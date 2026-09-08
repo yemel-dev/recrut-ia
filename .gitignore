@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+*.pyo
+.env
+venv/
+.venv/
+*.db
+data/cvs/*
+!data/cvs/.gitkeep
+data/models/*
+!data/models/.gitkeep
+*.exe
+*.spec
+build/
+dist/
+token.json
+credentials.json
