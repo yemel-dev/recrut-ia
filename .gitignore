@@ -15,3 +15,13 @@ build/
 dist/
 token.json
 credentials.json
+data/secrets/
+data/*.db 
+data/cvs/*
+!data/cvs/.gitkeep
+data/secrets/ 
+secrets/
+credentials.json
+token.json
+.env 
+
