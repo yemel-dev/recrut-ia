@@ -212,3 +212,46 @@ export function Confirmation({ ouverte, titre, children, libelleConfirmer = 'Con
     </dialog>
   );
 }
+
+/** Interrupteur marche / arrêt. */
+export function Interrupteur({ actif, onChange, libelle, disabled }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={actif}
+      disabled={disabled}
+      onClick={() => onChange(!actif)}
+      className="inline-flex items-center gap-3 text-sm font-medium text-navy-800 disabled:cursor-not-allowed disabled:opacity-60"
+    >
+      <span className={cx('relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors', actif ? 'bg-brand-600' : 'bg-navy-100')}>
+        <span className={cx('absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow transition-transform', actif && 'translate-x-5')} />
+      </span>
+      {libelle}
+    </button>
+  );
+}
+
+/** Onglets simples : [{ valeur, libelle, compteur? }]. */
+export function Onglets({ onglets, valeur, onChange }) {
+  return (
+    <div className="mb-4 flex gap-1 border-b border-line" role="tablist">
+      {onglets.map((o) => (
+        <button
+          key={o.valeur}
+          type="button"
+          role="tab"
+          aria-selected={valeur === o.valeur}
+          onClick={() => onChange(o.valeur)}
+          className={cx(
+            '-mb-px flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors',
+            valeur === o.valeur ? 'border-brand-600 text-navy-900' : 'border-transparent text-muted hover:text-navy-900',
+          )}
+        >
+          {o.libelle}
+          {o.compteur > 0 && <span className="rounded-full bg-navy-50 px-2 py-0.5 text-xs text-navy-700">{o.compteur}</span>}
+        </button>
+      ))}
+    </div>
+  );
+}

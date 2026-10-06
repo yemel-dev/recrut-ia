@@ -9,12 +9,11 @@ export class ErreurApi extends Error {
 }
 
 export const EVENEMENT_SESSION_EXPIREE = 'injara:session-expiree';
-const ROUTES_PUBLIQUES = ['/auth/'];
 
 async function appeler(methode, chemin, corps) {
   const reponse = await window.injara.api[methode](chemin, corps);
   if (!reponse.ok) {
-    if (reponse.statut === 401 && !ROUTES_PUBLIQUES.some((p) => chemin.startsWith(p))) {
+    if (reponse.statut === 401 && reponse.donnees?.code === 'session_requise') {
       window.dispatchEvent(new Event(EVENEMENT_SESSION_EXPIREE));
     }
     throw new ErreurApi(reponse.statut, reponse.donnees);
