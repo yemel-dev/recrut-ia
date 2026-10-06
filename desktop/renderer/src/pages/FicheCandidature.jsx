@@ -1,4 +1,4 @@
-import { ArrowLeft, ExternalLink, FileWarning, Mail, Phone, RefreshCw, RotateCcw, ScanText } from 'lucide-react';
+import { ArrowLeft, ExternalLink, FileDown, FileWarning, Mail, Phone, RefreshCw, RotateCcw, ScanText } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { api } from '../api.js';
@@ -69,6 +69,21 @@ export default function FicheCandidature() {
     if (message) setErreur(message);
   };
 
+  const [exportEnCours, setExportEnCours] = useState(false);
+  const exporterRapport = async () => {
+    setErreur('');
+    setExportEnCours(true);
+    try {
+      const resultat = await window.injara.fichiers.exporterRapport(fiche.id);
+      if (resultat.ok) notifier(`Rapport enregistré : ${resultat.chemin}`, 'succes');
+      else if (!resultat.annule) setErreur(resultat.message);
+    } catch (err) {
+      setErreur(err.message);
+    } finally {
+      setExportEnCours(false);
+    }
+  };
+
   if (!fiche) {
     return erreur ? <Alerte>{erreur}</Alerte> : <Chargement />;
   }
@@ -95,7 +110,10 @@ export default function FicheCandidature() {
             </p>
           </div>
         </div>
-        <Bouton variante="secondaire" icone={ExternalLink} onClick={ouvrirCV}>Ouvrir le CV</Bouton>
+        <div className="flex flex-wrap gap-2">
+          <Bouton variante="secondaire" icone={ExternalLink} onClick={ouvrirCV}>Ouvrir le CV</Bouton>
+          <Bouton icone={FileDown} chargement={exportEnCours} onClick={exporterRapport}>Exporter le rapport</Bouton>
+        </div>
       </div>
 
       {erreur && <div className="mb-4"><Alerte>{erreur}</Alerte></div>}

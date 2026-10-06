@@ -20,5 +20,7 @@ contextBridge.exposeInMainWorld('injara', {
     /** Ouvre le CV d'une candidature (déchiffré dans un dossier temporaire) ; renvoie un message d'erreur, ou une chaîne vide. */
     ouvrirCV: (candidatureId) => ipcRenderer.invoke('injara:ouvrir-cv', candidatureId),
     importerIdentifiantsGoogle: () => ipcRenderer.invoke('injara:importer-identifiants-google'),
+    /** Rapport PDF du candidat : l'utilisateur choisit où l'enregistrer. Renvoie { ok, chemin }, { annule } ou { ok: false, message }. */
+    exporterRapport: (candidatureId) => ipcRenderer.invoke('injara:exporter-rapport', candidatureId),
   },
 });

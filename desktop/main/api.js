@@ -8,12 +8,13 @@
 // Les CV sont chiffrés sur le disque. Pour en ouvrir un, le backend le renvoie déchiffré : il est posé dans un
 // dossier temporaire privé (DOSSIER_OUVERTS), vidé à la déconnexion, à la fermeture et au lancement suivant.
 
-const { dialog, ipcMain, shell } = require('electron');
+const { app, dialog, ipcMain, shell } = require('electron');
 const crypto = require('node:crypto');
 const fs = require('node:fs/promises');
 const http = require('node:http');
 const os = require('node:os');
 const path = require('node:path');
+const { gabaritRapport, genererPdf, nomDeFichier } = require('./rapport');
 
 const METHODES = new Set(['GET', 'POST', 'PUT', 'DELETE']);
 const CHEMIN_VALIDE = /^\/[a-z0-9_\-/]*(\?[a-z0-9_=&\-.%@+]*)?$/i;
@@ -160,6 +161,28 @@ function installerPontApi({ backend, origineAutorisee, fenetre }) {
     await fs.writeFile(fichier, reponse.tampon, { mode: 0o600 });
     const erreur = await shell.openPath(fichier);
     return erreur ? `Impossible d'ouvrir le fichier : ${erreur}` : '';
+  });
+
+  // --- Rapport PDF d'un candidat ------------------------------------------------------------------
+
+  ipcMain.handle('injara:exporter-rapport', async (event, candidatureId) => {
+    verifierOrigine(event);
+    if (!Number.isSafeInteger(candidatureId) || candidatureId <= 0) throw new Error('Requête invalide.');
+    const reponse = await envoyer('GET', `/candidatures/${candidatureId}/rapport`);
+    if (!reponse.ok) return { ok: false, message: reponse.donnees?.detail || 'Rapport indisponible.' };
+    const donnees = reponse.donnees;
+    const { canceled, filePath } = await dialog.showSaveDialog(fenetre(), {
+      title: 'Exporter le rapport',
+      defaultPath: path.join(app.getPath('documents'), nomDeFichier(donnees)),
+      filters: [{ name: 'Document PDF', extensions: ['pdf'] }],
+    });
+    if (canceled || !filePath) return { annule: true };
+    try {
+      await fs.writeFile(filePath, await genererPdf(gabaritRapport(donnees)));
+    } catch (err) {
+      return { ok: false, message: `Le rapport n'a pas pu être enregistré : ${err.message}` };
+    }
+    return { ok: true, chemin: filePath };
   });
 
   // --- Identifiants Google (credentials.json) --------------------------------------------------

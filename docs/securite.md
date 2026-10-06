@@ -49,6 +49,9 @@
   dans `<temp>/injara-cv-ouverts/`, l'ouvre avec le logiciel du système, et vide ce dossier à la déconnexion, à la
   fermeture et au lancement suivant (un fichier encore ouvert, verrouillé sous Windows, part au nettoyage suivant).
 - Un fichier chiffré altéré est signalé « illisible » et ne s'ouvre pas.
+- **Rapport PDF** : produit dans une fenêtre cachée (JavaScript désactivé, navigation bloquée, CSP `default-src 'none'`,
+  valeurs échappées), puis écrit **en clair** à l'endroit choisi par le recruteur : c'est un document destiné à être
+  partagé, il sort du périmètre chiffré d'INJARA.
 
 ## Agent mail
 

@@ -52,6 +52,12 @@ def contenu_cv(candidature_id: int, request: Request):
     )
 
 
+@router.get("/candidatures/{candidature_id}/rapport")
+def rapport(candidature_id: int, request: Request):
+    """Toutes les données du rapport PDF du candidat (le PDF est produit par Electron)."""
+    return request.app.state.services.rapport.donnees(candidature_id)
+
+
 @router.put("/candidatures/{candidature_id}/poste")
 def assigner(candidature_id: int, corps: Assignation, request: Request):
     return _service(request).assigner(candidature_id, corps.poste_id)

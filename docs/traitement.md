@@ -114,6 +114,20 @@ Un signal non évaluable est exclu du calcul, il ne compte pas comme une mauvais
 leadership à 2 ajoute la recommandation « Profil à fort potentiel d'évolution vers un poste d'encadrement ». Tous les
 seuils sont des constantes nommées en tête du module.
 
+## Rapport PDF par candidat
+
+Bouton « Exporter le rapport » sur la fiche. Le backend fournit toutes les données en une seule route
+(`GET /candidatures/{id}/rapport`, `services/rapport.py`) : entreprise, poste, date, candidat, score et poids
+réellement utilisés, compétences trouvées et manquantes, expérience, diplôme, potentiel et justification, décision et
+note, et la mention « Les scores et indicateurs sont des aides à la décision. La décision appartient au recruteur. »
+Ce qui n'a pas été calculé (adéquation, potentiel, score d'un CV illisible) y est indiqué explicitement.
+
+Le rapport porte sur le poste assigné ; sans poste assigné, sur celui où la candidature a le meilleur score, ce que le
+rapport précise. Electron construit le gabarit HTML (`desktop/main/rapport.js`, liste de sections), l'imprime avec
+`webContents.printToPDF` dans une fenêtre cachée sans JavaScript, puis l'enregistre là où le recruteur le choisit.
+Pour ajouter une section (« Entretien », prévue), écrire une fonction de plus dans `SECTIONS` : elle n'est affichée que
+si elle renvoie du contenu (la section entretien est vide tant que `entretien` vaut `null`).
+
 ## CV scannés (OCR)
 
 Un PDF sans couche texte passe par RapidOCR (modèles PP-OCRv6 multilingues, fournis avec le paquet `rapidocr`, sur

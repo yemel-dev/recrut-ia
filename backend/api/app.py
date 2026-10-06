@@ -24,6 +24,7 @@ from ..services.auth import AuthService
 from ..services.candidatures import CandidaturesService
 from ..services.entreprise import EntrepriseService
 from ..services.postes import PostesService
+from ..services.rapport import RapportService
 from ..services.tableau_de_bord import TableauDeBordService
 from ..services.traitement import TraitementService
 from ..services.erreurs import Conflit, ErreurService, ErreurValidation, Introuvable, NonAutorise, SessionRequise
@@ -40,6 +41,7 @@ class Services:
     agent_mail: AgentMailService
     traitement: TraitementService
     candidatures: CandidaturesService
+    rapport: RapportService
 
 
 def construire_services(db: Database, settings: Settings, modele: ModeleSemantique | None = None) -> Services:
@@ -66,6 +68,9 @@ def construire_services(db: Database, settings: Settings, modele: ModeleSemantiq
         agent_mail=agent_mail,
         traitement=traitement,
         candidatures=candidatures,
+        rapport=RapportService(
+            CandidatureRepository(db), ScoreRepository(db), PosteRepository(db), EntrepriseRepository(db), cle=auth.cle_session
+        ),
     )
 
 
