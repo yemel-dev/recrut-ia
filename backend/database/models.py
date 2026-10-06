@@ -1,70 +1,85 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, Text, Boolean
-from sqlalchemy.orm import declarative_base
-from sqlalchemy.sql import func
+"""Modèles SQLAlchemy du socle INJARA.
 
-Base = declarative_base()
+Une installation = une entreprise = un compte. Les tables liées aux candidatures (candidats, analyses,
+entretiens) seront ajoutées avec leurs modules.
+"""
+from __future__ import annotations
 
+from datetime import date, datetime, timezone
 
-class OffreEmploi(Base):
-    __tablename__ = "offres_emploi"
-    id                  = Column(Integer, primary_key=True)
-    titre               = Column(String(255), nullable=False)
-    description         = Column(Text)
-    competences_requises = Column(Text)  # JSON
-    experience_min      = Column(Integer, default=0)
-    formation_requise   = Column(String(50))
-    is_active           = Column(Boolean, default=True)
-    date_creation       = Column(DateTime, server_default=func.now())
+from sqlalchemy import JSON, Date, DateTime, Integer, LargeBinary, String, Text
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
-class Candidat(Base):
-    __tablename__ = "candidats"
-    id             = Column(Integer, primary_key=True)
-    nom            = Column(String(100))
-    prenom         = Column(String(100))
-    email          = Column(String(255), unique=True)
-    cv_path        = Column(String(500))
-    date_reception = Column(DateTime, server_default=func.now())
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
-class AnalyseCV(Base):
-    __tablename__ = "analyses_cv"
-    id                  = Column(Integer, primary_key=True)
-    candidat_id         = Column(Integer, nullable=False)
-    offre_id            = Column(Integer, nullable=False)
-    competences         = Column(Text)   # JSON
-    experience_annees   = Column(Float, default=0.0)
-    formation_niveau    = Column(String(50))
-    score_competences   = Column(Float, default=0.0)
-    score_experience    = Column(Float, default=0.0)
-    score_formation     = Column(Float, default=0.0)
-    score_adequation    = Column(Float, default=0.0)
-    score_global        = Column(Float, default=0.0)
-    score_potentiel     = Column(String(20))
-    justification       = Column(Text)
-    date_analyse        = Column(DateTime, server_default=func.now())
+class Base(DeclarativeBase):
+    pass
 
 
-class Entretien(Base):
-    __tablename__ = "entretiens"
-    id                  = Column(Integer, primary_key=True)
-    candidat_id         = Column(Integer, nullable=False)
-    offre_id            = Column(Integer, nullable=False)
-    code_invitation     = Column(String(20), unique=True)
-    date_entretien      = Column(DateTime)
-    statut              = Column(String(20), default="planifie")
-    score_regard        = Column(Float)
-    score_contenu       = Column(Float)
-    score_confiance     = Column(Float)
-    score_entretien     = Column(Float)
-    transcription       = Column(Text)
-    rapport_path        = Column(String(500))
+class Compte(Base):
+    """Le compte unique du recruteur, avec la clé de données protégée deux fois."""
+
+    __tablename__ = "compte"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    email: Mapped[str] = mapped_column(String(255), nullable=False)
+    mot_de_passe_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    # Clé de données chiffrée par une clé dérivée du mot de passe (argon2id + AES-GCM)
+    sel_mot_de_passe: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    cle_par_mot_de_passe: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    # Même clé de données, chiffrée par une clé dérivée de la clé de récupération (HKDF + AES-GCM)
+    sel_recuperation: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    cle_par_recuperation: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    cree_le: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    modifie_le: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
 
 
-class AlerteTriche(Base):
-    __tablename__ = "alertes_triche"
-    id            = Column(Integer, primary_key=True)
-    entretien_id  = Column(Integer, nullable=False)
-    type_alerte   = Column(String(100))
-    details       = Column(Text)
-    timestamp     = Column(DateTime, server_default=func.now())
+class Entreprise(Base):
+    """Profil de l'entreprise (une seule ligne)."""
+
+    __tablename__ = "entreprise"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    nom: Mapped[str] = mapped_column(String(255), default="")
+    secteur: Mapped[str | None] = mapped_column(String(255))
+    ville: Mapped[str | None] = mapped_column(String(255))
+    email_pro: Mapped[str | None] = mapped_column(String(255))
+    telephone: Mapped[str | None] = mapped_column(String(50))
+    description: Mapped[str | None] = mapped_column(Text)
+    modifie_le: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
+
+
+class Poste(Base):
+    """Profil de poste créé par l'entreprise. Seuls les postes « actif » serviront au classement."""
+
+    __tablename__ = "postes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    statut: Mapped[str] = mapped_column(String(20), default="brouillon", index=True)
+
+    # Obligatoires
+    intitule: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    competences_requises: Mapped[list[str]] = mapped_column(JSON, default=list)
+    experience_min_annees: Mapped[int] = mapped_column(Integer, default=0)
+    niveau_formation: Mapped[str] = mapped_column(String(20), nullable=False)
+
+    # Facultatifs
+    reference_interne: Mapped[str | None] = mapped_column(String(100))
+    departement: Mapped[str | None] = mapped_column(String(255))
+    lieu: Mapped[str | None] = mapped_column(String(255))
+    teletravail: Mapped[str | None] = mapped_column(String(20))
+    type_contrat: Mapped[str | None] = mapped_column(String(20))
+    duree: Mapped[str | None] = mapped_column(String(100))
+    date_limite: Mapped[date | None] = mapped_column(Date)
+    competences_comportementales: Mapped[list[str]] = mapped_column(JSON, default=list)
+    langues: Mapped[list[str]] = mapped_column(JSON, default=list)
+    remuneration: Mapped[str | None] = mapped_column(String(255))
+    processus_selection: Mapped[str | None] = mapped_column(Text)
+    documents_demandes: Mapped[list[str]] = mapped_column(JSON, default=list)
+
+    cree_le: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    modifie_le: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
