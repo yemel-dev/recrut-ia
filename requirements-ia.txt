@@ -1,0 +1,12 @@
+# Bibliothèques lourdes (plusieurs Go) : NLP, scoring, entretiens vidéo.
+# Non nécessaires au socle. À installer seulement pour travailler sur backend/ia/.
+-r requirements.txt
+spacy>=3.7
+sentence-transformers>=2.7
+PyMuPDF>=1.23
+python-docx>=1.1
+scikit-learn>=1.4
+opencv-python>=4.9
+mediapipe>=0.10
+openai-whisper
+psutil>=5.9

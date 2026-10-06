@@ -1,27 +1,28 @@
+# Python
 __pycache__/
-*.pyc
-*.pyo
-.env
-venv/
+*.py[co]
 .venv/
+venv/
+.pytest_cache/
+
+# Node / Electron
+node_modules/
+desktop/renderer/dist/
+desktop/out/
+
+# Données locales (jamais commitées)
+.env
 *.db
+data/*
+!data/cvs/
 data/cvs/*
 !data/cvs/.gitkeep
-data/models/*
-!data/models/.gitkeep
-*.exe
-*.spec
-build/
-dist/
-token.json
-credentials.json
-data/secrets/
-data/*.db 
-data/cvs/*
-!data/cvs/.gitkeep
-data/secrets/ 
 secrets/
 credentials.json
 token.json
-.env 
 
+# Builds
+build/
+dist/
+*.exe
+*.spec

@@ -1,16 +1,12 @@
-cffi==2.1.1
-colorama==0.4.6
-cryptography==50.0.1
-greenlet==3.5.5
-iniconfig==2.3.0
-packaging==26.3
-pluggy==1.6.0
-pycparser==3.0
-Pygments==2.21.0
-PyQt6==6.11.0
-PyQt6-Qt6==6.11.2
-PyQt6_sip==13.12.0
-pytest==9.1.1
-python-dotenv==1.2.3
-SQLAlchemy==2.0.52
-typing_extensions==4.16.0
+# Socle INJARA : API locale, base de données, sécurité, agent mail.
+fastapi>=0.115
+uvicorn>=0.30
+pydantic>=2.7
+SQLAlchemy>=2.0
+argon2-cffi>=23.1
+cryptography>=42.0
+python-dotenv>=1.0
+python-multipart>=0.0.9   # import de CV par l'agent (multipart)
+keyring>=25.0             # agent : mot de passe IMAP dans le coffre du système
+google-auth-oauthlib>=1.2 # agent : Gmail OAuth2 (mode real)
+google-api-python-client>=2.130
