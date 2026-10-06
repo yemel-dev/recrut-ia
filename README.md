@@ -30,8 +30,16 @@ cd desktop
 npm install
 ```
 
-`requirements.txt` contient le socle et s'installe en quelques secondes. Les bibliothèques d'IA (plusieurs Go) sont
-dans `requirements-ia.txt` et ne servent que pour travailler sur `backend/ia/`.
+`requirements.txt` contient le socle, y compris la lecture des CV (pypdf, python-docx), et s'installe en quelques
+secondes. Le critère « adéquation globale » du score utilise Sentence-BERT, plus lourd (environ 700 Mo avec le
+modèle). Sans lui, INJARA fonctionne et note les CV sur les trois autres critères. Pour l'activer :
+
+```bash
+# Windows : .venv\Scripts\python ; Linux : .venv/bin/python
+python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+python -m pip install -r requirements-ia.txt
+python -m backend.ia.telecharger_modele   # une seule fois, puis tout fonctionne hors ligne
+```
 
 ## Lancer
 
@@ -75,7 +83,9 @@ avec un autre dossier : `INJARA_DATA_DIR=/chemin/vers/dossier npm run dev`.
 
 Les tests couvrent l'authentification (`backend/tests/test_auth.py`), les postes et le tableau de bord
 (`test_postes.py`), le profil entreprise (`test_entreprise.py`), l'intégration de l'agent mail
-(`test_agent_mail.py`, en mode démo) et l'agent lui-même (`backend/tests/agent/`).
+(`test_agent_mail.py`, en mode démo), le traitement des candidatures (`test_ia_extraction.py`,
+`test_ia_scoring.py`, `test_traitement.py`, avec des CV fictifs dans `backend/tests/fixtures/`) et l'agent lui-même
+(`backend/tests/agent/`).
 
 ## Dépannage
 
@@ -100,9 +110,9 @@ backend/                Python
   services/             logique métier : compte et clés, entreprise, postes, tableau de bord, agent mail
   database/             modèles SQLAlchemy ; seul paquet qui accède à la base
   agent/                agent mail (Gmail OAuth, IMAP, import manuel), monté sous /gmail
-  ia/                   NLP et scoring (vide pour l'instant)
+  ia/                   lecture et analyse des CV, score, classement (voir docs/traitement.md)
   tests/
-docs/                   documents de cadrage et décisions (docs/README.md), sécurité (docs/securite.md)
+docs/                   cadrage (README.md), sécurité, agent mail, traitement des candidatures
 ```
 
 ## Lancer le backend seul
