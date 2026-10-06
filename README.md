@@ -5,7 +5,8 @@ serveur distant. Une installation correspond à une entreprise et à un compte.
 
 - **Interface** : Electron + React (Vite) + Tailwind CSS, en JavaScript (`desktop/`)
 - **Moteur** : Python, FastAPI, SQLAlchemy, SQLite (`backend/`), lancé et arrêté par Electron
-- **Agent mail** : récupère les candidatures depuis Gmail ou IMAP (`backend/agent/`, voir son README)
+- **Agent mail** : récupère les CV reçus dans la boîte de recrutement, Gmail ou autre messagerie (`backend/agent/`,
+  intégration décrite dans [docs/agent-mail.md](docs/agent-mail.md))
 
 ## Prérequis
 
@@ -40,10 +41,25 @@ npm run dev     # interface avec rechargement à chaud ; Electron lance lui-mêm
 npm start       # compile l'interface puis lance Electron sur la version compilée
 ```
 
+Pour développer sans vraie boîte mail, lancer en **mode démo** (boîte simulée avec 5 CV d'exemple, bandeau
+« MODE DÉMO » dans l'application) :
+
+```bash
+# Linux
+GMAIL_MODE=fake npm run dev
+# Windows (PowerShell)
+$env:GMAIL_MODE = "fake"; npm run dev
+```
+
+Sans cette variable, l'agent est en mode réel. Pour lier un compte Gmail, l'application demande le fichier
+`credentials.json` de l'entreprise (ID client OAuth de type « Application de bureau », voir
+`backend/agent/README.md`) ; une autre messagerie se lie avec son adresse et son mot de passe.
+
 Electron utilise le Python de `.venv` à la racine du dépôt. Pour en utiliser un autre, définir `INJARA_PYTHON`
 (chemin de l'exécutable).
 
-Les données (base `injara.db`) sont rangées dans le dossier utilisateur d'Electron, sous-dossier `donnees` :
+Les données (base `injara.db`, CV reçus dans `cvs/`, registre de l'agent, compte mail dans `secrets/`) sont rangées
+dans le dossier utilisateur d'Electron, sous-dossier `donnees` :
 
 - Windows : `%APPDATA%\injara-desktop\donnees`
 - Linux : `~/.config/injara-desktop/donnees`
@@ -61,7 +77,8 @@ avec un autre dossier : `INJARA_DATA_DIR=/chemin/vers/dossier npm run dev`.
 ```
 
 Les tests couvrent l'authentification (`backend/tests/test_auth.py`), les postes et le tableau de bord
-(`test_postes.py`), le profil entreprise (`test_entreprise.py`) et l'agent mail (`backend/tests/agent/`).
+(`test_postes.py`), le profil entreprise (`test_entreprise.py`), l'intégration de l'agent mail
+(`test_agent_mail.py`, en mode démo) et l'agent lui-même (`backend/tests/agent/`).
 
 ## Dépannage
 
@@ -83,9 +100,9 @@ desktop/                Electron
 backend/                Python
   __main__.py           point d'entrée lancé par Electron (python -m backend)
   api/                  routes FastAPI, sans logique : elles appellent services/
-  services/             logique métier : compte et clés, entreprise, postes, tableau de bord
+  services/             logique métier : compte et clés, entreprise, postes, tableau de bord, agent mail
   database/             modèles SQLAlchemy ; seul paquet qui accède à la base
-  agent/                agent mail (Gmail OAuth, IMAP, import manuel)
+  agent/                agent mail (Gmail OAuth, IMAP, import manuel), monté sous /gmail
   ia/                   NLP et scoring (vide pour l'instant)
   tests/
 docs/                   documents de cadrage et décisions (docs/README.md), sécurité (docs/securite.md)

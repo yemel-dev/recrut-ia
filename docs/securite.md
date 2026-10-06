@@ -12,6 +12,9 @@
 | `contextIsolation`, `sandbox`, `nodeIntegration: false` ; le preload n'expose que `window.injara.api.{get,post,put,delete}` | `desktop/main/index.js`, `desktop/preload/index.js` |
 | CSP stricte au build (`connect-src 'none'`), navigation externe et nouvelles fenêtres bloquées, permissions refusées sauf l'écriture dans le presse-papiers | `desktop/vite.config.mjs`, `desktop/main/index.js` |
 | Le backend s'arrête quand Electron ferme son entrée standard, même si Electron plante | `backend/__main__.py` |
+| Les routes de l'agent mail (`/gmail/*`, `/agent/*`) exigent la session, comme le reste | `backend/api/routes_agent.py` |
+| Seul un 401 `code: "session_requise"` ferme la session (un mot de passe de messagerie refusé ne déconnecte pas) | `backend/api/app.py`, `desktop/main/api.js` |
+| Import de CV : le processus principal lit lui-même les fichiers (PDF, DOCX, ZIP, 200 Mo max) ; ouverture d'un CV : uniquement un PDF ou DOCX situé dans le dossier des CV | `desktop/main/api.js` |
 
 ## Compte et clés
 
@@ -30,9 +33,17 @@
 - **Session** : en mémoire dans le backend (jeton aléatoire + clé de données déchiffrée). Fermer l'application arrête
   le backend et donc déconnecte. `AuthService.cle_de_donnees(jeton)` est le point d'accès prévu pour le chiffrement.
 
+## Agent mail
+
+- Le mot de passe d'une messagerie n'existe que dans le champ du formulaire (vidé dès la réponse) et dans le corps de
+  la requête ; l'agent le range dans le coffre du système (`keyring`). Le jeton Gmail et le `credentials.json` sont
+  dans `<données>/secrets/`.
+- L'agent lit la boîte en lecture seule (`gmail.readonly` ou IMAP) ; la surveillance ne tourne que pendant une session.
+
 ## Limites connues (à traiter plus tard)
 
-- Les données de l'entreprise et des postes sont en clair dans SQLite. Seuls les CV sont prévus pour être chiffrés.
+- Les données de l'entreprise et des postes sont en clair dans SQLite, de même que les CV reçus (dossier `cvs/`) pour
+  l'instant : leur chiffrement avec la clé de données est la prochaine étape.
 - Pas de verrouillage automatique après inactivité, ni de limitation du nombre d'essais de connexion (argon2 ralentit
   déjà chaque essai, et l'API n'est joignable qu'avec le jeton de lancement).
 - Perdre à la fois le mot de passe et la clé de récupération rend la clé de données irrécupérable : c'est voulu.
