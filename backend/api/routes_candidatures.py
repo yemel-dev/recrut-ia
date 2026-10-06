@@ -1,7 +1,9 @@
 """Routes des candidatures traitées (session obligatoire) : liste, fiche, choix du poste, top par poste."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Request
+from urllib.parse import quote
+
+from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel
 
 from .securite import session_requise
@@ -32,6 +34,17 @@ def lister(
 @router.get("/candidatures/{candidature_id}")
 def consulter(candidature_id: int, request: Request):
     return _service(request).consulter(candidature_id)
+
+
+@router.get("/candidatures/{candidature_id}/cv")
+def contenu_cv(candidature_id: int, request: Request):
+    """CV déchiffré, pour qu'Electron l'ouvre dans l'application par défaut du système."""
+    nom, contenu = _service(request).contenu_cv(candidature_id)
+    return Response(
+        contenu,
+        media_type="application/octet-stream",
+        headers={"X-Injara-Nom-Fichier": quote(nom), "Cache-Control": "no-store"},
+    )
 
 
 @router.put("/candidatures/{candidature_id}/poste")

@@ -17,8 +17,8 @@ contextBridge.exposeInMainWorld('injara', {
     /** Chemin local d'un fichier glissé-déposé dans la fenêtre. */
     cheminDe: (fichier) => webUtils.getPathForFile(fichier),
     importerCV: (chemins) => ipcRenderer.invoke('injara:importer-cv', chemins),
-    /** Ouvre un CV avec le logiciel du système ; renvoie un message d'erreur, ou une chaîne vide. */
-    ouvrirCV: (chemin) => ipcRenderer.invoke('injara:ouvrir-cv', chemin),
+    /** Ouvre le CV d'une candidature (déchiffré dans un dossier temporaire) ; renvoie un message d'erreur, ou une chaîne vide. */
+    ouvrirCV: (candidatureId) => ipcRenderer.invoke('injara:ouvrir-cv', candidatureId),
     importerIdentifiantsGoogle: () => ipcRenderer.invoke('injara:importer-identifiants-google'),
   },
 });

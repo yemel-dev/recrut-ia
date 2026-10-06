@@ -5,6 +5,7 @@ la candidature est alors marquée « illisible » et signalée au recruteur, jam
 """
 from __future__ import annotations
 
+import io
 import logging
 import re
 from pathlib import Path
@@ -25,16 +26,21 @@ class FichierIllisible(Exception):
         self.motif = motif
 
 
-def lire_texte(chemin: str | Path) -> str:
-    """Texte brut du CV. Lève FichierIllisible si le fichier est inexploitable."""
+def lire_texte(chemin: str | Path, contenu: bytes | None = None) -> str:
+    """Texte brut du CV. Lève FichierIllisible si le fichier est inexploitable.
+
+    `contenu` : octets déjà lus (CV déchiffré en mémoire) ; `chemin` ne sert alors qu'au nom et à l'extension.
+    """
     chemin = Path(chemin)
-    if not chemin.exists():
-        raise FichierIllisible("Fichier introuvable : il a peut-être été déplacé ou supprimé.")
+    if contenu is None:
+        if not chemin.exists():
+            raise FichierIllisible("Fichier introuvable : il a peut-être été déplacé ou supprimé.")
+        contenu = chemin.read_bytes()
     extension = chemin.suffix.lower()
     if extension == ".pdf":
-        texte = _lire_pdf(chemin)
+        texte = _lire_pdf(contenu, chemin.name)
     elif extension == ".docx":
-        texte = _lire_docx(chemin)
+        texte = _lire_docx(contenu, chemin.name)
     else:
         raise FichierIllisible(f"Format non pris en charge ({extension or 'sans extension'}) : PDF ou DOCX attendu.")
 
@@ -50,14 +56,14 @@ def lire_texte(chemin: str | Path) -> str:
     return texte.strip()
 
 
-def _lire_pdf(chemin: Path) -> str:
+def _lire_pdf(contenu: bytes, nom: str) -> str:
     try:
         from pypdf import PdfReader
         from pypdf.errors import PdfReadError
     except ImportError as exc:  # pragma: no cover - dépendance du socle
         raise FichierIllisible("Lecteur PDF absent (pypdf) : installez requirements.txt.") from exc
     try:
-        lecteur = PdfReader(str(chemin))
+        lecteur = PdfReader(io.BytesIO(contenu))
         if lecteur.is_encrypted and not lecteur.decrypt(""):
             raise FichierIllisible("Ce PDF est protégé par un mot de passe.")
         if not lecteur.pages:
@@ -66,19 +72,19 @@ def _lire_pdf(chemin: Path) -> str:
     except FichierIllisible:
         raise
     except (PdfReadError, ValueError, KeyError, TypeError, OSError) as exc:
-        log.warning("PDF illisible %s : %s", chemin.name, exc)
+        log.warning("PDF illisible %s : %s", nom, exc)
         raise FichierIllisible("Ce PDF est endommagé ou dans un format non reconnu.") from exc
 
 
-def _lire_docx(chemin: Path) -> str:
+def _lire_docx(contenu: bytes, nom: str) -> str:
     try:
         from docx import Document
     except ImportError as exc:  # pragma: no cover - dépendance du socle
         raise FichierIllisible("Lecteur DOCX absent (python-docx) : installez requirements.txt.") from exc
     try:
-        document = Document(str(chemin))
+        document = Document(io.BytesIO(contenu))
     except Exception as exc:  # zip invalide, XML corrompu…
-        log.warning("DOCX illisible %s : %s", chemin.name, exc)
+        log.warning("DOCX illisible %s : %s", nom, exc)
         raise FichierIllisible("Ce document Word est endommagé ou dans un format non reconnu.") from exc
     morceaux = [p.text for p in document.paragraphs]
     # Beaucoup de CV Word sont mis en page dans des tableaux : on lit aussi leurs cellules, ligne par ligne.

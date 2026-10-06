@@ -8,7 +8,8 @@
 4. classement : poste cité dans le mail, sinon meilleur poste. Un choix manuel n'est jamais écrasé.
 
 Quand un poste change, ses candidatures sont renotées à partir des données enregistrées, sans relire les CV.
-Le traitement ne tourne que pendant une session (les CV seront chiffrés avec la clé de session).
+Le traitement ne tourne que pendant une session : dès l'import, les CV et pièces jointes sont chiffrés avec la clé de
+données de la session (voir coffre.py), et le texte extrait est enregistré chiffré.
 """
 from __future__ import annotations
 
@@ -23,6 +24,7 @@ from typing import Any, Callable
 from ..database.repositories import CandidatureRepository, PosteRepository, ScoreRepository
 from ..ia import classement, extraction, lecture, scoring, semantique
 from ..ia.scoring import DonneesCV, DonneesPoste
+from . import coffre
 from .agent_mail import AgentMailService
 
 log = logging.getLogger("injara.traitement")
@@ -30,6 +32,10 @@ log = logging.getLogger("injara.traitement")
 _NOM_CV = re.compile(r"\bcv\b|curriculum|resume|cv[_\-.]", re.IGNORECASE)
 _NOM_LETTRE = re.compile(r"lettre|motivation|cover|\blm\b|lm[_\-.]", re.IGNORECASE)
 LONGUEUR_MAX_LETTRE = 20_000
+
+
+class SessionFermee(Exception):
+    """La session s'est fermée pendant un passage : la clé n'est plus disponible, le passage s'arrête."""
 
 
 def _maintenant() -> datetime:
@@ -56,6 +62,7 @@ class TraitementService:
         postes: PosteRepository,
         agent_mail: AgentMailService,
         modele: semantique.ModeleSemantique,
+        cle: Callable[[], bytes | None],
         aujourdhui: Callable[[], date] = date.today,
     ) -> None:
         self.candidatures = candidatures
@@ -63,6 +70,7 @@ class TraitementService:
         self.postes = postes
         self.agent_mail = agent_mail
         self.modele = modele
+        self.cle = cle  # clé de données de la session en cours, ou None
         self.aujourdhui = aujourdhui
         self._demande = threading.Event()
         self._arret = threading.Event()
@@ -130,10 +138,14 @@ class TraitementService:
             return self._traiter()
 
     def _traiter(self) -> dict[str, int]:
+        if self.cle() is None:
+            log.info("Traitement ignoré : aucune session ouverte")
+            return {}
         self.en_cours = True
         debut = time.monotonic()
         try:
             importees = self.importer_depuis_agent()
+            self.chiffrer()
             lues, illisibles = self.lire_et_extraire()
             vecteurs = self.completer_vecteurs()
             tout = self._tout_renoter or vecteurs > 0
@@ -144,6 +156,9 @@ class TraitementService:
             bilan = {"importees": importees, "lues": lues, "illisibles": illisibles, "notees": notees}
             log.info("Traitement terminé en %.1f s : %s", time.monotonic() - debut, bilan)
             return bilan
+        except SessionFermee:
+            log.info("Traitement interrompu : fin de session")
+            return {}
         finally:
             self.en_cours = False
 
@@ -185,6 +200,51 @@ class TraitementService:
             log.info("Étape import : %d nouvelle(s) candidature(s)", len(par_mail))
         return len(par_mail)
 
+    # ------------------------------------------------------------------ chiffrement au repos
+
+    def _cle(self) -> bytes:
+        cle = self.cle()
+        if cle is None:
+            raise SessionFermee()
+        return cle
+
+    def chiffrer(self) -> int:
+        """Chiffre les CV et pièces jointes encore en clair, et le texte extrait enregistré avant le chiffrement."""
+        cle = self._cle()
+        fichiers = textes = 0
+        for candidature in self.candidatures.toutes():
+            for chemin in [candidature["fichier_cv"], *(p["chemin"] for p in candidature["pieces_jointes"] or [])]:
+                try:
+                    fichiers += coffre.chiffrer_fichier(chemin, cle)
+                except OSError as exc:  # fichier verrouillé (ouvert ailleurs) : nouvel essai au prochain passage
+                    log.warning("Chiffrement de %s reporté : %s", Path(chemin).name, exc)
+            if not (coffre.est_chiffre(candidature["texte"]) and coffre.est_chiffre(candidature["texte_lettre"])):
+                self.candidatures.maj(
+                    candidature["id"],
+                    texte=coffre.chiffrer_texte(candidature["texte"], cle),
+                    texte_lettre=coffre.chiffrer_texte(candidature["texte_lettre"], cle),
+                )
+                textes += 1
+        if fichiers or textes:
+            log.info("Étape chiffrement : %d fichier(s), %d texte(s)", fichiers, textes)
+        return fichiers
+
+    def _lire(self, chemin: str) -> str:
+        """Texte d'un CV ou d'une pièce jointe, déchiffré en mémoire."""
+        try:
+            contenu = coffre.lire_fichier(chemin, self._cle())
+        except FileNotFoundError as exc:
+            raise lecture.FichierIllisible("Fichier introuvable : il a peut-être été déplacé ou supprimé.") from exc
+        except coffre.Indechiffrable as exc:
+            raise lecture.FichierIllisible("Le fichier chiffré est endommagé : il ne peut pas être relu.") from exc
+        return lecture.lire_texte(chemin, contenu)
+
+    def _en_clair(self, candidature: dict) -> dict:
+        cle = self._cle()
+        candidature["texte"] = coffre.dechiffrer_texte(candidature["texte"], cle)
+        candidature["texte_lettre"] = coffre.dechiffrer_texte(candidature["texte_lettre"], cle)
+        return candidature
+
     # ------------------------------------------------------------------ étapes 1 et 2 : lecture, extraction
 
     def lire_et_extraire(self) -> tuple[int, int]:
@@ -196,7 +256,7 @@ class TraitementService:
             candidature = self.candidatures.get(candidature_id)
             nom_fichier = candidature["nom_fichier_cv"]
             try:
-                texte = lecture.lire_texte(candidature["fichier_cv"])
+                texte = self._lire(candidature["fichier_cv"])
             except lecture.FichierIllisible as exc:
                 illisibles += 1
                 log.warning("Étape lecture ❌ candidature %d (%s) : %s", candidature_id, nom_fichier, exc.motif)
@@ -216,12 +276,13 @@ class TraitementService:
                 candidature_id, resultat.experience_mois, resultat.stages_mois, resultat.diplome.get("niveau") or "non trouvé",
             )
             vecteur = self.modele.encoder(texte) if self.modele.pret else None
+            cle = self._cle()
             self.candidatures.maj(
                 candidature_id,
                 statut_lecture="lue",
                 motif_lecture=None,
-                texte=texte,
-                texte_lettre=self._lire_lettres(candidature["pieces_jointes"]),
+                texte=coffre.chiffrer_texte(texte, cle),
+                texte_lettre=coffre.chiffrer_texte(self._lire_lettres(candidature["pieces_jointes"]), cle),
                 extraction=resultat.en_dict(),
                 nom=resultat.nom or candidature["expediteur_nom"],
                 email=resultat.email or candidature["expediteur_email"],
@@ -238,12 +299,11 @@ class TraitementService:
             lues += 1
         return lues, illisibles
 
-    @staticmethod
-    def _lire_lettres(pieces: list[dict]) -> str | None:
+    def _lire_lettres(self, pieces: list[dict]) -> str | None:
         textes = []
         for piece in pieces or []:
             try:
-                textes.append(lecture.lire_texte(piece["chemin"]))
+                textes.append(self._lire(piece["chemin"]))
             except lecture.FichierIllisible:
                 continue
         return "\n\n".join(textes)[:LONGUEUR_MAX_LETTRE] or None
@@ -255,7 +315,7 @@ class TraitementService:
         n = 0
         for candidature in self.candidatures.lues():
             if candidature["vecteur"] is None or candidature["modele_vecteur"] != self.modele.nom:
-                vecteur = self.modele.encoder(candidature["texte"] or "")
+                vecteur = self.modele.encoder(self._en_clair(candidature)["texte"] or "")
                 self.candidatures.maj(candidature["id"], vecteur=semantique.en_octets(vecteur), modele_vecteur=self.modele.nom)
                 n += 1
         if n:
@@ -313,7 +373,7 @@ class TraitementService:
                 continue
             if candidature["mode_assignation"] == "manuel" and candidature["poste_id"] is None and candidature["statut_classement"] == "classe":
                 candidature["mode_assignation"] = None  # le poste choisi à la main a été supprimé : on reclasse
-            donnees = self.donnees_cv(candidature)
+            donnees = self.donnees_cv(self._en_clair(candidature))
             a_noter = {p["id"] for p in actifs}
             if candidature["poste_id"] in postes:
                 a_noter.add(candidature["poste_id"])  # poste choisi à la main, même s'il n'est plus actif

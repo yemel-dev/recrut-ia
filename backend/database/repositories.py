@@ -183,6 +183,10 @@ class CandidatureRepository:
             )
             return list(s.scalars(requete.order_by(Candidature.id)))
 
+    def toutes(self) -> list[dict[str, Any]]:
+        with self.db.session() as s:
+            return [_as_dict(c) for c in s.scalars(select(Candidature).order_by(Candidature.id))]
+
     def lues(self) -> list[dict[str, Any]]:
         """Candidatures lisibles, avec ce qu'il faut pour les noter (sans relire les fichiers)."""
         with self.db.session() as s:

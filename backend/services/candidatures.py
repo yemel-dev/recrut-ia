@@ -7,7 +7,8 @@ from __future__ import annotations
 from typing import Any
 
 from ..database.repositories import CandidatureRepository, PosteRepository, ScoreRepository
-from .erreurs import ErreurValidation, Introuvable
+from . import coffre
+from .erreurs import ErreurService, ErreurValidation, Introuvable, SessionRequise
 from .traitement import TraitementService
 
 TAILLE_TOP = 10
@@ -122,6 +123,19 @@ class CandidaturesService:
 
     def etat(self) -> dict[str, Any]:
         return {**self.traitement.etat(), "compteurs": self.candidatures.compter()}
+
+    def contenu_cv(self, candidature_id: int) -> tuple[str, bytes]:
+        """Nom et contenu en clair du CV, déchiffré en mémoire pour être ouvert par le recruteur."""
+        candidature = self._get(candidature_id)
+        cle = self.traitement.cle()
+        if cle is None:
+            raise SessionRequise("Session expirée. Veuillez vous reconnecter.")
+        try:
+            return candidature["nom_fichier_cv"], coffre.lire_fichier(candidature["fichier_cv"], cle)
+        except FileNotFoundError as exc:
+            raise Introuvable("Fichier introuvable : il a peut-être été déplacé ou supprimé.") from exc
+        except coffre.Indechiffrable as exc:
+            raise ErreurService("Le fichier chiffré est endommagé : il ne peut pas être ouvert.") from exc
 
     def _get(self, candidature_id: int) -> dict[str, Any]:
         candidature = self.candidatures.get(candidature_id)

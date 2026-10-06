@@ -47,7 +47,9 @@ def construire_services(db: Database, settings: Settings, modele: ModeleSemantiq
     auth = AuthService(CompteRepository(db), settings.kdf)
     agent_mail = AgentMailService(settings.data_dir, settings.mode_agent, ParametreRepository(db))
     modele = modele or ModeleSemantique((settings.dossier_modeles or dossier_modeles()) / NOM_MODELE)
-    traitement = TraitementService(CandidatureRepository(db), ScoreRepository(db), PosteRepository(db), agent_mail, modele)
+    traitement = TraitementService(
+        CandidatureRepository(db), ScoreRepository(db), PosteRepository(db), agent_mail, modele, cle=auth.cle_session
+    )
     candidatures = CandidaturesService(CandidatureRepository(db), ScoreRepository(db), PosteRepository(db), traitement)
 
     auth.a_la_connexion += [agent_mail.session_ouverte, traitement.demarrer]

@@ -77,8 +77,13 @@ class AuthService:
             return None
         return session
 
+    def cle_session(self) -> bytes | None:
+        """Clé de données de la session ouverte, ou None : pour les traitements de fond (chiffrement des CV)."""
+        session = self._session
+        return session.cle_de_donnees if session is not None else None
+
     def cle_de_donnees(self, jeton: str | None) -> bytes:
-        """Clé de données de la session en cours (pour le futur chiffrement des CV)."""
+        """Clé de données de la session désignée par ce jeton."""
         session = self.session_valide(jeton)
         if session is None:
             raise SessionRequise("Session expirée. Veuillez vous reconnecter.")

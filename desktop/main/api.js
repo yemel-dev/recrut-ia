@@ -4,11 +4,15 @@
 // qui ajoute le jeton de lancement et le jeton de session. Aucun de ces deux secrets n'atteint l'interface.
 // Les accès au disque (import de CV, ouverture d'un CV, identifiants Google) passent aussi par ici,
 // avec des vérifications strictes sur les chemins.
+//
+// Les CV sont chiffrés sur le disque. Pour en ouvrir un, le backend le renvoie déchiffré : il est posé dans un
+// dossier temporaire privé (DOSSIER_OUVERTS), vidé à la déconnexion, à la fermeture et au lancement suivant.
 
 const { dialog, ipcMain, shell } = require('electron');
 const crypto = require('node:crypto');
 const fs = require('node:fs/promises');
 const http = require('node:http');
+const os = require('node:os');
 const path = require('node:path');
 
 const METHODES = new Set(['GET', 'POST', 'PUT', 'DELETE']);
@@ -17,9 +21,23 @@ const EXTENSIONS_IMPORT = new Set(['.pdf', '.docx', '.zip']);
 const EXTENSIONS_CV = new Set(['.pdf', '.docx']);
 const TAILLE_MAX_IMPORT = 200 * 1024 * 1024; // comme l'agent : 200 Mo par archive
 const TAILLE_MAX_IDENTIFIANTS = 64 * 1024;
+const DOSSIER_OUVERTS = path.join(os.tmpdir(), 'injara-cv-ouverts');
 
-function installerPontApi({ backend, origineAutorisee, dossierCV, fenetre }) {
+/** Efface les CV déchiffrés pour consultation. Un fichier encore ouvert dans un logiciel (verrouillé sous Windows)
+ * reste en place jusqu'au prochain nettoyage. */
+async function viderCVOuverts() {
+  let noms = [];
+  try {
+    noms = await fs.readdir(DOSSIER_OUVERTS);
+  } catch {
+    return;
+  }
+  await Promise.all(noms.map((nom) => fs.rm(path.join(DOSSIER_OUVERTS, nom), { force: true, recursive: true }).catch(() => {})));
+}
+
+function installerPontApi({ backend, origineAutorisee, fenetre }) {
   let jetonSession = null;
+  viderCVOuverts();
 
   // Requête HTTP vers le backend, sans délai maximal : la liaison Gmail attend que l'utilisateur
   // ait fini dans son navigateur.
@@ -34,7 +52,11 @@ function installerPontApi({ backend, origineAutorisee, dossierCV, fenetre }) {
       const requete = http.request({ host: '127.0.0.1', port: backend.port, path: chemin, method: methode, headers: enTetes }, (reponse) => {
         const morceaux = [];
         reponse.on('data', (m) => morceaux.push(m));
-        reponse.on('end', () => resolve(interpreter(chemin, reponse.statusCode, Buffer.concat(morceaux).toString('utf8'))));
+        reponse.on('end', () => {
+          const tampon = Buffer.concat(morceaux);
+          const binaire = reponse.statusCode === 200 && reponse.headers['content-type'] === 'application/octet-stream';
+          resolve(binaire ? { ok: true, statut: 200, tampon, enTetes: reponse.headers } : interpreter(chemin, reponse.statusCode, tampon.toString('utf8')));
+        });
       });
       requete.on('error', () =>
         resolve({ ok: false, statut: 0, donnees: { detail: "Le moteur INJARA ne répond plus. Redémarrez l'application." } }),
@@ -60,7 +82,10 @@ function installerPontApi({ backend, origineAutorisee, dossierCV, fenetre }) {
     const finDeSession = ok && (chemin === '/auth/deconnexion' || chemin === '/auth/recuperation');
     // Seul un 401 marqué « session_requise » signifie que la session est perdue (pas un mot de passe de messagerie refusé).
     const sessionRefusee = statut === 401 && donnees?.code === 'session_requise';
-    if (finDeSession || sessionRefusee) jetonSession = null;
+    if (finDeSession || sessionRefusee) {
+      jetonSession = null;
+      viderCVOuverts();
+    }
     return { ok, statut, donnees };
   }
 
@@ -115,20 +140,25 @@ function installerPontApi({ backend, origineAutorisee, dossierCV, fenetre }) {
 
   // --- Ouverture d'un CV ---------------------------------------------------------------------
 
-  ipcMain.handle('injara:ouvrir-cv', async (event, chemin) => {
+  ipcMain.handle('injara:ouvrir-cv', async (event, candidatureId) => {
     verifierOrigine(event);
-    if (typeof chemin !== 'string') throw new Error('Requête invalide.');
-    const absolu = path.resolve(chemin);
-    const relatif = path.relative(path.resolve(dossierCV), absolu);
-    if (!relatif || relatif.startsWith('..') || path.isAbsolute(relatif) || !EXTENSIONS_CV.has(path.extname(absolu).toLowerCase())) {
-      return "Ce fichier n'est pas un CV d'INJARA.";
-    }
+    if (!Number.isSafeInteger(candidatureId) || candidatureId <= 0) throw new Error('Requête invalide.');
+    const reponse = await envoyer('GET', `/candidatures/${candidatureId}/cv`);
+    if (!reponse.tampon) return reponse.donnees?.detail || "Impossible d'ouvrir le CV.";
+    let nom;
     try {
-      await fs.access(absolu);
+      nom = path.basename(decodeURIComponent(reponse.enTetes['x-injara-nom-fichier'] || ''));
     } catch {
-      return 'Fichier introuvable : il a peut-être été déplacé ou supprimé.';
+      nom = '';
     }
-    const erreur = await shell.openPath(absolu);
+    const extension = path.extname(nom).toLowerCase();
+    if (!EXTENSIONS_CV.has(extension)) return "Ce fichier n'est pas un CV d'INJARA.";
+    // Un sous-dossier par ouverture : deux CV de même nom ne s'écrasent pas.
+    await fs.mkdir(DOSSIER_OUVERTS, { recursive: true, mode: 0o700 });
+    const dossier = await fs.mkdtemp(path.join(DOSSIER_OUVERTS, `${candidatureId}-`));
+    const fichier = path.join(dossier, nom.replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_'));
+    await fs.writeFile(fichier, reponse.tampon, { mode: 0o600 });
+    const erreur = await shell.openPath(fichier);
     return erreur ? `Impossible d'ouvrir le fichier : ${erreur}` : '';
   });
 
@@ -184,4 +214,4 @@ function multipart(fichiers) {
   return { corps: Buffer.concat(parties), type: `multipart/form-data; boundary=${frontiere}` };
 }
 
-module.exports = { installerPontApi };
+module.exports = { installerPontApi, viderCVOuverts };

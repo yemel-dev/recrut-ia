@@ -59,7 +59,7 @@ export default function FicheCandidature() {
     );
 
   const ouvrirCV = async () => {
-    const message = await window.injara.fichiers.ouvrirCV(fiche.fichier_cv);
+    const message = await window.injara.fichiers.ouvrirCV(fiche.id);
     if (message) setErreur(message);
   };
 

@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 
 from backend.api.app import create_app
 from backend.ia import semantique
+from backend.services import coffre
 
 from .conftest import EMAIL, JETON, MOT_DE_PASSE
 from .fixtures import fabrique
@@ -251,7 +252,7 @@ def test_poste_modifie_renote_sans_relire_les_cv(connecte, services, boite, tmp_
     c = candidature_de(services, "cv.pdf")
     assert c["score"] == 100
 
-    Path(services.candidatures.candidatures.get(c["id"])["fichier_cv"]).unlink()  # le fichier n'est plus là
+    coffre.chemin_chiffre(services.candidatures.candidatures.get(c["id"])["fichier_cv"]).unlink()  # le fichier n'est plus là
     connecte.put(f"/postes/{dev}", json={**POSTE_DEV, "competences_requises": ["Python", "Kubernetes"]})
     services.traitement.traiter()
     c = candidature_de(services, "cv.pdf")

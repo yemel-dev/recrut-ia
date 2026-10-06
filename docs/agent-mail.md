@@ -21,7 +21,7 @@ cela diffère du *Guide d'intégration frontend — Agent IA Mail* rédigé pour
    lancement **et une session ouverte**. L'interface passe par `window.injara.api` (IPC) ; il n'y a ni `apiBase`
    ni CORS. Le point 7 de la section sécurité du guide (jeton aléatoire) est donc réalisé.
 2. **Fichiers.** L'interface n'a pas accès au disque. Le preload expose `window.injara.fichiers` :
-   `choisirCV()`, `cheminDe(fichier)` (glisser-déposer), `importerCV(chemins)`, `ouvrirCV(saved_path)`,
+   `choisirCV()`, `cheminDe(fichier)` (glisser-déposer), `importerCV(chemins)`, `ouvrirCV(candidatureId)` (CV déchiffré dans un dossier temporaire),
    `importerIdentifiantsGoogle()`. Le processus principal vérifie les extensions et les tailles, et n'ouvre que des
    PDF ou DOCX situés dans le dossier des CV d'INJARA.
 3. **Emplacement des données.** Les fichiers de l'agent ne sont plus dans `data/` à la racine du dépôt mais dans le

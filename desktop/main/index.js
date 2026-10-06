@@ -5,7 +5,7 @@ const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 
 const { Backend } = require('./backend');
-const { installerPontApi } = require('./api');
+const { installerPontApi, viderCVOuverts } = require('./api');
 
 const URL_DEV = process.env.INJARA_DEV_URL || null;
 const PAGE = path.join(__dirname, '..', 'renderer', 'dist', 'index.html');
@@ -72,7 +72,7 @@ async function demarrer() {
     app.exit(1);
     return;
   }
-  installerPontApi({ backend, origineAutorisee, dossierCV: path.join(dataDir, 'cvs'), fenetre: () => fenetre });
+  installerPontApi({ backend, origineAutorisee, fenetre: () => fenetre });
   creerFenetre();
 }
 
@@ -94,6 +94,6 @@ if (!app.requestSingleInstanceLock()) {
     if (arretEnCours || !backend) return;
     event.preventDefault();
     arretEnCours = true;
-    backend.arreter().finally(() => app.quit());
+    Promise.all([backend.arreter(), viderCVOuverts()]).finally(() => app.quit());
   });
 }
