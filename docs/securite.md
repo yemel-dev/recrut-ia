@@ -9,7 +9,7 @@
 | Toute requête sans ce jeton (en-tête `X-Injara-Token`) reçoit 401, y compris `/docs` (désactivé de toute façon) | `backend/api/securite.py` |
 | Le backend refuse de démarrer sans jeton | `backend/api/app.py` |
 | L'interface n'appelle pas le backend : elle passe par IPC, et le processus principal ajoute les jetons. Ni le jeton de lancement ni le jeton de session n'atteignent l'interface | `desktop/main/api.js` |
-| `contextIsolation`, `sandbox`, `nodeIntegration: false` ; le preload n'expose que `window.injara.api.{get,post,put,delete}` | `desktop/main/index.js`, `desktop/preload/index.js` |
+| `contextIsolation`, `sandbox`, `nodeIntegration: false` ; le preload n'expose que `window.injara.api.{get,post,put,delete}` et `window.injara.fichiers` (choix, import et ouverture de CV, identifiants Google) | `desktop/main/index.js`, `desktop/preload/index.js` |
 | CSP stricte au build (`connect-src 'none'`), navigation externe et nouvelles fenêtres bloquées, permissions refusées sauf l'écriture dans le presse-papiers | `desktop/vite.config.mjs`, `desktop/main/index.js` |
 | Le backend s'arrête quand Electron ferme son entrée standard, même si Electron plante | `backend/__main__.py` |
 | Les routes de l'agent mail (`/gmail/*`, `/agent/*`) exigent la session, comme le reste | `backend/api/routes_agent.py` |
