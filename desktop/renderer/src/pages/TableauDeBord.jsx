@@ -44,6 +44,7 @@ export default function TableauDeBord() {
       )}
 
       <CarteCandidatures />
+      <CompteursTraitement />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {['actif', 'brouillon', 'cloture'].map((statut) => (
@@ -121,5 +122,31 @@ function CarteCandidatures() {
         <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
       </span>
     </Link>
+  );
+}
+
+/** Ce qui demande l'attention du recruteur : candidatures à vérifier, non classées, illisibles. */
+function CompteursTraitement() {
+  const [compteurs, setCompteurs] = useState(null);
+  useEffect(() => {
+    api.get('/candidatures?limite=1').then((d) => setCompteurs(d.compteurs), () => {});
+  }, []);
+  if (!compteurs || compteurs.total === 0) return null;
+  const cases = [
+    { cle: 'classees', libelle: 'Classées', texte: 'Rattachées à un poste' },
+    { cle: 'a_verifier', libelle: 'À vérifier', texte: 'Correspondance faible ou postes proches' },
+    { cle: 'non_classees', libelle: 'Non classées', texte: 'Aucun poste actif ne correspond' },
+    { cle: 'illisibles', libelle: 'CV illisibles', texte: 'À ouvrir et lire vous-même' },
+  ];
+  return (
+    <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      {cases.map(({ cle, libelle, texte }) => (
+        <Link key={cle} to="/candidatures" className="rounded-xl border border-line bg-white p-4 transition-colors hover:border-navy-200">
+          <p className="text-sm font-medium text-muted">{libelle}</p>
+          <p className={`mt-1 text-2xl font-bold ${cle === 'a_verifier' && compteurs[cle] > 0 ? 'text-amber-700' : 'text-navy-900'}`}>{compteurs[cle]}</p>
+          <p className="mt-0.5 text-xs text-muted">{texte}</p>
+        </Link>
+      ))}
+    </div>
   );
 }

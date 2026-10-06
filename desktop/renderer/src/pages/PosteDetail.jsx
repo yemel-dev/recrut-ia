@@ -2,6 +2,7 @@ import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api.js';
+import TopPoste from '../candidatures/TopPoste.jsx';
 import SuppressionPoste from '../components/SuppressionPoste.jsx';
 import { Alerte, BadgeStatut, Bouton, Carte, Chargement } from '../components/ui.jsx';
 import { STATUTS, TELETRAVAIL, TYPES_CONTRAT } from '../constantes.js';
@@ -102,6 +103,10 @@ export default function PosteDetail() {
           ))}
         </div>
       </Carte>
+
+      <div className="mb-6">
+        <TopPoste posteId={Number(id)} actif={poste.statut === 'actif'} />
+      </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="flex flex-col gap-6 lg:col-span-2">

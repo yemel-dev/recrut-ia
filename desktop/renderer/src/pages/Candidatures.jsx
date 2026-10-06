@@ -1,17 +1,22 @@
-import { ExternalLink, FileText, Inbox, Mail, RefreshCw, RotateCcw, Upload, X } from 'lucide-react';
+import { Info, Mail, RefreshCw, RotateCcw, Upload, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api.js';
 import { useAgent } from '../agent/ContexteAgent.jsx';
+import ListeCandidatures from '../candidatures/ListeCandidatures.jsx';
 import { FOURNISSEURS, REGLES_IGNORE, resumeSynchro } from '../agent/libelles.js';
 import { Alerte, Bouton, Carte, Chargement, EnTetePage, Interrupteur, Onglets } from '../components/ui.jsx';
-import { formaterDateHeure, formaterTaille } from '../format.js';
-
-const PAR_PAGE = 50;
+import { formaterDateHeure } from '../format.js';
 
 export default function Candidatures() {
   const { statut, etat, rafraichir, notifier, version, signalerNouveauxCV } = useAgent();
-  const [onglet, setOnglet] = useState('cv');
+  const [onglet, setOnglet] = useState('candidatures');
+  const [compteurs, setCompteurs] = useState(null);
+  const [traitement, setTraitement] = useState(null);
+
+  useEffect(() => {
+    api.get('/traitement/etat').then(setTraitement, () => {});
+  }, []);
   const [resultat, setResultat] = useState(null); // { titre, resume, details }
   const [verification, setVerification] = useState(false);
   const [importEnCours, setImportEnCours] = useState(false);
@@ -112,7 +117,7 @@ export default function Candidatures() {
 
       <EnTetePage
         titre="Candidatures"
-        description="Les CV reçus dans la boîte mail de recrutement, et ceux que vous importez vous-même."
+        description="Chaque CV reçu est lu, noté et rattaché au poste le plus proche. Le score aide à décider : rien n'est écarté automatiquement."
         actions={
           <>
             <Bouton variante="secondaire" icone={Upload} onClick={choisirFichiers} chargement={importEnCours}>Importer des CV</Bouton>
@@ -127,17 +132,24 @@ export default function Candidatures() {
 
       {erreur && <div className="mb-4"><Alerte>{erreur}</Alerte></div>}
       {resultat && <Resultat resultat={resultat} onFermer={() => setResultat(null)} />}
+      {traitement && !traitement.adequation.disponible && (
+        <p className="mb-4 flex items-start gap-2 rounded-lg border border-line bg-white px-4 py-3 text-sm text-muted">
+          <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
+          Le critère « adéquation globale » est désactivé (modèle d'analyse absent) : les scores reposent sur les
+          compétences, l'expérience et la formation.
+        </p>
+      )}
 
       <Onglets
         valeur={onglet}
         onChange={setOnglet}
         onglets={[
-          { valeur: 'cv', libelle: 'CV reçus', compteur: statut.total_cvs },
+          { valeur: 'candidatures', libelle: 'Candidatures', compteur: compteurs?.total ?? 0 },
           { valeur: 'ignores', libelle: 'Ignorés', compteur: statut.ignored_count },
         ]}
       />
-      {onglet === 'cv' ? (
-        <ListeCV version={version} onImporter={choisirFichiers} />
+      {onglet === 'candidatures' ? (
+        <ListeCandidatures version={version} onImporter={choisirFichiers} onCompteurs={setCompteurs} />
       ) : (
         <ListeIgnores connecte={connecte} onRecupere={() => { signalerNouveauxCV(); rafraichir(); }} />
       )}
@@ -222,92 +234,6 @@ function Resultat({ resultat, onFermer }) {
         </details>
       )}
     </Carte>
-  );
-}
-
-function ListeCV({ version, onImporter }) {
-  const [page, setPage] = useState(0);
-  const [cvs, setCvs] = useState(null);
-  const [erreur, setErreur] = useState('');
-
-  useEffect(() => {
-    api.get(`/gmail/cvs?limit=${PAR_PAGE + 1}&offset=${page * PAR_PAGE}`).then(setCvs, (err) => setErreur(err.message));
-  }, [page, version]);
-
-  const ouvrir = async (cv) => {
-    const message = await window.injara.fichiers.ouvrirCV(cv.saved_path);
-    setErreur(message);
-  };
-
-  if (!cvs) return erreur ? <Alerte>{erreur}</Alerte> : <Chargement />;
-  if (cvs.length === 0 && page === 0) {
-    return (
-      <div className="flex flex-col items-center rounded-2xl border border-dashed border-navy-100 bg-white px-8 py-14 text-center">
-        <span className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-navy-50 text-navy-700">
-          <Inbox className="size-7" aria-hidden />
-        </span>
-        <h2 className="text-lg font-semibold text-navy-900">Aucun CV pour le moment</h2>
-        <p className="mt-2 max-w-md text-sm text-muted">
-          Les CV reçus en pièce jointe dans la boîte de recrutement apparaîtront ici. Vous pouvez aussi glisser des
-          fichiers PDF, DOCX ou ZIP sur cette page.
-        </p>
-        <Bouton variante="secondaire" icone={Upload} onClick={onImporter} className="mt-6">Importer des CV</Bouton>
-      </div>
-    );
-  }
-
-  const visibles = cvs.slice(0, PAR_PAGE);
-  return (
-    <>
-      {erreur && <div className="mb-3"><Alerte>{erreur}</Alerte></div>}
-      <div className="overflow-hidden rounded-xl border border-line bg-white">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-mist text-xs font-semibold tracking-wide text-muted uppercase">
-            <tr>
-              <th className="px-4 py-3">Fichier</th>
-              <th className="px-4 py-3">Candidat</th>
-              <th className="px-4 py-3">Objet</th>
-              <th className="px-4 py-3">Reçu le</th>
-              <th className="px-4 py-3"><span className="sr-only">Actions</span></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-line">
-            {visibles.map((cv) => (
-              <tr key={`${cv.message_id}-${cv.attachment_id}`} className="hover:bg-mist/60">
-                <td className="max-w-56 px-4 py-3">
-                  <p className="flex items-center gap-2 truncate font-medium text-navy-900" title={cv.filename}>
-                    <FileText className="size-4 shrink-0 text-muted" aria-hidden /> {cv.filename}
-                  </p>
-                  <p className="pl-6 text-xs text-muted">{formaterTaille(cv.size_bytes)}</p>
-                </td>
-                <td className="max-w-48 px-4 py-3">
-                  {cv.source === 'upload' ? (
-                    <span className="rounded-full bg-navy-50 px-2 py-0.5 text-xs font-medium text-navy-700">Import manuel</span>
-                  ) : (
-                    <>
-                      <p className="truncate text-navy-900">{cv.sender_name || cv.sender_email}</p>
-                      <p className="truncate text-xs text-muted">{cv.sender_email}</p>
-                    </>
-                  )}
-                </td>
-                <td className="max-w-56 truncate px-4 py-3 text-muted" title={cv.subject}>{cv.source === 'upload' ? '—' : cv.subject || '—'}</td>
-                <td className="px-4 py-3 whitespace-nowrap text-muted">{formaterDateHeure(cv.received_at)}</td>
-                <td className="px-4 py-3 text-right">
-                  <Bouton variante="discret" icone={ExternalLink} onClick={() => ouvrir(cv)} aria-label={`Ouvrir ${cv.filename}`}>Ouvrir</Bouton>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {(page > 0 || cvs.length > PAR_PAGE) && (
-        <div className="mt-4 flex items-center justify-between text-sm text-muted">
-          <Bouton variante="secondaire" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>Précédent</Bouton>
-          Page {page + 1}
-          <Bouton variante="secondaire" disabled={cvs.length <= PAR_PAGE} onClick={() => setPage((p) => p + 1)}>Suivant</Bouton>
-        </div>
-      )}
-    </>
   );
 }
 

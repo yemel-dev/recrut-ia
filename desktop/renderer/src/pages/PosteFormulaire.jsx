@@ -24,7 +24,18 @@ const VIDE = {
   processus_selection: '',
   documents_demandes: [],
   statut: 'brouillon',
+  poids_competences: 40,
+  poids_experience: 25,
+  poids_formation: 20,
+  poids_adequation: 15,
 };
+
+const POIDS = [
+  ['poids_competences', 'Compétences', 'Part des compétences requises trouvées dans le CV.'],
+  ['poids_experience', 'Expérience', "Années d'expérience par rapport au minimum demandé."],
+  ['poids_formation', 'Formation', 'Diplôme obtenu par rapport au niveau demandé.'],
+  ['poids_adequation', 'Adéquation globale', 'Proximité entre le CV et la description du poste.'],
+];
 
 const versFormulaire = (poste) => Object.fromEntries(Object.keys(VIDE).map((k) => [k, poste[k] ?? VIDE[k]]));
 
@@ -34,6 +45,7 @@ function versRequete(f) {
     ...f,
     experience_min_annees: experience === '' ? null : Number(experience),
     date_limite: f.date_limite || null,
+    ...Object.fromEntries(POIDS.map(([champ]) => [champ, f[champ] === '' ? null : Number(f[champ])])),
   };
 }
 
@@ -158,6 +170,27 @@ export default function PosteFormulaire() {
               {(a) => <Saisie {...a} placeholder="Ex. 350 000 à 450 000 FCFA brut / mois" {...valeur('remuneration')} />}
             </Champ>
           </div>
+        </Section>
+
+        <Section titre="Pondération du score" facultatif>
+          <p className="-mt-2 text-sm text-muted">
+            Le score de chaque candidature (sur 100) combine ces quatre critères. Le total doit faire 100.
+          </p>
+          <div className="grid grid-cols-2 gap-5 md:grid-cols-4">
+            {POIDS.map(([champ, libelle, aide]) => (
+              <Champ key={champ} label={libelle} erreur={erreurs[champ]} aide={aide}>
+                {(a) => <Saisie {...a} type="number" min={0} max={100} step={5} {...valeur(champ)} />}
+              </Champ>
+            ))}
+          </div>
+          {(() => {
+            const total = POIDS.reduce((somme, [champ]) => somme + (Number(formulaire[champ]) || 0), 0);
+            return (
+              <p className={`text-sm font-medium ${total === 100 && !erreurs.poids ? 'text-brand-700' : 'text-danger'}`}>
+                Total : {total} / 100{erreurs.poids && total !== 100 ? ` — ${erreurs.poids}` : ''}
+              </p>
+            );
+          })()}
         </Section>
 
         <Section titre="Sélection" facultatif>
