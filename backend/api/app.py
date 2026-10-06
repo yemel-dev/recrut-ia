@@ -9,20 +9,33 @@ from fastapi.responses import JSONResponse
 
 from ..config import MIN_TOKEN_LENGTH, Settings
 from ..database.db import Database
-from ..database.repositories import CompteRepository
+from ..database.repositories import CompteRepository, EntrepriseRepository, PosteRepository
 from ..services.auth import AuthService
+from ..services.entreprise import EntrepriseService
+from ..services.postes import PostesService
+from ..services.tableau_de_bord import TableauDeBordService
 from ..services.erreurs import Conflit, ErreurService, ErreurValidation, Introuvable, NonAutorise
-from . import routes_auth
+from . import routes_auth, routes_metier
 from .securite import JetonDeLancementMiddleware
 
 
 @dataclass
 class Services:
     auth: AuthService
+    entreprise: EntrepriseService
+    postes: PostesService
+    tableau_de_bord: TableauDeBordService
 
 
 def construire_services(db: Database, settings: Settings) -> Services:
-    return Services(auth=AuthService(CompteRepository(db), settings.kdf))
+    entreprise = EntrepriseService(EntrepriseRepository(db))
+    postes = PostesService(PosteRepository(db))
+    return Services(
+        auth=AuthService(CompteRepository(db), settings.kdf),
+        entreprise=entreprise,
+        postes=postes,
+        tableau_de_bord=TableauDeBordService(entreprise, postes),
+    )
 
 
 def create_app(settings: Settings) -> FastAPI:
@@ -38,6 +51,7 @@ def create_app(settings: Settings) -> FastAPI:
     _gestionnaires_erreurs(app)
 
     app.include_router(routes_auth.router)
+    app.include_router(routes_metier.router)
     return app
 
 

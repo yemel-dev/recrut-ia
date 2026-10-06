@@ -7,12 +7,27 @@ from __future__ import annotations
 
 from datetime import date, datetime, timezone
 
-from sqlalchemy import JSON, Date, DateTime, Integer, LargeBinary, String, Text
+from sqlalchemy import JSON, Date, DateTime, Integer, LargeBinary, String, Text, TypeDecorator
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
+
+
+class DateHeureUTC(TypeDecorator):
+    """SQLite ne conserve pas le fuseau horaire : on stocke en UTC et on le rétablit à la lecture."""
+
+    impl = DateTime
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is not None and value.tzinfo is not None:
+            value = value.astimezone(timezone.utc).replace(tzinfo=None)
+        return value
+
+    def process_result_value(self, value, dialect):
+        return value.replace(tzinfo=timezone.utc) if value is not None else None
 
 
 class Base(DeclarativeBase):
@@ -33,8 +48,8 @@ class Compte(Base):
     # Même clé de données, chiffrée par une clé dérivée de la clé de récupération (HKDF + AES-GCM)
     sel_recuperation: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     cle_par_recuperation: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
-    cree_le: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
-    modifie_le: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
+    cree_le: Mapped[datetime] = mapped_column(DateHeureUTC, default=_now)
+    modifie_le: Mapped[datetime] = mapped_column(DateHeureUTC, default=_now, onupdate=_now)
 
 
 class Entreprise(Base):
@@ -49,7 +64,7 @@ class Entreprise(Base):
     email_pro: Mapped[str | None] = mapped_column(String(255))
     telephone: Mapped[str | None] = mapped_column(String(50))
     description: Mapped[str | None] = mapped_column(Text)
-    modifie_le: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
+    modifie_le: Mapped[datetime] = mapped_column(DateHeureUTC, default=_now, onupdate=_now)
 
 
 class Poste(Base):
@@ -81,5 +96,5 @@ class Poste(Base):
     processus_selection: Mapped[str | None] = mapped_column(Text)
     documents_demandes: Mapped[list[str]] = mapped_column(JSON, default=list)
 
-    cree_le: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
-    modifie_le: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
+    cree_le: Mapped[datetime] = mapped_column(DateHeureUTC, default=_now)
+    modifie_le: Mapped[datetime] = mapped_column(DateHeureUTC, default=_now, onupdate=_now)
