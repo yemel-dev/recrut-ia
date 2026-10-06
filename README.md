@@ -63,6 +63,16 @@ avec un autre dossier : `INJARA_DATA_DIR=/chemin/vers/dossier npm run dev`.
 Les tests couvrent l'authentification (`backend/tests/test_auth.py`), les postes et le tableau de bord
 (`test_postes.py`), le profil entreprise (`test_entreprise.py`) et l'agent mail (`backend/tests/agent/`).
 
+## Dépannage
+
+**`npm install` échoue sous Windows avec « Electron failed to install correctly » ou « Cannot find native binding ».**
+L'extracteur d'Electron a besoin du runtime Visual C++. Installer
+[Microsoft Visual C++ Redistributable 2015-2022 (x64)](https://aka.ms/vs/17/release/vc_redist.x64.exe), puis
+supprimer `desktop/node_modules/electron` et relancer `npm install`.
+
+**« INJARA ne peut pas démarrer » au lancement.** Le message indique le Python utilisé et l'erreur du backend.
+Vérifier que `.venv` existe à la racine et que `requirements.txt` y est installé.
+
 ## Organisation
 
 ```
