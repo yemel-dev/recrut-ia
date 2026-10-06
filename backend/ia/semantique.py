@@ -14,6 +14,7 @@ import os
 import threading
 from array import array
 from pathlib import Path
+from typing import Any, Callable
 
 from ..config import ROOT_DIR
 
@@ -36,6 +37,7 @@ class ModeleSemantique:
         self._essaye = False
         self.motif_indisponible: str | None = None
         self._lock = threading.Lock()
+        self._chargement: threading.Thread | None = None
 
     @property
     def nom(self) -> str:
@@ -43,8 +45,38 @@ class ModeleSemantique:
 
     @property
     def disponible(self) -> bool:
+        """Charge le modèle si besoin (jusqu'à deux minutes) : à éviter là où l'on ne doit pas attendre."""
         self._charger()
         return self._modele is not None
+
+    @property
+    def pret(self) -> bool:
+        """Sans attendre : vrai seulement si le modèle est déjà chargé."""
+        return self._modele is not None
+
+    def precharger(self, quand_fini: Callable[[], None] | None = None) -> None:
+        """Lance le chargement dans un fil à part ; `quand_fini` est appelé ensuite, même en cas d'échec."""
+        with self._lock:
+            if self._essaye or self._chargement is not None:
+                return
+
+            def charger() -> None:
+                self._charger()
+                if quand_fini is not None:
+                    quand_fini()
+
+            self._chargement = threading.Thread(target=charger, name="chargement-modele", daemon=True)
+            self._chargement.start()
+
+    def statut(self) -> dict[str, Any]:
+        """État pour l'interface, sans attendre la fin d'un chargement en cours."""
+        termine = self._essaye and not self._lock.locked()
+        return {
+            "disponible": self._modele is not None,
+            "en_chargement": not termine,
+            "modele": self.nom,
+            "motif": self.motif_indisponible if termine else None,
+        }
 
     def _charger(self) -> None:
         with self._lock:

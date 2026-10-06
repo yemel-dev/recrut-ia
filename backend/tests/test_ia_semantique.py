@@ -53,6 +53,31 @@ def test_bibliotheque_absente(monkeypatch, faux_modele):
     assert "requirements-ia.txt" in modele.motif_indisponible
 
 
+def test_prechargement_en_arriere_plan(monkeypatch, tmp_path):
+    """Pendant le chargement, statut() et pret répondent sans attendre ; le rappel arrive à la fin."""
+    import threading
+
+    (tmp_path / "config.json").write_text("{}", encoding="utf-8")
+    (tmp_path / "model.safetensors").write_bytes(b"x")
+    libere, fini = threading.Event(), threading.Event()
+
+    def sonde_lente():
+        libere.wait(5)
+        return "Moteur d'analyse impossible à charger : essai"
+
+    monkeypatch.setattr(semantique, "sonder_import", sonde_lente)
+    modele = semantique.ModeleSemantique(tmp_path)
+    modele.precharger(fini.set)
+    assert modele.pret is False
+    assert modele.statut() == {"disponible": False, "en_chargement": True, "modele": semantique.NOM_MODELE, "motif": None}
+    modele.precharger(lambda: None)  # déjà lancé : sans effet
+    libere.set()
+    assert fini.wait(5)
+    statut = modele.statut()
+    assert statut["en_chargement"] is False and statut["disponible"] is False
+    assert "essai" in statut["motif"]
+
+
 def test_vecteurs_en_octets_aller_retour():
     vecteur = semantique.normaliser_vecteur([3.0, 4.0])
     assert semantique.depuis_octets(semantique.en_octets(vecteur)) == pytest.approx([0.6, 0.8])

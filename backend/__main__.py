@@ -20,12 +20,31 @@ from .config import load_settings
 HOTE = "127.0.0.1"
 
 
-def _surveiller_parent() -> None:
-    """Bloque jusqu'à la fermeture de stdin (Electron arrêté ou planté), puis termine le processus."""
+def _detacher_stdin() -> int:
+    """Déplace le tube stdin d'Electron sur un descripteur privé et met NUL à la place de stdin.
+
+    Sous Windows, une lecture en attente sur le stdin du processus bloque la création de tout sous-processus
+    (constaté : la sonde du moteur d'analyse, puis l'import de torch, restaient figés indéfiniment).
+    """
+    fd = os.dup(0)  # non héritable par les sous-processus
+    nul = os.open(os.devnull, os.O_RDONLY)
+    os.dup2(nul, 0)
+    os.close(nul)
+    if sys.platform == "win32":
+        import ctypes
+        import msvcrt
+
+        ctypes.windll.kernel32.SetStdHandle(-10, msvcrt.get_osfhandle(0))  # STD_INPUT_HANDLE
+    sys.stdin = open(0, closefd=False)  # noqa: SIM115
+    return fd
+
+
+def _surveiller_parent(fd: int) -> None:
+    """Bloque jusqu'à la fermeture du tube d'Electron (arrêté ou planté), puis termine le processus."""
     try:
-        while sys.stdin.buffer.read(1024):
+        while os.read(fd, 1024):
             pass
-    except (OSError, ValueError):
+    except OSError:
         pass
     logging.getLogger("injara").info("Electron s'est arrêté : arrêt du backend.")
     os._exit(0)
@@ -47,7 +66,7 @@ def main() -> int:
     port = sock.getsockname()[1]
 
     if os.getenv("INJARA_WATCH_STDIN", "1") == "1":
-        threading.Thread(target=_surveiller_parent, name="surveillance-parent", daemon=True).start()
+        threading.Thread(target=_surveiller_parent, args=(_detacher_stdin(),), name="surveillance-parent", daemon=True).start()
 
     print(f"INJARA_PORT={port}", flush=True)
     config = uvicorn.Config(app, log_level="warning", access_log=False)

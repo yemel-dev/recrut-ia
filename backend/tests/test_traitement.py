@@ -174,8 +174,11 @@ def test_adequation_avec_un_modele(settings, tmp_path):
     """Avec un modèle (ici factice), l'adéquation compte dans le score."""
 
     class ModeleFactice(semantique.ModeleSemantique):
-        disponible = True
         nom = "factice"
+
+        def __init__(self):
+            super().__init__()
+            self._modele, self._essaye = object(), True  # déjà chargé
 
         def encoder(self, texte):
             mots = texte.lower()
@@ -202,8 +205,10 @@ def test_adequation_avec_un_modele(settings, tmp_path):
         app.state.db.close()
 
 
-def test_modele_absent_signale(connecte):
+def test_modele_absent_signale(connecte, services):
+    services.traitement.modele._chargement.join(5)  # préchargé à l'ouverture de session
     etat = connecte.get("/traitement/etat").json()
+    assert etat["adequation"]["en_chargement"] is False
     assert etat["adequation"]["disponible"] is False
     assert "absent" in etat["adequation"]["motif"]
 

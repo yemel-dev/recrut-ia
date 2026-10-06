@@ -85,6 +85,9 @@ class TraitementService:
                 self._arret.clear()
                 self._fil = threading.Thread(target=self._boucle, name="traitement-candidatures", daemon=True)
                 self._fil.start()
+        # Le modèle met jusqu'à deux minutes à se charger : les CV sont notés sans l'adéquation en attendant,
+        # puis encodés et renotés au passage demandé ici.
+        self.modele.precharger(lambda: self.demander("moteur d'analyse chargé"))
         self.demander("ouverture de session", tout_renoter=True)
 
     def arreter(self) -> None:
@@ -212,7 +215,7 @@ class TraitementService:
                 "Étape extraction ✅ candidature %d : expérience %d mois (+ %d mois de stage), diplôme %s",
                 candidature_id, resultat.experience_mois, resultat.stages_mois, resultat.diplome.get("niveau") or "non trouvé",
             )
-            vecteur = self.modele.encoder(texte) if self.modele.disponible else None
+            vecteur = self.modele.encoder(texte) if self.modele.pret else None
             self.candidatures.maj(
                 candidature_id,
                 statut_lecture="lue",
@@ -247,7 +250,7 @@ class TraitementService:
 
     def completer_vecteurs(self) -> int:
         """Si le modèle est devenu disponible, encode les CV déjà lus (sans relire les fichiers)."""
-        if not self.modele.disponible:
+        if not self.modele.pret:
             return 0
         n = 0
         for candidature in self.candidatures.lues():
@@ -262,11 +265,11 @@ class TraitementService:
     # ------------------------------------------------------------------ étapes 3 et 4 : score et classement
 
     def _donnees_poste(self, poste: dict) -> DonneesPoste:
-        cle_cache = poste["modifie_le"]
+        cle_cache = (poste["modifie_le"], self.modele.pret)  # recalculé quand le modèle devient prêt
         cache = self._vecteurs_postes.get(poste["id"])
         if cache is None or cache[0] != cle_cache:
             texte = "\n".join([poste["intitule"], poste["description"], ", ".join(poste["competences_requises"] or [])])
-            cache = (cle_cache, self.modele.encoder(texte) if self.modele.disponible else None)
+            cache = (cle_cache, self.modele.encoder(texte) if self.modele.pret else None)
             self._vecteurs_postes[poste["id"]] = cache
         return DonneesPoste(
             competences=list(poste["competences_requises"] or []),
@@ -350,9 +353,5 @@ class TraitementService:
             "en_cours": self.en_cours,
             "derniere_execution": self.derniere_execution.isoformat() if self.derniere_execution else None,
             "derniere_erreur": self.derniere_erreur,
-            "adequation": {
-                "disponible": self.modele.disponible,
-                "modele": self.modele.nom,
-                "motif": self.modele.motif_indisponible,
-            },
+            "adequation": self.modele.statut(),
         }

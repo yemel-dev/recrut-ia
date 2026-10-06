@@ -135,10 +135,17 @@ export default function Candidatures() {
       {traitement && !traitement.adequation.disponible && (
         <p className="mb-4 flex items-start gap-2 rounded-lg border border-line bg-white px-4 py-3 text-sm text-muted">
           <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
-          <span>
-            Le critère « adéquation globale » est désactivé : les scores reposent sur les compétences, l'expérience et la
-            formation. <span className="text-xs">({(traitement.adequation.motif || '').split(' : [')[0]})</span>
-          </span>
+          {traitement.adequation.en_chargement ? (
+            <span>
+              Le moteur d'analyse se charge (jusqu'à deux minutes). En attendant, les scores reposent sur les compétences,
+              l'expérience et la formation ; ils seront complétés automatiquement.
+            </span>
+          ) : (
+            <span>
+              Le critère « adéquation globale » est désactivé : les scores reposent sur les compétences, l'expérience et
+              la formation. <span className="text-xs">({(traitement.adequation.motif || '').split(' : [')[0]})</span>
+            </span>
+          )}
         </p>
       )}
 

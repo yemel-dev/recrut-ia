@@ -68,7 +68,9 @@ nouveau calcul ; « Revenir au classement automatique » l'annule.
 ## Modèle Sentence-BERT
 
 `paraphrase-multilingual-MiniLM-L12-v2`, chargé une seule fois depuis `modeles/` (ou `INJARA_MODELES_DIR`), hors
-ligne. Installation, à faire une fois :
+ligne. Le chargement (jusqu'à deux minutes au premier lancement) se fait en arrière-plan dès l'ouverture de session :
+en attendant, les CV sont lus et notés sans l'adéquation, puis encodés et renotés automatiquement quand le modèle est
+prêt. `GET /traitement/etat` renvoie `adequation.en_chargement` pendant ce temps. Installation, à faire une fois :
 
 ```bash
 pip install torch --index-url https://download.pytorch.org/whl/cpu
