@@ -60,7 +60,8 @@
 ## Limites connues (à traiter plus tard)
 
 - Restent en clair dans SQLite : l'entreprise, les postes, et pour chaque candidature les nom, email, téléphone,
-  objet et extrait du mail, ainsi que l'extraction détaillée (périodes, ligne du diplôme). Le registre de l'agent
+  objet et extrait du mail, ainsi que l'extraction détaillée (périodes, ligne du diplôme), le détail du score
+  (compétences trouvées) et la justification du potentiel (intitulés de poste, courts extraits du CV). Le registre de l'agent
   mail (`gmail_ledger*.db`) garde aussi expéditeurs, objets et extraits en clair.
 - Entre son écriture par l'agent et le passage du traitement, un CV reste quelques secondes en clair sur le disque ;
   l'effacement ne garantit pas la disparition physique des données sur un SSD.

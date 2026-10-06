@@ -63,6 +63,65 @@ export function BadgeDecision({ decision }) {
   );
 }
 
+/** Indicateur de potentiel : affiché à côté du score, il ne le modifie jamais. */
+const COULEURS_POTENTIEL = {
+  Faible: 'bg-white text-navy-700 ring-line',
+  Moyen: 'bg-navy-50 text-navy-800 ring-navy-100',
+  Élevé: 'bg-brand-50 text-brand-700 ring-brand-100',
+  Exceptionnel: 'bg-brand-600 text-white ring-brand-600',
+  'Non évaluable': 'bg-white text-muted ring-line',
+};
+
+export const MENTION_POTENTIEL = 'Indicateur fondé sur des règles, à apprécier par le recruteur.';
+
+export function BadgePotentiel({ niveau }) {
+  if (!niveau) return null;
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap ring-1 ring-inset ${COULEURS_POTENTIEL[niveau] || COULEURS_POTENTIEL['Non évaluable']}`}
+      title={`Potentiel : ${niveau}. ${MENTION_POTENTIEL}`}
+    >
+      Potentiel {niveau.toLowerCase()}
+    </span>
+  );
+}
+
+// « Progression : passé de… » : le nom du signal est déjà affiché au-dessus.
+const sansPrefixe = (phrase) => {
+  const reste = phrase.replace(/^[^:]+ : /, '');
+  return reste.charAt(0).toUpperCase() + reste.slice(1);
+};
+
+function NoteSignal({ note }) {
+  if (note === null || note === undefined) return <span className="text-xs whitespace-nowrap text-muted">non évaluable</span>;
+  return (
+    <span className="flex gap-0.5" aria-label={`${note} sur 2`} title={`${note} sur 2`}>
+      {[0, 1].map((i) => (
+        <span key={i} className={`size-2 rounded-full ${i < note ? 'bg-brand-600' : 'bg-navy-100'}`} />
+      ))}
+    </span>
+  );
+}
+
+export function DetailPotentiel({ potentiel }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <ul className="flex flex-col gap-2.5">
+        {potentiel.signaux.map((s) => (
+          <li key={s.cle} className={s.evaluable ? '' : 'opacity-70'}>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-medium text-navy-900">{s.nom}</span>
+              <NoteSignal note={s.note} />
+            </div>
+            <p className="mt-0.5 text-xs text-muted">{sansPrefixe(s.phrase)}</p>
+          </li>
+        ))}
+      </ul>
+      {potentiel.recommandation && <p className="rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-700">{potentiel.recommandation}</p>}
+    </div>
+  );
+}
+
 /** Score sur 100. Un indicateur : les couleurs restent neutres, aucune notion de rejet. */
 export function PastilleScore({ score, taille = 'normale' }) {
   if (score === null || score === undefined) return <span className="text-sm text-muted">—</span>;

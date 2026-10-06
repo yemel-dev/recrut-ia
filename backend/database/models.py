@@ -182,4 +182,7 @@ class Score(Base):
     pertinence: Mapped[float] = mapped_column(Float, nullable=False)
     adequation_ignoree: Mapped[bool] = mapped_column(Boolean, default=False)
     detail: Mapped[dict] = mapped_column(JSON, default=dict)
+    # Indicateur de potentiel (ia/potentiel.py) : affiché à côté du score, sans jamais le modifier
+    potentiel_niveau: Mapped[str | None] = mapped_column(String(20))
+    potentiel: Mapped[dict | None] = mapped_column(JSON)
     calcule_le: Mapped[datetime] = mapped_column(DateHeureUTC, default=_now, onupdate=_now)

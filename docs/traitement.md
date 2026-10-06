@@ -93,6 +93,27 @@ le classement** : un candidat écarté reste visible partout. Dans le classement
 décision ; le filtre par décision montre toutes les candidatures du poste ayant cette décision, à leur rang d'origine
 (`GET /postes/{id}/classement?decision=retenu`).
 
+## Indicateur de potentiel
+
+`ia/potentiel.py`, fonction pure : des règles explicites, pas un modèle prédictif. Il est calculé en même temps que le
+score, pour chaque poste (le signal formation dépend du poste), enregistré avec le détail par signal
+(`scores.potentiel`), et donc recalculé quand un poste change. Il est affiché à côté du score sans jamais le modifier
+ni changer le classement. Ses données viennent du texte déjà lu (déchiffré en mémoire) : le CV n'est pas relu.
+
+| Signal | Non évaluable si | 2 | 1 | 0 |
+|---|---|---|---|---|
+| Progression (niveau de l'intitulé le plus ancien comparé au plus récent : stagiaire 0, junior 1, confirmé 2, senior 3, responsable 4) | moins de 2 postes datés avec un intitulé | +2 niveaux ou plus | +1 | aucun gain |
+| Diversité (éléments des sections compétences et langues ; familles techniques, langues, savoir-être) | aucune compétence listée | 10 éléments et 2 familles | 5 éléments | moins de 5 |
+| Stabilité (durée moyenne par emploi, hors stages) | moins de 12 mois d'emploi | 24 mois | 12 mois | moins de 12 mois |
+| Formation face au poste | aucun diplôme trouvé | niveau atteint ou dépassé | 1 niveau en dessous | 2 ou plus |
+| Leadership et initiative (encadrement, projet, création, certification, projets personnels) | jamais | 3 familles | 1 ou 2 | aucune |
+
+Niveau : ratio = somme des notes / (2 × signaux évaluables). Moins de 0,35 Faible ; 0,35 Moyen ; 0,60 Élevé ; 0,85
+Exceptionnel (avec au moins 4 signaux évaluables, sinon Élevé). Moins de 3 signaux évaluables : « Non évaluable ».
+Un signal non évaluable est exclu du calcul, il ne compte pas comme une mauvaise note. Élevé ou Exceptionnel avec un
+leadership à 2 ajoute la recommandation « Profil à fort potentiel d'évolution vers un poste d'encadrement ». Tous les
+seuils sont des constantes nommées en tête du module.
+
 ## CV scannés (OCR)
 
 Un PDF sans couche texte passe par RapidOCR (modèles PP-OCRv6 multilingues, fournis avec le paquet `rapidocr`, sur

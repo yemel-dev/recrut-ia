@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api.js';
 import { Alerte, Carte, Chargement } from '../components/ui.jsx';
-import { BadgeDecision, CRITERES, DECISIONS, DetailScore, MODES_ASSIGNATION, PastilleScore, formaterExperience } from './elements.jsx';
+import { BadgeDecision, BadgePotentiel, CRITERES, DECISIONS, DetailScore, MODES_ASSIGNATION, PastilleScore, formaterExperience } from './elements.jsx';
 
 export default function TopPoste({ posteId, actif }) {
   const [top, setTop] = useState(null);
@@ -79,6 +79,7 @@ export default function TopPoste({ posteId, actif }) {
                       {c.nom || c.email || c.nom_fichier_cv}
                     </Link>
                     <BadgeDecision decision={c.decision} />
+                    <BadgePotentiel niveau={c.potentiel_niveau} />
                   </div>
                   <p className="text-xs text-muted">
                     {c.diplome_niveau || 'Diplôme non trouvé'} · {formaterExperience(c.experience_mois)} d'expérience · {MODES_ASSIGNATION[c.mode_assignation] || ''}

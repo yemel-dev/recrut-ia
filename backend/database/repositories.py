@@ -329,5 +329,6 @@ class ScoreRepository:
                     "pertinence": score.pertinence,
                     "detail": score.detail,
                     "adequation_ignoree": score.adequation_ignoree,
+                    "potentiel_niveau": score.potentiel_niveau,
                 })
             return resultat

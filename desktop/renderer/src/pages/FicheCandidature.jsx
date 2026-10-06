@@ -5,9 +5,12 @@ import { api } from '../api.js';
 import { useAgent } from '../agent/ContexteAgent.jsx';
 import {
   BadgeDecision,
+  BadgePotentiel,
   BadgeStatutCandidature,
   DECISIONS,
+  DetailPotentiel,
   DetailScore,
+  MENTION_POTENTIEL,
   MODES_ASSIGNATION,
   PastilleScore,
   formaterExperience,
@@ -165,6 +168,20 @@ export default function FicheCandidature() {
               </div>
               <DetailScore detail={{ ...scorePoste.detail, adequation_ignoree: scorePoste.adequation_ignoree }} />
               <p className="mt-4 text-xs text-muted">Le score est un indicateur d'aide à la décision : il ne remplace pas la lecture du CV.</p>
+            </Carte>
+          )}
+
+          {scorePoste?.potentiel && (
+            <Carte>
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <h2 className="font-semibold text-navy-900">Potentiel</h2>
+                <BadgePotentiel niveau={scorePoste.potentiel.niveau} />
+              </div>
+              <DetailPotentiel potentiel={scorePoste.potentiel} />
+              <p className="mt-4 text-xs text-muted">
+                {MENTION_POTENTIEL} Il ne modifie ni le score ni le classement.
+                {scorePoste.potentiel.niveau === 'Non évaluable' && ' Trop peu de signaux évaluables dans ce CV (au moins trois sont nécessaires).'}
+              </p>
             </Carte>
           )}
 

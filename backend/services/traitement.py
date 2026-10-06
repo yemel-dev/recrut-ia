@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from ..database.repositories import CandidatureRepository, PosteRepository, ScoreRepository
-from ..ia import classement, extraction, lecture, scoring, semantique
+from ..ia import classement, extraction, lecture, potentiel, scoring, semantique
 from ..ia.ocr import MoteurOCR
 from ..ia.scoring import DonneesCV, DonneesPoste
 from . import coffre
@@ -404,6 +404,7 @@ class TraitementService:
             if candidature["mode_assignation"] == "manuel" and candidature["poste_id"] is None and candidature["statut_classement"] == "classe":
                 candidature["mode_assignation"] = None  # le poste choisi à la main a été supprimé : on reclasse
             donnees = self.donnees_cv(self._en_clair(candidature))
+            profil = self._profil(donnees.texte, candidature["diplome_niveau"])
             a_noter = {p["id"] for p in actifs}
             if candidature["poste_id"] in postes:
                 a_noter.add(candidature["poste_id"])  # poste choisi à la main, même s'il n'est plus actif
@@ -415,6 +416,7 @@ class TraitementService:
                     candidature["id"], poste_id,
                     score=resultat.score, pertinence=resultat.pertinence,
                     adequation_ignoree=resultat.adequation_ignoree, detail=resultat.detail(),
+                    **self._potentiel(profil, donnees_postes[poste_id].niveau_formation),
                 )
             if candidature["mode_assignation"] != "manuel":
                 source = classement.SourceMail(candidature["objet"] or "", candidature["corps"] or "", candidature["texte_lettre"] or "")
@@ -432,6 +434,25 @@ class TraitementService:
         if n:
             log.info("Étape score : %d candidature(s) notée(s) sur %d poste(s) actif(s)", n, len(actifs))
         return n
+
+    def _profil(self, texte: str, diplome_niveau: str | None) -> potentiel.ProfilCV | None:
+        try:
+            return potentiel.profil_depuis_texte(texte, diplome_niveau, self.aujourdhui())
+        except Exception:
+            log.exception("Profil pour l'indicateur de potentiel en échec")
+            return None
+
+    @staticmethod
+    def _potentiel(profil: potentiel.ProfilCV | None, niveau_requis: str | None) -> dict[str, Any]:
+        """Indicateur de potentiel pour un poste ; une panne de cet indicateur ne bloque jamais le score."""
+        if profil is None:
+            return {"potentiel_niveau": None, "potentiel": None}
+        try:
+            resultat = potentiel.evaluer(profil, niveau_requis)
+        except Exception:
+            log.exception("Indicateur de potentiel en échec")
+            return {"potentiel_niveau": None, "potentiel": None}
+        return {"potentiel_niveau": resultat.niveau, "potentiel": resultat.en_dict()}
 
     def noter_une(self, candidature_id: int) -> None:
         """Renote tout de suite une candidature (après un choix manuel), sans attendre le fil de travail."""

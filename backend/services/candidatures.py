@@ -77,6 +77,7 @@ class CandidaturesService:
                     "pertinence": s["pertinence"],
                     "adequation_ignoree": s["adequation_ignoree"],
                     "detail": s["detail"],
+                    "potentiel": s["potentiel"],
                 }
                 for s in scores
             ],
@@ -154,6 +155,7 @@ class CandidaturesService:
                     "pertinence": l["pertinence"],
                     "detail": l["detail"],
                     "adequation_ignoree": l["adequation_ignoree"],
+                    "potentiel_niveau": l["potentiel_niveau"],
                 }
                 for l in lignes
             ],
