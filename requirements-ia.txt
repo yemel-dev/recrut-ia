@@ -1,9 +1,12 @@
-# Bibliothèques lourdes (plusieurs Go) : NLP, scoring, entretiens vidéo.
-# Non nécessaires au socle. À installer seulement pour travailler sur backend/ia/.
+# Bibliothèques lourdes, non nécessaires au socle.
 -r requirements.txt
-spacy>=3.7
-sentence-transformers>=2.7
-scikit-learn>=1.4
+
+# Adéquation globale CV / poste (Sentence-BERT). Torch CPU suffit :
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+# puis télécharger le modèle une fois : python -m backend.ia.telecharger_modele
+sentence-transformers>=3.0
+
+# Modules à venir (entretiens vidéo, regard, transcription)
 opencv-python>=4.9
 mediapipe>=0.10
 openai-whisper

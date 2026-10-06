@@ -225,11 +225,27 @@ class CandidatureRepository:
 
     def compter(self) -> dict[str, int]:
         with self.db.session() as s:
-            par_classement = dict(s.execute(select(Candidature.statut_classement, func.count()).group_by(Candidature.statut_classement)).all())
+            # Classement des seules candidatures lues (une illisible n'est pas « non classée » : elle est à ouvrir)
+            par_classement = dict(
+                s.execute(
+                    select(Candidature.statut_classement, func.count())
+                    .where(Candidature.statut_lecture == "lue")
+                    .group_by(Candidature.statut_classement)
+                ).all()
+            )
             par_lecture = dict(s.execute(select(Candidature.statut_lecture, func.count()).group_by(Candidature.statut_lecture)).all())
+            # Pas encore lues, ou lues mais pas encore classées
+            en_attente = s.scalar(
+                select(func.count()).select_from(Candidature).where(
+                    or_(
+                        Candidature.statut_lecture == "en_attente",
+                        and_(Candidature.statut_lecture == "lue", Candidature.statut_classement == "a_traiter"),
+                    )
+                )
+            )
         return {
             "total": sum(par_lecture.values()),
-            "en_attente": par_lecture.get("en_attente", 0),
+            "en_attente": en_attente,
             "illisibles": par_lecture.get("illisible", 0),
             "classees": par_classement.get("classe", 0),
             "a_verifier": par_classement.get("a_verifier", 0),

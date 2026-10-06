@@ -21,6 +21,9 @@ secrets/
 credentials.json
 token.json
 
+# Modèles d'IA téléchargés (plusieurs centaines de Mo)
+modeles/
+
 # Builds
 build/
 dist/
