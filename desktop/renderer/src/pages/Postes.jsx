@@ -5,10 +5,9 @@ import { api } from '../api.js';
 import SuppressionPoste from '../components/SuppressionPoste.jsx';
 import { Alerte, BadgeStatut, Bouton, Chargement, EnTetePage } from '../components/ui.jsx';
 import { STATUTS, TYPES_CONTRAT } from '../constantes.js';
-import { formaterDate, pluriel } from '../format.js';
+import { experience, formaterDate } from '../format.js';
 
 const FILTRES = [['', 'Tous'], ['actif', 'Actifs'], ['brouillon', 'Brouillons'], ['cloture', 'Clôturés']];
-
 
 export default function Postes() {
   const navigate = useNavigate();
@@ -101,7 +100,7 @@ function LignePoste({ poste, onSupprimer }) {
   const details = [
     poste.lieu && { icone: MapPin, texte: poste.lieu },
     poste.type_contrat && { icone: Briefcase, texte: TYPES_CONTRAT[poste.type_contrat] },
-    { icone: GraduationCap, texte: `${poste.niveau_formation} · ${pluriel(poste.experience_min_annees, 'an')} d'exp. min.` },
+    { icone: GraduationCap, texte: `${poste.niveau_formation} · ${experience(poste.experience_min_annees)}` },
     poste.date_limite && { icone: CalendarClock, texte: `Jusqu'au ${formaterDate(poste.date_limite)}` },
   ].filter(Boolean);
 

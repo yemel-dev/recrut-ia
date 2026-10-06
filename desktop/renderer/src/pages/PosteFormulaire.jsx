@@ -169,7 +169,7 @@ export default function PosteFormulaire() {
           </Champ>
         </Section>
 
-        <div className="sticky bottom-0 -mx-8 flex justify-end gap-2 border-t border-line bg-mist/95 px-8 py-4 backdrop-blur">
+        <div className="sticky bottom-0 -mx-8 flex justify-end gap-2 border-t border-line bg-mist px-8 py-4">
           <Bouton variante="secondaire" onClick={() => navigate(retour)}>Annuler</Bouton>
           <Bouton type="submit" chargement={envoi}>{id ? 'Enregistrer les modifications' : 'Créer le poste'}</Bouton>
         </div>

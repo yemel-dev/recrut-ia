@@ -5,7 +5,7 @@ import { api } from '../api.js';
 import SuppressionPoste from '../components/SuppressionPoste.jsx';
 import { Alerte, BadgeStatut, Bouton, Carte, Chargement } from '../components/ui.jsx';
 import { STATUTS, TELETRAVAIL, TYPES_CONTRAT } from '../constantes.js';
-import { formaterDate, pluriel } from '../format.js';
+import { experience, formaterDate } from '../format.js';
 
 export default function PosteDetail() {
   const { id } = useParams();
@@ -66,7 +66,7 @@ export default function PosteDetail() {
             <BadgeStatut statut={poste.statut} />
           </div>
           <p className="mt-1 text-sm text-muted">
-            {poste.niveau_formation} · {pluriel(poste.experience_min_annees, 'an')} d'expérience minimum
+            {poste.niveau_formation} · {experience(poste.experience_min_annees)}
           </p>
         </div>
         <div className="flex gap-2">

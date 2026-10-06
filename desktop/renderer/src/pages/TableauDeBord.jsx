@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api.js';
 import { Alerte, Carte, Chargement, EnTetePage } from '../components/ui.jsx';
-import { STATUTS } from '../constantes.js';
+
+const LIBELLES = { actif: 'Postes actifs', brouillon: 'Brouillons', cloture: 'Postes clôturés' };
 
 const DESCRIPTIONS = {
   actif: 'Utilisés pour classer les candidatures',
@@ -47,7 +48,7 @@ export default function TableauDeBord() {
             to={`/postes?statut=${statut}`}
             className="rounded-xl border border-line bg-white p-5 transition-colors hover:border-navy-200"
           >
-            <p className="text-sm font-medium text-muted">Postes {STATUTS[statut].toLowerCase()}s</p>
+            <p className="text-sm font-medium text-muted">{LIBELLES[statut]}</p>
             <p className={`mt-2 text-3xl font-bold ${statut === 'actif' ? 'text-brand-700' : 'text-navy-900'}`}>{postes[statut]}</p>
             <p className="mt-1 text-xs text-muted">{DESCRIPTIONS[statut]}</p>
           </Link>

@@ -34,7 +34,11 @@ export default function CleRecuperation({ cle, onContinuer, libelleContinuer = '
         <div className="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide text-muted uppercase">
           <KeyRound className="size-3.5" aria-hidden /> Clé de récupération
         </div>
-        <p className="font-mono text-lg font-semibold tracking-wider break-all text-navy-900 select-all">{cle}</p>
+        <p className="grid grid-cols-4 gap-x-3 gap-y-1 font-mono text-lg font-semibold tracking-wider text-navy-900" aria-label={cle}>
+          {cle.split('-').map((groupe, i) => (
+            <span key={i} className="select-all">{groupe}</span>
+          ))}
+        </p>
         <Bouton variante="secondaire" icone={copiee ? Check : Copy} onClick={copier} className="mt-3">
           {copiee ? 'Copiée' : 'Copier'}
         </Bouton>
