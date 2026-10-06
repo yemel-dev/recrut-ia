@@ -12,7 +12,7 @@ const http = require('node:http');
 const path = require('node:path');
 
 const METHODES = new Set(['GET', 'POST', 'PUT', 'DELETE']);
-const CHEMIN_VALIDE = /^\/[a-z0-9\-/]*(\?[a-z0-9_=&\-.%@+]*)?$/i;
+const CHEMIN_VALIDE = /^\/[a-z0-9_\-/]*(\?[a-z0-9_=&\-.%@+]*)?$/i;
 const EXTENSIONS_IMPORT = new Set(['.pdf', '.docx', '.zip']);
 const EXTENSIONS_CV = new Set(['.pdf', '.docx']);
 const TAILLE_MAX_IMPORT = 200 * 1024 * 1024; // comme l'agent : 200 Mo par archive
