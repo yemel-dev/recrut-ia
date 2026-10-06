@@ -41,6 +41,9 @@ def main() -> int:
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.bind((HOTE, 0))
+    # Écouter avant d'annoncer le port : les requêtes arrivées pendant le démarrage d'uvicorn attendent
+    # dans la file au lieu d'être refusées.
+    sock.listen(128)
     port = sock.getsockname()[1]
 
     if os.getenv("INJARA_WATCH_STDIN", "1") == "1":
