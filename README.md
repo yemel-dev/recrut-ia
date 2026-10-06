@@ -98,7 +98,7 @@ supprimer `desktop/node_modules/electron` et relancer `npm install`.
 aussi besoin du runtime Visual C++ ci-dessus. Une fois installé, relancer INJARA ; `python -m backend.ia.calibrer`
 permet de vérifier que le modèle se charge.
 
-**« INJARA ne peut pas démarrer » au lancement.** Le message indique le Python utilisé et l'erreur du backend.
+**« INJARA ne peut pas démarrer » au lancement.** Le message indique le moteur lancé et l'erreur du backend.
 Vérifier que `.venv` existe à la racine et que `requirements.txt` y est installé.
 
 ## Organisation
@@ -116,8 +116,12 @@ backend/                Python
   agent/                agent mail (Gmail OAuth, IMAP, import manuel), monté sous /gmail
   ia/                   lecture et analyse des CV, score, classement (voir docs/traitement.md)
   tests/
-docs/                   cadrage (README.md), sécurité, agent mail, traitement des candidatures
+packaging/              backend figé pour l'installeur (PyInstaller)
+docs/                   cadrage (README.md), sécurité, agent mail, traitement des candidatures, installeur
 ```
+
+L'installeur (Windows : NSIS avec le runtime Visual C++ ; Linux : AppImage et .deb) se construit avec
+`npm run dist` dans `desktop/` : voir [docs/installeur.md](docs/installeur.md).
 
 ## Lancer le backend seul
 

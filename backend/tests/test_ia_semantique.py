@@ -109,6 +109,18 @@ def test_sonde(monkeypatch, resultat, extrait):
     assert motif is None if extrait is None else extrait in motif
 
 
+def test_sonde_dans_l_application_installee(monkeypatch):
+    """Exécutable PyInstaller : pas d'interpréteur, l'exécutable du backend fait l'essai lui-même."""
+    import subprocess
+    import sys
+
+    commandes = []
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(subprocess, "run", lambda commande, **k: commandes.append(commande) or _Resultat(0))
+    assert semantique.sonder_import() is None
+    assert commandes == [[sys.executable, semantique.ARGUMENT_SONDE]]
+
+
 def test_sonde_delai_depasse(monkeypatch):
     import subprocess
 

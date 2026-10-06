@@ -1,0 +1,3 @@
+# Construction de l'installeur (backend figé par PyInstaller) : voir docs/installeur.md
+-r requirements-ia.txt
+pyinstaller>=6.10

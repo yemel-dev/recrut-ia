@@ -133,6 +133,7 @@ class ModeleSemantique:
 
 
 DELAI_SONDE_S = 120
+ARGUMENT_SONDE = "--sonde-moteur-analyse"
 
 
 def sonder_import() -> str | None:
@@ -141,9 +142,11 @@ def sonder_import() -> str | None:
     import sys
 
     options = {"creationflags": subprocess.CREATE_NO_WINDOW} if sys.platform == "win32" else {}
+    # Application installée (PyInstaller) : pas d'interpréteur, l'exécutable du backend fait lui-même l'essai.
+    commande = [sys.executable, ARGUMENT_SONDE] if getattr(sys, "frozen", False) else [sys.executable, "-c", "import sentence_transformers"]
     try:
         resultat = subprocess.run(
-            [sys.executable, "-c", "import sentence_transformers"],
+            commande,
             stdin=subprocess.DEVNULL,
             capture_output=True,
             text=True,

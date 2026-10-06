@@ -4,24 +4,75 @@
   "version": "0.1.0",
   "private": true,
   "description": "INJARA : application de recrutement installée sur l'ordinateur du recruteur.",
+  "author": "INJARA",
   "main": "main/index.js",
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "dev:demo": "node scripts/dev.mjs --demo",
     "build": "vite build",
-    "start": "vite build && node scripts/electron.mjs"
-  },
-  "dependencies": {
-    "lucide-react": "^1.52.0",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "react-router-dom": "^7.18.4"
+    "start": "vite build && node scripts/electron.mjs",
+    "dist": "node scripts/preparer-installeur.mjs && vite build && electron-builder --publish never"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "@vitejs/plugin-react": "^6.1.2",
     "electron": "^44.5.1",
+    "electron-builder": "^26.15.3",
+    "lucide-react": "^1.52.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-router-dom": "^7.18.4",
     "tailwindcss": "^4.3.3",
     "vite": "^8.3.3"
+  },
+  "build": {
+    "appId": "cm.injara.desktop",
+    "productName": "INJARA",
+    "directories": {
+      "output": "out",
+      "buildResources": "packaging"
+    },
+    "files": [
+      "main/**",
+      "preload/**",
+      "renderer/dist/**",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../dist/injara-backend",
+        "to": "backend"
+      },
+      {
+        "from": "../modeles",
+        "to": "modeles",
+        "filter": [
+          "**/*",
+          "!**/.cache/**",
+          "!**/*.lock"
+        ]
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "packaging/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "include": "packaging/installer.nsh",
+      "artifactName": "INJARA-Setup-${version}.${ext}",
+      "shortcutName": "INJARA"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Office",
+      "icon": "packaging/icon.png",
+      "maintainer": "INJARA"
+    }
   }
 }
