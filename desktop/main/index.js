@@ -62,7 +62,9 @@ async function demarrer() {
   session.defaultSession.setPermissionCheckHandler((_wc, permission) => PERMISSIONS.has(permission));
   if (!URL_DEV) Menu.setApplicationMenu(null);
 
-  backend = new Backend({ dataDir: path.join(app.getPath('userData'), 'donnees') });
+  // INJARA_DATA_DIR permet d'utiliser un autre dossier de données (tests, démonstration).
+  const dataDir = process.env.INJARA_DATA_DIR || path.join(app.getPath('userData'), 'donnees');
+  backend = new Backend({ dataDir });
   try {
     await backend.demarrer();
   } catch (err) {
