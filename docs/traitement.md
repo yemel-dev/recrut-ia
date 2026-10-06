@@ -76,6 +76,12 @@ pip install -r requirements-ia.txt
 python -m backend.ia.telecharger_modele
 ```
 
+Sous Windows, torch exige le **runtime Microsoft Visual C++ 2015-2022 (x64)**. S'il manque, l'adéquation est
+désactivée avec ce motif (le reste du traitement fonctionne). L'installeur d'INJARA devra l'embarquer.
+
+Les bornes `SIMILARITE_PLANCHER` (0,15) et `SIMILARITE_PLAFOND` (0,65) sont provisoires : les caler avec
+`python -m backend.ia.calibrer` (similarités brutes des CV fictifs pour plusieurs postes).
+
 ## Tests
 
 `backend/tests/fixtures/cv/` contient des CV fictifs en texte ; `fixtures/fabrique.py` en fait de vrais PDF (dont un

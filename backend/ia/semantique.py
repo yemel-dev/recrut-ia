@@ -58,11 +58,29 @@ class ModeleSemantique:
                 return
             os.environ.setdefault("HF_HUB_OFFLINE", "1")
             os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+            # torch charge des DLL natives : si elles manquent, l'import peut figer tout le processus (constaté sous
+            # Windows sans runtime Visual C++). On l'essaie donc d'abord dans un processus séparé, avec un délai.
+            motif = sonder_import()
+            if motif:
+                self.motif_indisponible = motif
+                log.warning("Adéquation désactivée : %s", motif)
+                return
             try:
                 from sentence_transformers import SentenceTransformer
             except ImportError:
                 self.motif_indisponible = "Bibliothèque sentence-transformers absente (voir requirements-ia.txt)."
                 log.warning("Adéquation désactivée : %s", self.motif_indisponible)
+                return
+            except OSError as exc:  # sous Windows : DLL de torch introuvable (runtime Visual C++ absent)
+                self.motif_indisponible = (
+                    "Moteur d'analyse impossible à charger (sous Windows, installez le runtime Microsoft Visual C++ "
+                    f"2015-2022 x64) : {exc}"
+                )
+                log.warning("Adéquation désactivée : %s", self.motif_indisponible)
+                return
+            except Exception as exc:  # toute autre panne d'import : l'adéquation est ignorée, le reste fonctionne
+                self.motif_indisponible = f"Moteur d'analyse impossible à charger : {exc}"
+                log.exception("Import de sentence-transformers impossible")
                 return
             try:
                 self._modele = SentenceTransformer(str(self.chemin), device="cpu")
@@ -80,6 +98,42 @@ class ModeleSemantique:
         vecteurs = self._modele.encode(morceaux, normalize_embeddings=True, show_progress_bar=False)
         moyenne = [sum(colonne) / len(vecteurs) for colonne in zip(*vecteurs)]
         return normaliser_vecteur(moyenne)
+
+
+DELAI_SONDE_S = 120
+
+
+def sonder_import() -> str | None:
+    """Essaie `import sentence_transformers` dans un processus séparé. Renvoie un motif d'échec, ou None si l'import marche."""
+    import subprocess
+    import sys
+
+    options = {"creationflags": subprocess.CREATE_NO_WINDOW} if sys.platform == "win32" else {}
+    try:
+        resultat = subprocess.run(
+            [sys.executable, "-c", "import sentence_transformers"],
+            stdin=subprocess.DEVNULL,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=DELAI_SONDE_S,
+            env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+            **options,
+        )
+    except subprocess.TimeoutExpired:
+        return f"Le moteur d'analyse ne se charge pas (délai de {DELAI_SONDE_S} s dépassé)."
+    except OSError as exc:
+        return f"Le moteur d'analyse ne peut pas être testé : {exc}"
+    if resultat.returncode == 0:
+        return None
+    erreur = (resultat.stderr or "").strip().splitlines()
+    derniere = erreur[-1] if erreur else f"code {resultat.returncode}"
+    if "No module named" in derniere:
+        return "Bibliothèque sentence-transformers absente (voir requirements-ia.txt)."
+    if sys.platform == "win32" and ("DLL" in derniere or "WinError" in derniere):
+        return f"Moteur d'analyse impossible à charger (installez le runtime Microsoft Visual C++ 2015-2022 x64) : {derniere}"
+    return f"Moteur d'analyse impossible à charger : {derniere}"
 
 
 def normaliser_vecteur(vecteur: list[float]) -> list[float]:

@@ -135,8 +135,10 @@ export default function Candidatures() {
       {traitement && !traitement.adequation.disponible && (
         <p className="mb-4 flex items-start gap-2 rounded-lg border border-line bg-white px-4 py-3 text-sm text-muted">
           <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
-          Le critère « adéquation globale » est désactivé (modèle d'analyse absent) : les scores reposent sur les
-          compétences, l'expérience et la formation.
+          <span>
+            Le critère « adéquation globale » est désactivé : les scores reposent sur les compétences, l'expérience et la
+            formation. <span className="text-xs">({(traitement.adequation.motif || '').split(' : [')[0]})</span>
+          </span>
         </p>
       )}
 

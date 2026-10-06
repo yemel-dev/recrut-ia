@@ -94,6 +94,10 @@ L'extracteur d'Electron a besoin du runtime Visual C++. Installer
 [Microsoft Visual C++ Redistributable 2015-2022 (x64)](https://aka.ms/vs/17/release/vc_redist.x64.exe), puis
 supprimer `desktop/node_modules/electron` et relancer `npm install`.
 
+**Le critère « adéquation globale » reste désactivé alors que le modèle est téléchargé.** Sous Windows, torch a lui
+aussi besoin du runtime Visual C++ ci-dessus. Une fois installé, relancer INJARA ; `python -m backend.ia.calibrer`
+permet de vérifier que le modèle se charge.
+
 **« INJARA ne peut pas démarrer » au lancement.** Le message indique le Python utilisé et l'erreur du backend.
 Vérifier que `.venv` existe à la racine et que `requirements.txt` y est installé.
 

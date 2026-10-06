@@ -78,7 +78,7 @@ export function DetailScore({ detail, compact = false }) {
       {detail.adequation_ignoree && (
         <p className="flex items-start gap-2 rounded-lg bg-mist px-3 py-2 text-xs text-muted">
           <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-          Adéquation globale non calculée (modèle absent) : le score repose sur les trois autres critères, poids recalculés.
+          Adéquation globale non calculée (moteur d'analyse indisponible) : le score repose sur les trois autres critères, poids recalculés.
         </p>
       )}
       {Object.keys(CRITERES).map((nom) => (
