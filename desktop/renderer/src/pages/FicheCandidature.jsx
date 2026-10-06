@@ -1,4 +1,4 @@
-import { ArrowLeft, ExternalLink, FileWarning, Mail, Phone, RefreshCw, RotateCcw } from 'lucide-react';
+import { ArrowLeft, ExternalLink, FileWarning, Mail, Phone, RefreshCw, RotateCcw, ScanText } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../api.js';
@@ -107,6 +107,13 @@ export default function FicheCandidature() {
             Relire le fichier
           </Bouton>
         </Carte>
+      )}
+
+      {!illisible && fiche.motif_lecture && (
+        <p className="mb-6 flex items-start gap-2 rounded-lg border border-line bg-white px-4 py-3 text-sm text-muted">
+          <ScanText className="mt-0.5 size-4 shrink-0" aria-hidden />
+          <span>{fiche.motif_lecture}</span>
+        </p>
       )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

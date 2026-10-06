@@ -6,6 +6,11 @@
 # puis télécharger le modèle une fois : python -m backend.ia.telecharger_modele
 sentence-transformers>=3.0
 
+# Lecture des CV scannés (OCR) : modèles PP-OCRv6 fournis avec rapidocr, rien à télécharger ensuite.
+rapidocr>=3.4
+onnxruntime>=1.20
+pypdfium2>=4.30           # rendu des pages PDF en images (licences BSD-3 / Apache-2.0)
+
 # Modules à venir (entretiens vidéo, regard, transcription)
 opencv-python>=4.9
 mediapipe>=0.10

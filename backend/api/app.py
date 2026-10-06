@@ -17,6 +17,7 @@ from ..database.repositories import (
     PosteRepository,
     ScoreRepository,
 )
+from ..ia.ocr import MoteurOCR
 from ..ia.semantique import NOM_MODELE, ModeleSemantique, dossier_modeles
 from ..services.agent_mail import AgentMailService
 from ..services.auth import AuthService
@@ -46,9 +47,11 @@ def construire_services(db: Database, settings: Settings, modele: ModeleSemantiq
     postes = PostesService(PosteRepository(db))
     auth = AuthService(CompteRepository(db), settings.kdf)
     agent_mail = AgentMailService(settings.data_dir, settings.mode_agent, ParametreRepository(db))
-    modele = modele or ModeleSemantique((settings.dossier_modeles or dossier_modeles()) / NOM_MODELE)
+    modeles = settings.dossier_modeles or dossier_modeles()
+    modele = modele or ModeleSemantique(modeles / NOM_MODELE)
     traitement = TraitementService(
-        CandidatureRepository(db), ScoreRepository(db), PosteRepository(db), agent_mail, modele, cle=auth.cle_session
+        CandidatureRepository(db), ScoreRepository(db), PosteRepository(db), agent_mail, modele,
+        cle=auth.cle_session, ocr=MoteurOCR(),
     )
     candidatures = CandidaturesService(CandidatureRepository(db), ScoreRepository(db), PosteRepository(db), traitement)
 

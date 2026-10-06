@@ -23,6 +23,7 @@ from typing import Any, Callable
 
 from ..database.repositories import CandidatureRepository, PosteRepository, ScoreRepository
 from ..ia import classement, extraction, lecture, scoring, semantique
+from ..ia.ocr import MoteurOCR
 from ..ia.scoring import DonneesCV, DonneesPoste
 from . import coffre
 from .agent_mail import AgentMailService
@@ -63,6 +64,7 @@ class TraitementService:
         agent_mail: AgentMailService,
         modele: semantique.ModeleSemantique,
         cle: Callable[[], bytes | None],
+        ocr: MoteurOCR,
         aujourdhui: Callable[[], date] = date.today,
     ) -> None:
         self.candidatures = candidatures
@@ -71,6 +73,7 @@ class TraitementService:
         self.agent_mail = agent_mail
         self.modele = modele
         self.cle = cle  # clé de données de la session en cours, ou None
+        self.ocr = ocr
         self.aujourdhui = aujourdhui
         self._demande = threading.Event()
         self._arret = threading.Event()
@@ -146,6 +149,7 @@ class TraitementService:
         try:
             importees = self.importer_depuis_agent()
             self.chiffrer()
+            self.relire_scans()
             lues, illisibles = self.lire_et_extraire()
             vecteurs = self.completer_vecteurs()
             tout = self._tout_renoter or vecteurs > 0
@@ -229,15 +233,28 @@ class TraitementService:
             log.info("Étape chiffrement : %d fichier(s), %d texte(s)", fichiers, textes)
         return fichiers
 
-    def _lire(self, chemin: str) -> str:
-        """Texte d'un CV ou d'une pièce jointe, déchiffré en mémoire."""
+    def _lire(self, chemin: str, avec_ocr: bool = False) -> lecture.Lecture:
+        """Texte d'un CV ou d'une pièce jointe, déchiffré en mémoire (OCR des scans pour le CV seulement)."""
         try:
             contenu = coffre.lire_fichier(chemin, self._cle())
         except FileNotFoundError as exc:
             raise lecture.FichierIllisible("Fichier introuvable : il a peut-être été déplacé ou supprimé.") from exc
         except coffre.Indechiffrable as exc:
             raise lecture.FichierIllisible("Le fichier chiffré est endommagé : il ne peut pas être relu.") from exc
-        return lecture.lire_texte(chemin, contenu)
+        return lecture.lire(chemin, contenu, ocr=self.ocr if avec_ocr else None)
+
+    def relire_scans(self) -> int:
+        """Remet en lecture les CV scannés déclarés illisibles faute d'OCR, si l'OCR est maintenant disponible."""
+        a_relire = [
+            c["id"] for c in self.candidatures.toutes()
+            if c["statut_lecture"] == "illisible" and (c["motif_lecture"] or "").startswith(lecture.MOTIF_SCAN_SANS_OCR)
+        ]
+        if not a_relire or not self.ocr.disponible:
+            return 0
+        for candidature_id in a_relire:
+            self.candidatures.maj(candidature_id, statut_lecture="en_attente")
+        log.info("Étape OCR : %d CV scanné(s) remis en lecture", len(a_relire))
+        return len(a_relire)
 
     def _en_clair(self, candidature: dict) -> dict:
         cle = self._cle()
@@ -256,7 +273,8 @@ class TraitementService:
             candidature = self.candidatures.get(candidature_id)
             nom_fichier = candidature["nom_fichier_cv"]
             try:
-                texte = self._lire(candidature["fichier_cv"])
+                lu = self._lire(candidature["fichier_cv"], avec_ocr=True)
+                texte = lu.texte
             except lecture.FichierIllisible as exc:
                 illisibles += 1
                 log.warning("Étape lecture ❌ candidature %d (%s) : %s", candidature_id, nom_fichier, exc.motif)
@@ -280,7 +298,7 @@ class TraitementService:
             self.candidatures.maj(
                 candidature_id,
                 statut_lecture="lue",
-                motif_lecture=None,
+                motif_lecture=lecture.MOTIF_LU_PAR_OCR if lu.par_ocr else None,
                 texte=coffre.chiffrer_texte(texte, cle),
                 texte_lettre=coffre.chiffrer_texte(self._lire_lettres(candidature["pieces_jointes"]), cle),
                 extraction=resultat.en_dict(),
@@ -303,7 +321,7 @@ class TraitementService:
         textes = []
         for piece in pieces or []:
             try:
-                textes.append(self._lire(piece["chemin"]))
+                textes.append(self._lire(piece["chemin"]).texte)
             except lecture.FichierIllisible:
                 continue
         return "\n\n".join(textes)[:LONGUEUR_MAX_LETTRE] or None
@@ -414,4 +432,5 @@ class TraitementService:
             "derniere_execution": self.derniere_execution.isoformat() if self.derniere_execution else None,
             "derniere_erreur": self.derniere_erreur,
             "adequation": self.modele.statut(),
+            "ocr": self.ocr.statut(),
         }

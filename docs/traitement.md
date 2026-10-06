@@ -12,7 +12,7 @@ Code : `backend/ia/` (analyse, fonctions pures), `backend/services/traitement.py
 | Étape | Ce qui est fait | Où |
 |---|---|---|
 | Import | Les CV de l'agent sont regroupés par mail. Le CV principal est choisi d'après le nom du fichier (`cv`, `resume`, `curriculum`) ; les autres pièces jointes sont lues comme lettre de motivation. | `traitement.importer_depuis_agent` |
-| 1. Lecture | Texte du PDF (pypdf) ou du DOCX (paragraphes et tableaux). Moins de 150 caractères utiles, fichier protégé ou corrompu : **illisible**, avec un motif, jamais noté 0 en silence. | `ia/lecture.py` |
+| 1. Lecture | CV déchiffré en mémoire, puis texte du PDF (pypdf) ou du DOCX (paragraphes et tableaux). PDF scanné : reconnaissance de caractères (voir ci-dessous). Moins de 150 caractères utiles, fichier protégé ou corrompu : **illisible**, avec un motif, jamais noté 0 en silence. | `ia/lecture.py`, `ia/ocr.py` |
 | 2. Extraction | Une seule fois par CV, sans dépendre d'un poste : contact, sections, périodes d'expérience, diplôme. Texte complet et vecteur Sentence-BERT enregistrés. | `ia/extraction.py`, `ia/diplomes.py` |
 | 3. Classement | Postes actifs uniquement. Voir ci-dessous. | `ia/classement.py` |
 | 4. Score | Sur 100, pour chaque poste actif, avec le détail. | `ia/scoring.py`, `ia/competences.py` |
@@ -85,10 +85,23 @@ Les bornes `SIMILARITE_PLANCHER` (0,30) et `SIMILARITE_PLAFOND` (0,70) ont été
 `python -m backend.ia.calibrer` (similarités brutes des CV fictifs pour plusieurs postes) : un CV correspondant au
 poste obtient 0,71 à 0,76, un profil sans rapport 0,09 à 0,38. À recaler sur de vrais CV quand il y en aura.
 
+## CV scannés (OCR)
+
+Un PDF sans couche texte passe par RapidOCR (modèles PP-OCRv6 multilingues, fournis avec le paquet `rapidocr`, sur
+onnxruntime ; hors ligne). Les 4 premières pages sont rendues à 200 points par pouce (pypdfium2) ; les lignes reconnues
+avec une confiance inférieure à 0,5 sont ignorées. Compter 5 à 10 secondes par page sur un processeur ordinaire.
+
+- Texte suffisant : la candidature est lue et notée normalement, mais la fiche affiche « CV scanné, lu par
+  reconnaissance de caractères : vérifiez les informations extraites ».
+- Presque rien de reconnu (image floue, manuscrite) : **illisible**, avec ce motif.
+- OCR non installé ou en panne : **illisible** comme avant, motif précisé. Quand l'OCR redevient disponible, ces CV
+  sont remis en lecture automatiquement.
+
 ## Tests
 
 `backend/tests/fixtures/cv/` contient des CV fictifs en texte ; `fixtures/fabrique.py` en fait de vrais PDF (dont un
 PDF scanné, image seule) et DOCX. `test_ia_extraction.py`, `test_ia_scoring.py` et `test_traitement.py` couvrent
 notamment : « Février 2025 – Présent », dates d'études, « Bac+5 », « Scrum Master », « Master en cours »,
 « Django REST Framework », CV de comptable sans rapport, mail sans référence, PDF scanné, choix manuel conservé,
-renotation sans relecture et top 10.
+renotation sans relecture et top 10. `test_ia_ocr.py` fabrique un vrai scan (texte rendu en image) et vérifie que
+l'extraction donne le même résultat que la version texte ; `test_coffre.py` couvre le chiffrement.

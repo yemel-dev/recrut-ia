@@ -1,6 +1,7 @@
 """Point d'entrée : la surveillance d'Electron par stdin ne doit pas bloquer les sous-processus."""
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 import threading
@@ -26,6 +27,8 @@ def test_sous_processus_pendant_la_surveillance_puis_arret_a_la_fermeture():
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
+        encoding="utf-8",
+        env={**os.environ, "PYTHONIOENCODING": "utf-8"},
     )
     garde = threading.Timer(60, enfant.kill)  # si le sous-processus se fige, le test échoue au lieu de bloquer
     garde.start()

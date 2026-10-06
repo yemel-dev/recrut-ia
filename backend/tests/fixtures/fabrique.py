@@ -70,6 +70,39 @@ def pdf_scanne() -> bytes:
     return _assembler_pdf(objets)
 
 
+# Polices système avec accents (celle par défaut de Pillow n'a pas « é » : elle dessine un carré vide).
+POLICES = [
+    "C:/Windows/Fonts/arial.ttf",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+    "/usr/share/fonts/dejavu/DejaVuSans.ttf",
+    "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+]
+
+
+def police_avec_accents() -> str | None:
+    return next((p for p in POLICES if Path(p).exists()), None)
+
+
+def pdf_scanne_texte(texte: str) -> bytes:
+    """PDF d'une page A4 qui ne contient qu'une image du texte (CV scanné lisible), pour tester l'OCR."""
+    from PIL import Image, ImageDraw, ImageFont
+
+    largeur, hauteur = 1240, 1754  # A4 à 150 points par pouce
+    image = Image.new("L", (largeur, hauteur), 255)
+    dessin = ImageDraw.Draw(image)
+    police = ImageFont.truetype(police_avec_accents(), 24)
+    for i, ligne in enumerate(texte.splitlines()[:50]):
+        dessin.text((80, 80 + i * 32), ligne, fill=0, font=police)
+    objets = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /XObject << /Im1 4 0 R >> >> /Contents 5 0 R >>",
+        _flux(image.tobytes(), f"/Type /XObject /Subtype /Image /Width {largeur} /Height {hauteur} /ColorSpace /DeviceGray /BitsPerComponent 8"),
+        _flux(b"q 595 0 0 842 0 0 cm /Im1 Do Q"),
+    ]
+    return _assembler_pdf(objets)
+
+
 def docx(texte: str, dans_un_tableau: bool = False) -> bytes:
     """DOCX ; avec dans_un_tableau=True, le corps du CV est mis en page dans un tableau à deux colonnes."""
     import io
