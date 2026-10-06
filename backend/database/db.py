@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
 
+from .migrations import ajouter_colonnes_manquantes
 from .models import Base
 
 
@@ -16,6 +17,7 @@ class Database:
         event.listen(self.engine, "connect", _sqlite_pragmas)
         self._sessions = sessionmaker(self.engine, expire_on_commit=False)
         Base.metadata.create_all(self.engine)
+        ajouter_colonnes_manquantes(self.engine)
 
     @contextmanager
     def session(self) -> Iterator[Session]:

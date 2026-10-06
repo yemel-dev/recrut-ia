@@ -60,6 +60,10 @@ class PosteSaisi(BaseModel):
     processus_selection: str | None = None
     documents_demandes: list[str] | None = None
     statut: str | None = None
+    poids_competences: int | None = None
+    poids_experience: int | None = None
+    poids_formation: int | None = None
+    poids_adequation: int | None = None
 
 
 class ChangementStatut(BaseModel):

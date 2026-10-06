@@ -1,13 +1,12 @@
 """Modèles SQLAlchemy du socle INJARA.
 
-Une installation = une entreprise = un compte. Les tables liées aux candidatures (candidats, analyses,
-entretiens) seront ajoutées avec leurs modules.
+Une installation = une entreprise = un compte. Les tables des entretiens seront ajoutées avec leur module.
 """
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
 
-from sqlalchemy import JSON, Date, DateTime, Integer, LargeBinary, String, Text, TypeDecorator
+from sqlalchemy import JSON, Boolean, Date, DateTime, Float, ForeignKey, Integer, LargeBinary, String, Text, TypeDecorator, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -105,5 +104,77 @@ class Poste(Base):
     processus_selection: Mapped[str | None] = mapped_column(Text)
     documents_demandes: Mapped[list[str]] = mapped_column(JSON, default=list)
 
+    # Poids du score (sur 100), modifiables par poste
+    poids_competences: Mapped[int] = mapped_column(Integer, default=40, server_default="40")
+    poids_experience: Mapped[int] = mapped_column(Integer, default=25, server_default="25")
+    poids_formation: Mapped[int] = mapped_column(Integer, default=20, server_default="20")
+    poids_adequation: Mapped[int] = mapped_column(Integer, default=15, server_default="15")
+
     cree_le: Mapped[datetime] = mapped_column(DateHeureUTC, default=_now)
     modifie_le: Mapped[datetime] = mapped_column(DateHeureUTC, default=_now, onupdate=_now)
+
+
+class Candidature(Base):
+    """Une candidature = un mail reçu (ou un fichier importé à la main), avec son CV principal."""
+
+    __tablename__ = "candidatures"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    cle: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)  # identifiant du mail dans l'agent
+    source: Mapped[str] = mapped_column(String(20), default="email")
+    expediteur_nom: Mapped[str | None] = mapped_column(String(255))
+    expediteur_email: Mapped[str | None] = mapped_column(String(255))
+    objet: Mapped[str | None] = mapped_column(Text)
+    corps: Mapped[str | None] = mapped_column(Text)
+    recue_le: Mapped[datetime | None] = mapped_column(DateHeureUTC)
+
+    # Fichiers : le CV principal et les autres pièces jointes [{nom, chemin, sha256}]
+    fichier_cv: Mapped[str] = mapped_column(Text, nullable=False)
+    nom_fichier_cv: Mapped[str] = mapped_column(String(255), nullable=False)
+    sha256_cv: Mapped[str] = mapped_column(String(64), nullable=False)
+    pieces_jointes: Mapped[list[dict]] = mapped_column(JSON, default=list)
+
+    # Étape 1 : lecture
+    statut_lecture: Mapped[str] = mapped_column(String(20), default="en_attente", index=True)  # en_attente | lue | illisible
+    motif_lecture: Mapped[str | None] = mapped_column(Text)
+
+    # Étape 2 : extraction (indépendante des postes)
+    texte: Mapped[str | None] = mapped_column(Text)
+    texte_lettre: Mapped[str | None] = mapped_column(Text)
+    extraction: Mapped[dict | None] = mapped_column(JSON)
+    nom: Mapped[str | None] = mapped_column(String(255))
+    email: Mapped[str | None] = mapped_column(String(255))
+    telephone: Mapped[str | None] = mapped_column(String(50))
+    experience_mois: Mapped[int | None] = mapped_column(Integer)
+    stages_mois: Mapped[int | None] = mapped_column(Integer)
+    diplome_niveau: Mapped[str | None] = mapped_column(String(20))
+    version_extraction: Mapped[int | None] = mapped_column(Integer)
+    vecteur: Mapped[bytes | None] = mapped_column(LargeBinary)  # Sentence-BERT, pour renoter sans relire le CV
+    modele_vecteur: Mapped[str | None] = mapped_column(String(100))
+    extraite_le: Mapped[datetime | None] = mapped_column(DateHeureUTC)
+
+    # Étape 3 : classement
+    poste_id: Mapped[int | None] = mapped_column(ForeignKey("postes.id", ondelete="SET NULL"), index=True)
+    statut_classement: Mapped[str] = mapped_column(String(20), default="a_traiter", index=True)  # a_traiter | classe | a_verifier | non_classe
+    mode_assignation: Mapped[str | None] = mapped_column(String(20))  # reference | automatique | manuel
+    motif_classement: Mapped[str | None] = mapped_column(Text)
+    classee_le: Mapped[datetime | None] = mapped_column(DateHeureUTC)
+
+    cree_le: Mapped[datetime] = mapped_column(DateHeureUTC, default=_now)
+    modifie_le: Mapped[datetime] = mapped_column(DateHeureUTC, default=_now, onupdate=_now)
+
+
+class Score(Base):
+    """Étape 4 : score d'une candidature pour un poste, avec le détail de chaque critère."""
+
+    __tablename__ = "scores"
+    __table_args__ = (UniqueConstraint("candidature_id", "poste_id"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    candidature_id: Mapped[int] = mapped_column(ForeignKey("candidatures.id", ondelete="CASCADE"), nullable=False, index=True)
+    poste_id: Mapped[int] = mapped_column(ForeignKey("postes.id", ondelete="CASCADE"), nullable=False, index=True)
+    score: Mapped[float] = mapped_column(Float, nullable=False)
+    pertinence: Mapped[float] = mapped_column(Float, nullable=False)
+    adequation_ignoree: Mapped[bool] = mapped_column(Boolean, default=False)
+    detail: Mapped[dict] = mapped_column(JSON, default=dict)
+    calcule_le: Mapped[datetime] = mapped_column(DateHeureUTC, default=_now, onupdate=_now)

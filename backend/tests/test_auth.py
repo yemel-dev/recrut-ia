@@ -124,6 +124,7 @@ def test_session_perdue_au_redemarrage(settings, connecte):
         client = TestClient(nouvelle_app, headers={"X-Injara-Token": JETON, "X-Injara-Session": jeton_session})
         assert client.get("/auth/etat").json() == {"compte_existe": True, "connecte": False, "email": None}
     finally:
+        nouvelle_app.state.services.traitement.arreter()
         nouvelle_app.state.services.agent_mail.arreter()
         nouvelle_app.state.db.close()
 

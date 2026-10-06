@@ -30,6 +30,7 @@ class Settings:
     token: str
     kdf: KdfParams = KdfParams()
     mode_agent: str = "real"
+    dossier_modeles: Path | None = None  # None : INJARA_MODELES_DIR, sinon ./modeles
 
     @property
     def database_url(self) -> str:
