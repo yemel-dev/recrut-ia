@@ -92,7 +92,7 @@ class TraitementService:
         self._demande.set()
         fil = self._fil
         if fil is not None and fil is not threading.current_thread():
-            fil.join(timeout=10)
+            fil.join(timeout=3)  # le passage en cours s'arrête à la candidature suivante
 
     def demander(self, raison: str, tout_renoter: bool = False) -> None:
         if tout_renoter:
@@ -187,6 +187,9 @@ class TraitementService:
     def lire_et_extraire(self) -> tuple[int, int]:
         lues = illisibles = 0
         for candidature_id in self.candidatures.ids_a_lire(extraction.VERSION_EXTRACTION):
+            if self._arret.is_set():
+                log.info("Étape lecture interrompue : fin de session")
+                break
             candidature = self.candidatures.get(candidature_id)
             nom_fichier = candidature["nom_fichier_cv"]
             try:
@@ -296,6 +299,10 @@ class TraitementService:
         donnees_postes = {p["id"]: self._donnees_poste(p) for p in postes.values()}
         n = 0
         for candidature in self.candidatures.lues():
+            if self._arret.is_set() and ids is None:
+                log.info("Étape score interrompue : fin de session")
+                self._tout_renoter = self._tout_renoter or tout  # à reprendre à la prochaine session
+                break
             if ids is not None:
                 if candidature["id"] not in ids:
                     continue

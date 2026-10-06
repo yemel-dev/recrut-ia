@@ -303,3 +303,17 @@ def test_poids_du_poste_valides(connecte):
 def test_routes_exigent_une_session(client, cle_recuperation):
     for chemin in ("/candidatures", "/candidatures/1", "/postes/1/classement", "/traitement/etat"):
         assert client.get(chemin).status_code == 401
+
+
+def test_fin_de_session_interrompt_le_traitement(connecte, services, boite, tmp_path):
+    """Après la déconnexion, le pipeline s'arrête à la candidature suivante ; il reprend à la connexion."""
+    creer_poste(connecte, POSTE_DEV)
+    services.traitement.arreter()  # fin de session : plus de fil de fond
+    recevoir(boite, tmp_path, "DEV-2026-04", [("cv.pdf", cv_pdf("dev_python"))])
+    services.traitement.traiter()
+    assert candidature_de(services, "cv.pdf")["statut_lecture"] == "en_attente"
+    services.traitement.demarrer()
+    services.traitement.arreter()  # attend la fin du passage lancé par demarrer()
+    services.traitement._arret.clear()
+    services.traitement.traiter()
+    assert candidature_de(services, "cv.pdf")["statut_lecture"] == "lue"
