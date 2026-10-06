@@ -20,8 +20,9 @@ POIDS_DEFAUT = {"competences": 40, "experience": 25, "formation": 20, "adequatio
 PENALITE_PAR_NIVEAU_MANQUANT = 0.40
 
 # Adéquation : la similarité cosinus brute de Sentence-BERT est ramenée sur [0, 1] entre ces deux bornes.
-SIMILARITE_PLANCHER = 0.15
-SIMILARITE_PLAFOND = 0.65
+# Calées avec python -m backend.ia.calibrer : CV correspondant 0,71-0,76 ; profil sans rapport 0,09-0,38.
+SIMILARITE_PLANCHER = 0.30
+SIMILARITE_PLAFOND = 0.70
 
 
 @dataclass(frozen=True)

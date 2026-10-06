@@ -32,7 +32,7 @@ def main() -> int:
     if not modele.disponible:
         print(f"Modèle indisponible : {modele.motif_indisponible}")
         return 1
-    print(f"Modèle chargé en {time.monotonic() - debut:.1f} s ; bornes actuelles : {SIMILARITE_PLANCHER} → {SIMILARITE_PLAFOND}")
+    print(f"Modèle chargé en {time.monotonic() - debut:.1f} s ; bornes actuelles : plancher {SIMILARITE_PLANCHER}, plafond {SIMILARITE_PLAFOND}")
     postes = {nom: modele.encoder(texte) for nom, texte in POSTES.items()}
     for cv in ["dev_python", "comptable", "scrum_master", "jeune_diplome"]:
         vecteur = modele.encoder(fabrique.texte_cv(cv))
