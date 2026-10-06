@@ -51,7 +51,8 @@ class ModeleSemantique:
             if self._essaye:
                 return
             self._essaye = True
-            if not (self.chemin / "config.json").exists():
+            poids = ("model.safetensors", "pytorch_model.bin")
+            if not (self.chemin / "config.json").exists() or not any((self.chemin / p).exists() for p in poids):
                 self.motif_indisponible = f"Modèle d'adéquation absent ({self.chemin})."
                 log.warning("Adéquation désactivée : %s", self.motif_indisponible)
                 return

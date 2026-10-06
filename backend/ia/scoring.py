@@ -63,7 +63,7 @@ def score_competences(texte_cv: str, requises: list[str]) -> tuple[float, dict]:
     return len(trouvees) / len(requises), {
         "trouvees": trouvees,
         "manquantes": manquantes,
-        "message": f"{len(trouvees)} compétence(s) requise(s) sur {len(requises)} trouvée(s) dans le CV.",
+        "message": f"{len(trouvees)} sur {len(requises)} {'compétence requise trouvée' if len(requises) == 1 else 'compétences requises trouvées'} dans le CV.",
     }
 
 
@@ -73,7 +73,7 @@ def score_experience(experience_mois: int, annees_requises: int) -> tuple[float,
     if annees_requises <= 0:
         return 1.0, {**detail, "message": "Aucune expérience minimale demandée."}
     score = min(1.0, experience_mois / (annees_requises * 12))
-    return score, {**detail, "message": f"{_annees(annees)} d'expérience retenue(s) pour {_annees(annees_requises)} demandée(s)."}
+    return score, {**detail, "message": f"Expérience retenue : {_annees(annees)}, pour {_annees(annees_requises)} demandé{'s' if annees_requises >= 2 else ''}."}
 
 
 def score_formation(niveau_cv: str | None, ligne: str | None, niveau_requis: str) -> tuple[float, dict]:
