@@ -42,16 +42,13 @@ npm start       # compile l'interface puis lance Electron sur la version compil�
 ```
 
 Pour développer sans vraie boîte mail, lancer en **mode démo** (boîte simulée avec 5 CV d'exemple, bandeau
-« MODE DÉMO » dans l'application) :
+« MODE DÉMO » dans l'application). Cette commande fonctionne dans tous les terminaux (PowerShell, cmd, bash) :
 
 ```bash
-# Linux
-GMAIL_MODE=fake npm run dev
-# Windows (PowerShell)
-$env:GMAIL_MODE = "fake"; npm run dev
+npm run dev:demo
 ```
 
-Sans cette variable, l'agent est en mode réel. Pour lier un compte Gmail, l'application demande le fichier
+Avec `npm run dev`, l'agent est en mode réel. Pour lier un compte Gmail, l'application demande le fichier
 `credentials.json` de l'entreprise (ID client OAuth de type « Application de bureau », voir
 `backend/agent/README.md`) ; une autre messagerie se lie avec son adresse et son mot de passe.
 
