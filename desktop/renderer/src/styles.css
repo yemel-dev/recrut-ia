@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+/* Identité INJARA (mêmes valeurs que le site vitrine) : vert #00BF63, bleu marine #031E40. */
+@theme {
+  --font-sans: "Segoe UI", system-ui, -apple-system, "Ubuntu", "Cantarell", "Noto Sans", sans-serif;
+
+  --color-brand-50: #e8faf0;
+  --color-brand-100: #ccf2df;
+  --color-brand-500: #00bf63;
+  --color-brand-600: #00a656;
+  --color-brand-700: #007a3f;
+
+  --color-navy-50: #eef2f7;
+  --color-navy-100: #c9d3e0;
+  --color-navy-200: #9fb0c6;
+  --color-navy-600: #34527a;
+  --color-navy-700: #1b3b66;
+  --color-navy-800: #0b2a52;
+  --color-navy-900: #031e40;
+
+  --color-mist: #f4f7fa;
+  --color-muted: #5b6b7f;
+  --color-line: #e2e8f0;
+  --color-danger: #b42318;
+  --color-danger-50: #fef3f2;
+}
+
+@layer base {
+  html, body, #racine { height: 100%; }
+  body { @apply bg-mist font-sans text-navy-900 antialiased; }
+  :focus-visible { @apply outline-2 outline-offset-2 outline-brand-500; }
+}
