@@ -130,7 +130,8 @@ class ParametreRepository:
 
 # Colonnes lourdes exclues des listes (texte complet, vecteur, extraction détaillée)
 _COLONNES_LEGERES = [
-    c for c in Candidature.__table__.columns if c.key not in ("texte", "texte_lettre", "extraction", "vecteur", "corps")
+    c for c in Candidature.__table__.columns
+    if c.key not in ("texte", "texte_lettre", "extraction", "vecteur", "corps", "decision_note")
 ]
 
 
@@ -261,6 +262,17 @@ class CandidatureRepository:
             requete = select(Candidature.poste_id, func.count()).where(Candidature.poste_id.is_not(None)).group_by(Candidature.poste_id)
             return dict(s.execute(requete).all())
 
+    def compter_decisions(self, poste_id: int) -> dict[str, int]:
+        """Candidatures notées et rattachées au poste, par décision du recruteur."""
+        with self.db.session() as s:
+            requete = (
+                select(Candidature.decision, func.count())
+                .join(Score, and_(Score.candidature_id == Candidature.id, Score.poste_id == poste_id))
+                .where(Candidature.poste_id == poste_id)
+                .group_by(Candidature.decision)
+            )
+            return dict(s.execute(requete).all())
+
 
 class ScoreRepository:
     def __init__(self, db: Database) -> None:
@@ -290,21 +302,28 @@ class ScoreRepository:
             score = s.scalars(select(Score).where(Score.candidature_id == candidature_id, Score.poste_id == poste_id)).first()
             return _as_dict(score) if score else None
 
-    def top(self, poste_id: int, limite: int) -> list[dict[str, Any]]:
-        """Candidatures rattachées au poste, triées par score décroissant."""
+    def top(self, poste_id: int, limite: int, decision: str | None = None) -> list[dict[str, Any]]:
+        """Candidatures rattachées au poste, triées par score décroissant, avec leur rang.
+
+        Avec `decision`, le rang reste celui du classement complet : le filtre masque des lignes sans rien réordonner.
+        """
         with self.db.session() as s:
             requete = (
                 select(Score, *_COLONNES_LEGERES)
                 .join(Candidature, Candidature.id == Score.candidature_id)
                 .where(Score.poste_id == poste_id, Candidature.poste_id == poste_id)
-                .order_by(Score.score.desc(), Candidature.recue_le.desc())
-                .limit(limite)
+                .order_by(Score.score.desc(), Candidature.recue_le.desc(), Candidature.id)
             )
+            if decision is None:
+                requete = requete.limit(limite)
             resultat = []
-            for rangee in s.execute(requete):
+            for rang, rangee in enumerate(s.execute(requete), start=1):
                 donnees = dict(rangee._mapping)
                 score = donnees.pop("Score")
+                if decision is not None and donnees["decision"] != decision:
+                    continue
                 resultat.append({
+                    "rang": rang,
                     "candidature": donnees,
                     "score": score.score,
                     "pertinence": score.pertinence,

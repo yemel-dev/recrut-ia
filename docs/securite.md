@@ -41,6 +41,9 @@
   dès le passage suivant (quelques secondes) dans `<fichier>.injara`, puis efface le clair. Les autres pièces jointes
   (lettres) aussi. Les fichiers restés en clair d'une version précédente sont chiffrés au premier passage.
 - **Texte extrait** : le texte du CV et celui des lettres sont enregistrés chiffrés en base (préfixe `injara:v1:`).
+  L'extraction enregistrée en clair ne garde que les noms des sections du CV, pas leur texte (les bases plus
+  anciennes sont nettoyées au premier passage du traitement).
+- **Note du recruteur** sur sa décision : chiffrée de la même façon.
 - **Lecture** : les CV sont déchiffrés en mémoire, jamais sur le disque. Sans session, rien n'est traité.
 - **Ouverture par le recruteur** : le backend renvoie le CV déchiffré (`GET /candidatures/{id}/cv`) ; Electron le pose
   dans `<temp>/injara-cv-ouverts/`, l'ouvre avec le logiciel du système, et vide ce dossier à la déconnexion, à la

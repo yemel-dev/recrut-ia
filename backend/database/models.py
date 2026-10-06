@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from datetime import date, datetime, timezone
 
-from sqlalchemy import JSON, Boolean, Date, DateTime, Float, ForeignKey, Integer, LargeBinary, String, Text, TypeDecorator, UniqueConstraint
+from sqlalchemy import JSON, Boolean, Date, DateTime, Float, ForeignKey, Integer, LargeBinary, String, Text, TypeDecorator, UniqueConstraint, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -159,6 +159,11 @@ class Candidature(Base):
     mode_assignation: Mapped[str | None] = mapped_column(String(20))  # reference | automatique | manuel
     motif_classement: Mapped[str | None] = mapped_column(Text)
     classee_le: Mapped[datetime | None] = mapped_column(DateHeureUTC)
+
+    # Décision du recruteur : n'influence ni le score ni le classement
+    decision: Mapped[str] = mapped_column(String(20), default="a_examiner", server_default=text("'a_examiner'"))  # a_examiner | retenu | en_attente | ecarte
+    decision_note: Mapped[str | None] = mapped_column(Text)  # chiffrée avec la clé de données (services/coffre.py)
+    decision_le: Mapped[datetime | None] = mapped_column(DateHeureUTC)
 
     cree_le: Mapped[datetime] = mapped_column(DateHeureUTC, default=_now)
     modifie_le: Mapped[datetime] = mapped_column(DateHeureUTC, default=_now, onupdate=_now)

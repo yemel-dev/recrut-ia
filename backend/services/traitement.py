@@ -39,6 +39,15 @@ class SessionFermee(Exception):
     """La session s'est fermée pendant un passage : la clé n'est plus disponible, le passage s'arrête."""
 
 
+def extraction_a_enregistrer(extraction_cv: dict) -> dict:
+    """L'extraction telle qu'enregistrée en clair : les sections n'y figurent que par leur nom.
+
+    Leur texte reprendrait tout le CV, qui n'est conservé que chiffré (colonne `texte`).
+    """
+    sections = extraction_cv.get("sections") or []
+    return {**extraction_cv, "sections": sorted(sections)}
+
+
 def _maintenant() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -222,11 +231,14 @@ class TraitementService:
                     fichiers += coffre.chiffrer_fichier(chemin, cle)
                 except OSError as exc:  # fichier verrouillé (ouvert ailleurs) : nouvel essai au prochain passage
                     log.warning("Chiffrement de %s reporté : %s", Path(chemin).name, exc)
-            if not (coffre.est_chiffre(candidature["texte"]) and coffre.est_chiffre(candidature["texte_lettre"])):
+            extraction_cv = candidature["extraction"] or {}
+            sections_en_clair = isinstance(extraction_cv.get("sections"), dict)  # enregistrées avant cette correction
+            if sections_en_clair or not (coffre.est_chiffre(candidature["texte"]) and coffre.est_chiffre(candidature["texte_lettre"])):
                 self.candidatures.maj(
                     candidature["id"],
                     texte=coffre.chiffrer_texte(candidature["texte"], cle),
                     texte_lettre=coffre.chiffrer_texte(candidature["texte_lettre"], cle),
+                    extraction=extraction_a_enregistrer(extraction_cv) if extraction_cv else candidature["extraction"],
                 )
                 textes += 1
         if fichiers or textes:
@@ -301,7 +313,7 @@ class TraitementService:
                 motif_lecture=lecture.MOTIF_LU_PAR_OCR if lu.par_ocr else None,
                 texte=coffre.chiffrer_texte(texte, cle),
                 texte_lettre=coffre.chiffrer_texte(self._lire_lettres(candidature["pieces_jointes"]), cle),
-                extraction=resultat.en_dict(),
+                extraction=extraction_a_enregistrer(resultat.en_dict()),
                 nom=resultat.nom or candidature["expediteur_nom"],
                 email=resultat.email or candidature["expediteur_email"],
                 telephone=resultat.telephone,

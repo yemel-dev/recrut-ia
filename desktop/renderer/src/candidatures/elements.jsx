@@ -39,6 +39,30 @@ export function BadgeStatutCandidature({ candidature }) {
   );
 }
 
+/** Décision du recruteur. Elle ne change ni le score ni le classement ; un candidat écarté reste affiché. */
+export const DECISIONS = {
+  a_examiner: 'À examiner',
+  retenu: 'Retenu',
+  en_attente: 'En attente',
+  ecarte: 'Écarté',
+};
+
+const COULEURS_DECISION = {
+  a_examiner: 'bg-white text-muted ring-line',
+  retenu: 'bg-brand-50 text-brand-700 ring-brand-100',
+  en_attente: 'bg-amber-50 text-amber-800 ring-amber-200',
+  ecarte: 'bg-navy-50 text-navy-700 ring-navy-100',
+};
+
+export function BadgeDecision({ decision }) {
+  const cle = decision || 'a_examiner';
+  return (
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap ring-1 ring-inset ${COULEURS_DECISION[cle]}`}>
+      {DECISIONS[cle]}
+    </span>
+  );
+}
+
 /** Score sur 100. Un indicateur : les couleurs restent neutres, aucune notion de rejet. */
 export function PastilleScore({ score, taille = 'normale' }) {
   if (score === null || score === undefined) return <span className="text-sm text-muted">—</span>;

@@ -1,21 +1,24 @@
 import { ArrowLeft, ExternalLink, FileWarning, Mail, Phone, RefreshCw, RotateCcw, ScanText } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { useAgent } from '../agent/ContexteAgent.jsx';
 import {
+  BadgeDecision,
   BadgeStatutCandidature,
+  DECISIONS,
   DetailScore,
   MODES_ASSIGNATION,
   PastilleScore,
   formaterExperience,
 } from '../candidatures/elements.jsx';
-import { Alerte, Bouton, Carte, Chargement } from '../components/ui.jsx';
+import { Alerte, Bouton, Carte, Champ, Chargement, ZoneTexte } from '../components/ui.jsx';
 import { STATUTS } from '../constantes.js';
 import { formaterDateHeure } from '../format.js';
 
 export default function FicheCandidature() {
   const { id } = useParams();
+  const retour = useLocation().state?.retour; // venu du classement d'un poste : on y revient
   const { notifier } = useAgent();
   const [fiche, setFiche] = useState(null);
   const [postes, setPostes] = useState([]);
@@ -73,8 +76,8 @@ export default function FicheCandidature() {
 
   return (
     <>
-      <Link to="/candidatures" className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-muted hover:text-navy-900">
-        <ArrowLeft className="size-4" aria-hidden /> Toutes les candidatures
+      <Link to={retour?.chemin || '/candidatures'} className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-muted hover:text-navy-900">
+        <ArrowLeft className="size-4" aria-hidden /> {retour?.libelle || 'Toutes les candidatures'}
       </Link>
 
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
@@ -187,6 +190,13 @@ export default function FicheCandidature() {
         </div>
 
         <div className="flex flex-col gap-6">
+          <CarteDecision
+            decision={fiche.decision}
+            envoi={envoi}
+            onEnregistrer={(decision, note) =>
+              action(() => api.put(`/candidatures/${id}/decision`, { decision, note }), 'Décision enregistrée. Le score et le classement ne changent pas.')
+            }
+          />
           <Carte className="flex flex-col gap-3 text-sm">
             <h2 className="font-semibold text-navy-900">Lu dans le CV</h2>
             {fiche.statut_lecture !== 'lue' ? (
@@ -202,7 +212,7 @@ export default function FicheCandidature() {
                 ))}
                 {fiche.extraction.periodes.length > 0 && (
                   <div>
-                    <p className="mb-1 font-medium text-navy-800">Périodes d'expérience</p>
+                    <p className="mb-1 font-medium text-navy-800">Périodes d'expérience retenues</p>
                     <ul className="flex flex-col gap-1 text-xs text-muted">
                       {fiche.extraction.periodes.map((p, i) => (
                         <li key={i}>
@@ -231,6 +241,53 @@ export default function FicheCandidature() {
         </div>
       </div>
     </>
+  );
+}
+
+function CarteDecision({ decision, envoi, onEnregistrer }) {
+  const [etat, setEtat] = useState(decision.etat);
+  const [note, setNote] = useState(decision.note || '');
+  useEffect(() => {
+    setEtat(decision.etat);
+    setNote(decision.note || '');
+  }, [decision]);
+  const modifiee = etat !== decision.etat || note.trim() !== (decision.note || '');
+
+  return (
+    <Carte className="flex flex-col gap-3 text-sm">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="font-semibold text-navy-900">Décision</h2>
+        <BadgeDecision decision={decision.etat} />
+      </div>
+      <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Décision du recruteur">
+        {Object.entries(DECISIONS).map(([cle, libelle]) => (
+          <button
+            key={cle}
+            type="button"
+            role="radio"
+            aria-checked={etat === cle}
+            onClick={() => setEtat(cle)}
+            className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+              etat === cle ? 'border-navy-900 bg-navy-900 text-white' : 'border-line bg-white text-navy-800 hover:border-navy-200'
+            }`}
+          >
+            {libelle}
+          </button>
+        ))}
+      </div>
+      <Champ label="Note (facultative)">
+        {(a) => (
+          <ZoneTexte {...a} rows={3} maxLength={2000} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Pour vous : impressions, prochaine étape…" />
+        )}
+      </Champ>
+      <Bouton disabled={!modifiee} chargement={envoi} onClick={() => onEnregistrer(etat, note)}>
+        Enregistrer la décision
+      </Bouton>
+      <p className="text-xs text-muted">
+        {decision.le ? `Décision du ${formaterDateHeure(decision.le)}. ` : ''}
+        Modifiable à tout moment ; elle ne change ni le score ni le classement.
+      </p>
+    </Carte>
   );
 }
 

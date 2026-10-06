@@ -19,6 +19,11 @@ class Assignation(BaseModel):
     poste_id: int | None = None
 
 
+class Decision(BaseModel):
+    decision: str
+    note: str | None = None
+
+
 @router.get("/candidatures")
 def lister(
     request: Request,
@@ -52,6 +57,11 @@ def assigner(candidature_id: int, corps: Assignation, request: Request):
     return _service(request).assigner(candidature_id, corps.poste_id)
 
 
+@router.put("/candidatures/{candidature_id}/decision")
+def decider(candidature_id: int, corps: Decision, request: Request):
+    return _service(request).decider(candidature_id, corps.decision, corps.note)
+
+
 @router.post("/candidatures/{candidature_id}/automatique")
 def rendre_automatique(candidature_id: int, request: Request):
     return _service(request).rendre_automatique(candidature_id)
@@ -63,8 +73,8 @@ def relire(candidature_id: int, request: Request):
 
 
 @router.get("/postes/{poste_id}/classement")
-def classement(poste_id: int, request: Request):
-    return _service(request).top(poste_id)
+def classement(poste_id: int, request: Request, decision: str | None = None):
+    return _service(request).top(poste_id, decision)
 
 
 @router.get("/traitement/etat")

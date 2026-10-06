@@ -1,9 +1,11 @@
-"""Candidatures côté recruteur : liste, fiche, choix manuel du poste, top par poste.
+"""Candidatures côté recruteur : liste, fiche, choix manuel du poste, décision, top par poste.
 
-Le score est un indicateur : aucune candidature n'est rejetée ni masquée automatiquement.
+Le score est un indicateur : aucune candidature n'est rejetée ni masquée automatiquement. La décision du recruteur
+(retenu, en attente, écarté) ne modifie ni le score ni le classement ; un candidat écarté reste visible.
 """
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Any
 
 from ..database.repositories import CandidatureRepository, PosteRepository, ScoreRepository
@@ -15,6 +17,8 @@ TAILLE_TOP = 10
 STATUTS_CLASSEMENT = ("a_traiter", "classe", "a_verifier", "non_classe")
 STATUTS_LECTURE = ("en_attente", "lue", "illisible")
 TAILLE_PAGE_MAX = 200
+DECISIONS = ("a_examiner", "retenu", "en_attente", "ecarte")
+LONGUEUR_MAX_NOTE = 2000
 
 
 class CandidaturesService:
@@ -57,11 +61,12 @@ class CandidaturesService:
             "corps": candidature["corps"],
             "pieces_jointes": [{"nom": p["nom"], "chemin": p["chemin"]} for p in candidature["pieces_jointes"] or []],
             "fichier_cv": candidature["fichier_cv"],
+            "decision": self._decision(candidature),
             "extraction": {
                 "periodes": extraction.get("periodes", []),
                 "diplome": extraction.get("diplome"),
                 "section_experience_trouvee": extraction.get("section_experience_trouvee"),
-                "sections": sorted((extraction.get("sections") or {}).keys()),
+                "sections": sorted(extraction.get("sections") or []),  # noms seulement : le texte reste chiffré
             },
             "scores": [
                 {
@@ -92,6 +97,25 @@ class CandidaturesService:
         self.traitement.noter_une(candidature_id)  # score pour ce poste, même s'il n'est pas actif
         return self.consulter(candidature_id)
 
+    def decider(self, candidature_id: int, decision: str, note: str | None = None) -> dict[str, Any]:
+        """Décision du recruteur, modifiable à tout moment. Ne touche ni au score ni au classement."""
+        self._get(candidature_id)
+        erreurs = {}
+        if decision not in DECISIONS:
+            erreurs["decision"] = "Décision inconnue."
+        note = (note or "").strip() or None
+        if note and len(note) > LONGUEUR_MAX_NOTE:
+            erreurs["note"] = f"La note ne doit pas dépasser {LONGUEUR_MAX_NOTE} caractères."
+        if erreurs:
+            raise ErreurValidation(erreurs)
+        self.candidatures.maj(
+            candidature_id,
+            decision=decision,
+            decision_note=coffre.chiffrer_texte(note, self._cle()),
+            decision_le=datetime.now(timezone.utc),
+        )
+        return self.consulter(candidature_id)
+
     def rendre_automatique(self, candidature_id: int) -> dict[str, Any]:
         """Annule le choix manuel : INJARA reclasse la candidature."""
         self._get(candidature_id)
@@ -106,17 +130,31 @@ class CandidaturesService:
         self.traitement.demander(f"relecture de la candidature {candidature_id}")
         return self.consulter(candidature_id)
 
-    def top(self, poste_id: int) -> dict[str, Any]:
+    def top(self, poste_id: int, decision: str | None = None) -> dict[str, Any]:
+        """Les meilleurs profils du poste ; avec `decision`, toutes les candidatures du poste ayant cette décision,
+        chacune à son rang dans le classement complet."""
         poste = self.postes.get(poste_id)
         if poste is None:
             raise Introuvable("Ce poste n'existe pas ou a été supprimé.")
-        lignes = self.scores.top(poste_id, TAILLE_TOP)
+        if decision is not None and decision not in DECISIONS:
+            raise ErreurValidation({"decision": "Décision inconnue."})
+        lignes = self.scores.top(poste_id, TAILLE_TOP, decision)
+        decisions = self.candidatures.compter_decisions(poste_id)
         return {
             "poste_id": poste_id,
             "taille": TAILLE_TOP,
+            "decision": decision,
             "total_rattachees": self.candidatures.compter_par_poste().get(poste_id, 0),
+            "par_decision": {d: decisions.get(d, 0) for d in DECISIONS},
             "elements": [
-                {**_resume(l["candidature"]), "score": l["score"], "pertinence": l["pertinence"], "detail": l["detail"], "adequation_ignoree": l["adequation_ignoree"]}
+                {
+                    **_resume(l["candidature"]),
+                    "rang": l["rang"],
+                    "score": l["score"],
+                    "pertinence": l["pertinence"],
+                    "detail": l["detail"],
+                    "adequation_ignoree": l["adequation_ignoree"],
+                }
                 for l in lignes
             ],
         }
@@ -127,15 +165,26 @@ class CandidaturesService:
     def contenu_cv(self, candidature_id: int) -> tuple[str, bytes]:
         """Nom et contenu en clair du CV, déchiffré en mémoire pour être ouvert par le recruteur."""
         candidature = self._get(candidature_id)
-        cle = self.traitement.cle()
-        if cle is None:
-            raise SessionRequise("Session expirée. Veuillez vous reconnecter.")
+        cle = self._cle()
         try:
             return candidature["nom_fichier_cv"], coffre.lire_fichier(candidature["fichier_cv"], cle)
         except FileNotFoundError as exc:
             raise Introuvable("Fichier introuvable : il a peut-être été déplacé ou supprimé.") from exc
         except coffre.Indechiffrable as exc:
             raise ErreurService("Le fichier chiffré est endommagé : il ne peut pas être ouvert.") from exc
+
+    def _cle(self) -> bytes:
+        cle = self.traitement.cle()
+        if cle is None:
+            raise SessionRequise("Session expirée. Veuillez vous reconnecter.")
+        return cle
+
+    def _decision(self, candidature: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "etat": candidature["decision"],
+            "note": coffre.dechiffrer_texte(candidature["decision_note"], self._cle()),
+            "le": candidature["decision_le"],
+        }
 
     def _get(self, candidature_id: int) -> dict[str, Any]:
         candidature = self.candidatures.get(candidature_id)
@@ -165,4 +214,5 @@ def _resume(c: dict[str, Any]) -> dict[str, Any]:
         "mode_assignation": c.get("mode_assignation"),
         "motif_classement": c.get("motif_classement"),
         "score": c.get("score"),
+        "decision": c.get("decision") or "a_examiner",
     }

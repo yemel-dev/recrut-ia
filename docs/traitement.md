@@ -85,6 +85,14 @@ Les bornes `SIMILARITE_PLANCHER` (0,30) et `SIMILARITE_PLAFOND` (0,70) ont été
 `python -m backend.ia.calibrer` (similarités brutes des CV fictifs pour plusieurs postes) : un CV correspondant au
 poste obtient 0,71 à 0,76, un profil sans rapport 0,09 à 0,38. À recaler sur de vrais CV quand il y en aura.
 
+## Décision du recruteur
+
+Sur la fiche candidat : « à examiner » (par défaut), « retenu », « en attente » ou « écarté », avec une note
+facultative (chiffrée en base) et la date de la décision. Elle se modifie à tout moment et ne change **ni le score ni
+le classement** : un candidat écarté reste visible partout. Dans le classement d'un poste, chaque ligne porte sa
+décision ; le filtre par décision montre toutes les candidatures du poste ayant cette décision, à leur rang d'origine
+(`GET /postes/{id}/classement?decision=retenu`).
+
 ## CV scannés (OCR)
 
 Un PDF sans couche texte passe par RapidOCR (modèles PP-OCRv6 multilingues, fournis avec le paquet `rapidocr`, sur
