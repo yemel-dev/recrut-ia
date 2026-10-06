@@ -27,6 +27,7 @@ class CVMetadata(BaseModel):
     sha256: str
     downloaded_at: datetime
     source: Literal["email", "upload"] = "email"  # d'où vient le CV
+    body_excerpt: str = ""  # début du texte du mail (vide pour un import manuel)
 
 
 class SkippedAttachment(BaseModel):

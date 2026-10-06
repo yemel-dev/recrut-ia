@@ -14,7 +14,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Callable, Protocol
 
-from .parsing import detect_automatic, parse_sender
+from .parsing import body_excerpt, detect_automatic, parse_sender
 
 SUPPORTED_EXTENSIONS = {".pdf", ".docx"}
 GMAIL_QUERY = "has:attachment (filename:pdf OR filename:docx) -in:trash"
@@ -38,6 +38,7 @@ class RawMessage:
     unread: bool = True
     automatic_reason: str | None = None  # rempli si l'email est automatique (newsletter, notification...)
     folder: str = "INBOX"
+    body_excerpt: str = ""  # début du texte du mail (sert à repérer le poste visé)
 
 
 class MailClient(Protocol):
@@ -167,6 +168,11 @@ class GmailApiClient:
                     RawAttachment(body["attachmentId"], filename, part.get("mimeType", ""), body.get("size", 0))
                 )
         received = datetime.fromtimestamp(int(message["internalDate"]) / 1000, tz=timezone.utc)
+        textes = {"text/plain": "", "text/html": ""}
+        for part in cls._walk(payload):
+            data = (part.get("body") or {}).get("data")
+            if data and not part.get("filename") and part.get("mimeType") in textes and not textes[part["mimeType"]]:
+                textes[part["mimeType"]] = base64.urlsafe_b64decode(data + "=" * (-len(data) % 4)).decode("utf-8", "replace")
         return RawMessage(
             id=message["id"],
             sender=headers.get("from", ""),
@@ -175,6 +181,7 @@ class GmailApiClient:
             attachments=attachments,
             unread="UNREAD" in message.get("labelIds", []),
             automatic_reason=detect_automatic(headers, parse_sender(headers.get("from", ""))[1]),
+            body_excerpt=body_excerpt(textes["text/plain"], textes["text/html"]),
         )
 
 
@@ -225,6 +232,7 @@ class FakeMailClient:
         unread: bool = True,
         automatic_reason: str | None = None,
         folder: str = "INBOX",
+        body: str = "",
     ) -> RawMessage:
         message_id = message_id or uuid.uuid4().hex[:16]
         raws = []
@@ -232,7 +240,7 @@ class FakeMailClient:
             attachment_id = f"att{index}-{message_id}"
             self._blobs[(message_id, attachment_id)] = content
             raws.append(RawAttachment(attachment_id, filename, "", len(content)))
-        message = RawMessage(message_id, sender, subject, received_at or datetime.now(timezone.utc), raws, unread, automatic_reason, folder)
+        message = RawMessage(message_id, sender, subject, received_at or datetime.now(timezone.utc), raws, unread, automatic_reason, folder, body_excerpt(body))
         self._messages[message_id] = message
         return message
 

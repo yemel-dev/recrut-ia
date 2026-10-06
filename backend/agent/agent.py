@@ -393,6 +393,7 @@ class GmailAgent:
             sender_name=name,
             sender_email=address,
             subject=message.subject,
+            body_excerpt=message.body_excerpt,
             received_at=message.received_at,
             size_bytes=len(data),
             sha256=digest,

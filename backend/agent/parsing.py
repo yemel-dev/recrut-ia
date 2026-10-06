@@ -77,3 +77,15 @@ def sender_matches(rule: str, address: str) -> bool:
         return address == rule
     domain = address.rsplit("@", 1)[-1]
     return domain == rule or domain.endswith("." + rule)
+
+
+BODY_EXCERPT_MAX = 2000
+_TAG = re.compile(r"<(script|style)\b.*?</\1>|<[^>]+>", re.IGNORECASE | re.DOTALL)
+
+
+def body_excerpt(text: str = "", html: str = "") -> str:
+    """Début lisible du corps d'un email (texte brut, ou HTML débarrassé de ses balises)."""
+    import html as html_lib
+
+    source = text or html_lib.unescape(_TAG.sub(" ", html or ""))
+    return " ".join(source.split())[:BODY_EXCERPT_MAX]

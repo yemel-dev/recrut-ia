@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Callable
 
 from .client import SUPPORTED_EXTENSIONS, RawAttachment, RawMessage
-from .parsing import detect_automatic, parse_sender
+from .parsing import body_excerpt, detect_automatic, parse_sender
 from .errors import ImapAuthError, ImapConnectionError
 
 log = logging.getLogger("injara.gmail")
@@ -227,7 +227,20 @@ class ImapMailClient:
             received = datetime.now(timezone.utc)
         sender = str(msg["From"] or "")
         automatic = detect_automatic({k: str(v) for k, v in msg.items()}, parse_sender(sender)[1])
-        return RawMessage(message_id, sender, str(msg["Subject"] or ""), received, attachments, automatic_reason=automatic, folder=self._current_folder)
+        texte, html = "", ""
+        try:
+            corps = msg.get_body(preferencelist=("plain", "html"))
+            if corps is not None:
+                if corps.get_content_type() == "text/plain":
+                    texte = corps.get_content()
+                else:
+                    html = corps.get_content()
+        except Exception:  # corps mal encodé : on garde l'email, sans extrait
+            pass
+        return RawMessage(
+            message_id, sender, str(msg["Subject"] or ""), received, attachments,
+            automatic_reason=automatic, folder=self._current_folder, body_excerpt=body_excerpt(texte, html),
+        )
 
     # ---------------------------------------------------------------- audit
     def audit_recent(self, since: datetime, limit: int = 30) -> dict:
