@@ -10,3 +10,5 @@ python-multipart>=0.0.9   # import de CV par l'agent (multipart)
 keyring>=25.0             # agent : mot de passe IMAP dans le coffre du système
 google-auth-oauthlib>=1.2 # agent : Gmail OAuth2 (mode real)
 google-api-python-client>=2.130
+pypdf>=5.0                # lecture des CV PDF (licence BSD ; PyMuPDF écarté car AGPL)
+python-docx>=1.1          # lecture des CV DOCX

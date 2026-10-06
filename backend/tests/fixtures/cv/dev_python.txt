@@ -1,0 +1,31 @@
+Awa NDONG
+Développeuse Python
+awa.ndong@example.cm | +237 6 99 12 34 56 | Douala
+
+PROFIL
+Développeuse backend, 3 ans d'expérience sur des API web et des bases de données.
+
+EXPÉRIENCE PROFESSIONNELLE
+Développeuse Python — Orange Digital Center, Douala
+Février 2025 – Présent
+- Conception d'API REST avec Django REST Framework et PostgreSQL
+- Mise en production avec Docker
+Développeuse web — Kribi Tech, Yaoundé
+Septembre 2021 – Février 2023
+- Applications React et Node.js, intégration continue
+Stagiaire développeur — Banque Atlantique
+Juin 2020 – Août 2020
+- Scripts Python d'automatisation
+
+FORMATION
+Master en Génie Logiciel — Université de Douala
+2019 – 2021
+Licence en Informatique — Université de Dschang
+2016 – 2019
+Baccalauréat C — Lycée de New-Bell, 2016
+
+COMPÉTENCES
+Python, Django REST Framework, Postgres, Docker, Git, JS, SQL
+
+LANGUES
+Français, Anglais

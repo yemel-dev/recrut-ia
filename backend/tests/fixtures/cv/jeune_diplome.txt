@@ -1,0 +1,16 @@
+Brice KAMGA
+brice.kamga@example.cm
++237 6 70 11 22 33
+
+FORMATION
+Diplôme d'Ingénieur de conception en Génie Informatique — ENSPY Yaoundé
+Septembre 2019 – Juillet 2024
+Baccalauréat D — Lycée Leclerc, 2019
+
+STAGES
+Développeur Java — MTN Cameroon
+Février 2024 – Juillet 2024
+Développement d'un module de facturation en Java et Spring Boot.
+
+COMPÉTENCES
+Java, Spring Boot, Python, Linux, Anglais
