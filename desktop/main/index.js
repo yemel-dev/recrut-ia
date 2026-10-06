@@ -72,7 +72,7 @@ async function demarrer() {
     app.exit(1);
     return;
   }
-  installerPontApi({ backend, origineAutorisee });
+  installerPontApi({ backend, origineAutorisee, dossierCV: path.join(dataDir, 'cvs'), fenetre: () => fenetre });
   creerFenetre();
 }
 
