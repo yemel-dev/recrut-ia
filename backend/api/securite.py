@@ -12,7 +12,7 @@ from fastapi import Depends, Request
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from ..services.auth import AuthService, Session
-from ..services.erreurs import NonAutorise
+from ..services.erreurs import SessionRequise
 
 EN_TETE_JETON = "x-injara-token"
 EN_TETE_SESSION = "X-Injara-Session"
@@ -49,5 +49,5 @@ def service_auth(request: Request) -> AuthService:
 def session_requise(request: Request, auth: AuthService = Depends(service_auth)) -> Session:
     session = auth.session_valide(request.headers.get(EN_TETE_SESSION))
     if session is None:
-        raise NonAutorise("Vous devez être connecté.")
+        raise SessionRequise("Vous devez être connecté.")
     return session

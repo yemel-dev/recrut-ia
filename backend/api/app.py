@@ -15,7 +15,7 @@ from ..services.auth import AuthService
 from ..services.entreprise import EntrepriseService
 from ..services.postes import PostesService
 from ..services.tableau_de_bord import TableauDeBordService
-from ..services.erreurs import Conflit, ErreurService, ErreurValidation, Introuvable, NonAutorise
+from ..services.erreurs import Conflit, ErreurService, ErreurValidation, Introuvable, NonAutorise, SessionRequise
 from . import routes_agent, routes_auth, routes_metier
 from .securite import JetonDeLancementMiddleware
 
@@ -63,7 +63,7 @@ def create_app(settings: Settings) -> FastAPI:
     return app
 
 
-_STATUTS = {ErreurValidation: 422, NonAutorise: 401, Introuvable: 404, Conflit: 409}
+_STATUTS = {ErreurValidation: 422, NonAutorise: 401, SessionRequise: 401, Introuvable: 404, Conflit: 409}
 
 
 def _gestionnaires_erreurs(app: FastAPI) -> None:
@@ -72,6 +72,8 @@ def _gestionnaires_erreurs(app: FastAPI) -> None:
         corps: dict = {"detail": exc.message}
         if isinstance(exc, ErreurValidation):
             corps["champs"] = exc.champs
+        if isinstance(exc, SessionRequise):
+            corps["code"] = "session_requise"  # seul ce 401 signifie « session perdue »
         return JSONResponse(corps, status_code=_STATUTS.get(type(exc), 400))
 
     @app.exception_handler(RequestValidationError)

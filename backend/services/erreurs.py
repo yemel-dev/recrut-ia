@@ -20,6 +20,13 @@ class NonAutorise(ErreurService):
     pass
 
 
+class SessionRequise(NonAutorise):
+    """Aucune session valide : l'interface doit revenir à l'écran de connexion.
+
+    Distincte des autres 401 (ex. : identifiants de messagerie refusés), qui ne doivent pas déconnecter.
+    """
+
+
 class Introuvable(ErreurService):
     pass
 

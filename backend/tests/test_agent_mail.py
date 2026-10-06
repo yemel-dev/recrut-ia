@@ -178,3 +178,18 @@ def test_identifiants_google_partages_en_developpement(tmp_path, monkeypatch):
 def test_jeton_session_requis_meme_avec_jeton_de_lancement(app, cle_recuperation):
     client = TestClient(app, headers={"X-Injara-Token": JETON, "X-Injara-Session": "invente"})
     assert client.get("/gmail/status").status_code == 401
+
+
+# --- 401 de session et 401 de messagerie ---------------------------------------------------------
+
+
+def test_un_401_de_session_porte_un_code(client, cle_recuperation):
+    assert client.get("/gmail/status").json()["code"] == "session_requise"
+
+
+def test_mot_de_passe_de_messagerie_refuse_ne_ferme_pas_la_session(connecte):
+    """Régression : un 401 de l'agent (identifiants IMAP refusés) ne doit pas être pris pour une session perdue."""
+    reponse = connecte.post("/gmail/connect/imap", json={"email": "rh@exemple.cm", "password": "mauvais", "host": "imap.exemple.cm"})
+    assert reponse.status_code == 401
+    assert "code" not in reponse.json()
+    assert connecte.get("/auth/etat").json()["connecte"] is True

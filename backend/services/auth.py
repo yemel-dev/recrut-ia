@@ -14,7 +14,7 @@ from argon2.exceptions import InvalidHashError, VerificationError
 from ..config import KdfParams
 from ..database.repositories import CompteRepository
 from . import cles
-from .erreurs import Conflit, ErreurValidation, NonAutorise
+from .erreurs import Conflit, ErreurValidation, NonAutorise, SessionRequise
 from .validation import email_valide
 
 LONGUEUR_MIN_MOT_DE_PASSE = 12
@@ -81,7 +81,7 @@ class AuthService:
         """Clé de données de la session en cours (pour le futur chiffrement des CV)."""
         session = self.session_valide(jeton)
         if session is None:
-            raise NonAutorise("Session expirée. Veuillez vous reconnecter.")
+            raise SessionRequise("Session expirée. Veuillez vous reconnecter.")
         return session.cle_de_donnees
 
     # --- Création du compte ---------------------------------------------------
