@@ -133,3 +133,38 @@ def test_api_returns_409_when_not_connected(tmp_path):
     app.include_router(router)
     assert TestClient(app).post("/gmail/sync").status_code == 409
     set_agent(None)
+
+
+# --- Extrait du corps du mail (ajout INJARA) ---------------------------------------------
+
+
+def test_extrait_du_corps_texte_et_html():
+    from backend.agent.parsing import BODY_EXCERPT_MAX, body_excerpt
+
+    assert body_excerpt("Bonjour,\n\n  je postule   au poste DEV-12.") == "Bonjour, je postule au poste DEV-12."
+    assert body_excerpt("", "<p>Poste&nbsp;<b>Comptable</b></p><style>p{}</style>") == "Poste Comptable"
+    assert len(body_excerpt("x " * 5000)) == BODY_EXCERPT_MAX
+
+
+def test_extrait_du_corps_gmail():
+    import base64
+
+    from backend.agent.client import GmailApiClient
+
+    corps = base64.urlsafe_b64encode("Je postule au poste de comptable.".encode()).decode().rstrip("=")
+    message = {
+        "id": "m1", "internalDate": "1700000000000", "labelIds": [],
+        "payload": {"headers": [{"name": "From", "value": "A <a@b.cm>"}, {"name": "Subject", "value": "CV"}], "parts": [
+            {"mimeType": "text/plain", "body": {"data": corps}},
+            {"filename": "cv.pdf", "mimeType": "application/pdf", "body": {"attachmentId": "x", "size": 10}},
+        ]},
+    }
+    assert GmailApiClient._to_raw(message).body_excerpt == "Je postule au poste de comptable."
+
+
+def test_extrait_du_corps_conserve_dans_le_registre(tmp_path):
+    client = FakeMailClient()
+    client.add_message("Awa <awa@x.cm>", "Candidature", [("cv.pdf", fake_cv_bytes("Awa"))], body="Poste visé : DEV-12")
+    agent = GmailAgent(ledger=Ledger(tmp_path / "l.db"), cv_dir=tmp_path / "cvs", mode="fake", client=client)
+    agent.sync_once()
+    assert agent.ledger.list_cvs()[0].body_excerpt == "Poste visé : DEV-12"
