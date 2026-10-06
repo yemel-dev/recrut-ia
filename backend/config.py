@@ -2,6 +2,9 @@
 
 Electron fournit INJARA_TOKEN (jeton de lancement) et INJARA_DATA_DIR (dossier des données de l'utilisateur).
 En développement sans Electron, les données vont dans ./data à la racine du dépôt.
+
+GMAIL_MODE (variable d'environnement ou fichier .env à la racine) choisit le mode de l'agent mail :
+« real » par défaut (vraie boîte mail), « fake » pour une boîte de démonstration.
 """
 from __future__ import annotations
 
@@ -26,6 +29,7 @@ class Settings:
     data_dir: Path
     token: str
     kdf: KdfParams = KdfParams()
+    mode_agent: str = "real"
 
     @property
     def database_url(self) -> str:
@@ -36,5 +40,12 @@ MIN_TOKEN_LENGTH = 32
 
 
 def load_settings() -> Settings:
+    try:
+        from dotenv import load_dotenv
+
+        load_dotenv(ROOT_DIR / ".env")  # n'écrase pas les variables déjà définies
+    except ImportError:
+        pass
     data_dir = Path(os.getenv("INJARA_DATA_DIR") or ROOT_DIR / "data")
-    return Settings(data_dir=data_dir, token=os.getenv("INJARA_TOKEN", ""))
+    mode_agent = os.getenv("GMAIL_MODE", "real").strip().lower()
+    return Settings(data_dir=data_dir, token=os.getenv("INJARA_TOKEN", ""), mode_agent=mode_agent)

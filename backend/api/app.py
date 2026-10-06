@@ -9,13 +9,14 @@ from fastapi.responses import JSONResponse
 
 from ..config import MIN_TOKEN_LENGTH, Settings
 from ..database.db import Database
-from ..database.repositories import CompteRepository, EntrepriseRepository, PosteRepository
+from ..database.repositories import CompteRepository, EntrepriseRepository, ParametreRepository, PosteRepository
+from ..services.agent_mail import AgentMailService
 from ..services.auth import AuthService
 from ..services.entreprise import EntrepriseService
 from ..services.postes import PostesService
 from ..services.tableau_de_bord import TableauDeBordService
 from ..services.erreurs import Conflit, ErreurService, ErreurValidation, Introuvable, NonAutorise
-from . import routes_auth, routes_metier
+from . import routes_agent, routes_auth, routes_metier
 from .securite import JetonDeLancementMiddleware
 
 
@@ -25,16 +26,22 @@ class Services:
     entreprise: EntrepriseService
     postes: PostesService
     tableau_de_bord: TableauDeBordService
+    agent_mail: AgentMailService
 
 
 def construire_services(db: Database, settings: Settings) -> Services:
     entreprise = EntrepriseService(EntrepriseRepository(db))
     postes = PostesService(PosteRepository(db))
+    auth = AuthService(CompteRepository(db), settings.kdf)
+    agent_mail = AgentMailService(settings.data_dir, settings.mode_agent, ParametreRepository(db))
+    auth.a_la_connexion.append(agent_mail.session_ouverte)
+    auth.a_la_deconnexion.append(agent_mail.session_fermee)
     return Services(
-        auth=AuthService(CompteRepository(db), settings.kdf),
+        auth=auth,
         entreprise=entreprise,
         postes=postes,
         tableau_de_bord=TableauDeBordService(entreprise, postes),
+        agent_mail=agent_mail,
     )
 
 
@@ -52,6 +59,7 @@ def create_app(settings: Settings) -> FastAPI:
 
     app.include_router(routes_auth.router)
     app.include_router(routes_metier.router)
+    routes_agent.monter(app)
     return app
 
 
@@ -72,5 +80,11 @@ def _gestionnaires_erreurs(app: FastAPI) -> None:
         for erreur in exc.errors():
             emplacement = [str(p) for p in erreur.get("loc", ()) if p not in ("body", "query", "path")]
             champ = emplacement[0] if emplacement else "requete"
-            champs.setdefault(champ, "Champ obligatoire." if erreur.get("type") == "missing" else "Valeur invalide.")
+            if erreur.get("type") == "missing":
+                message = "Champ obligatoire."
+            elif erreur.get("type") == "value_error":  # message rédigé par un validateur (ex. : agent mail)
+                message = str(erreur.get("msg", "")).removeprefix("Value error, ") or "Valeur invalide."
+            else:
+                message = "Valeur invalide."
+            champs.setdefault(champ, message)
         return JSONResponse({"detail": "Certains champs sont invalides.", "champs": champs}, status_code=422)

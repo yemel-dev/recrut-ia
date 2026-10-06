@@ -16,13 +16,14 @@ KDF_RAPIDE = KdfParams(time_cost=1, memory_cost_kib=8 * 1024, parallelism=1)
 
 @pytest.fixture
 def settings(tmp_path) -> Settings:
-    return Settings(data_dir=tmp_path / "data", token=JETON, kdf=KDF_RAPIDE)
+    return Settings(data_dir=tmp_path / "data", token=JETON, kdf=KDF_RAPIDE, mode_agent="fake")
 
 
 @pytest.fixture
 def app(settings):
     app = create_app(settings)
     yield app
+    app.state.services.agent_mail.arreter()
     app.state.db.close()
 
 

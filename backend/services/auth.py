@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import hmac
 import secrets
+import logging
 import threading
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from argon2 import PasswordHasher
@@ -18,6 +20,8 @@ from .validation import email_valide
 LONGUEUR_MIN_MOT_DE_PASSE = 12
 LONGUEUR_MAX_MOT_DE_PASSE = 256
 _IDENTIFIANTS_INCORRECTS = "Email ou mot de passe incorrect."
+
+log = logging.getLogger("injara.auth")
 
 
 @dataclass
@@ -58,6 +62,9 @@ class AuthService:
         )
         self._session: Session | None = None
         self._lock = threading.Lock()
+        # Autres services prévenus quand une session s'ouvre ou se ferme (ex. : l'agent mail).
+        self.a_la_connexion: list[Callable[[], None]] = []
+        self.a_la_deconnexion: list[Callable[[], None]] = []
 
     # --- État -----------------------------------------------------------------
 
@@ -123,11 +130,15 @@ class AuthService:
 
         if self._hasher.check_needs_rehash(compte["mot_de_passe_hash"]):
             self.comptes.update(mot_de_passe_hash=self._hasher.hash(mot_de_passe))
-        return self._ouvrir_session(compte["email"], cle_de_donnees)
+        resultat = self._ouvrir_session(compte["email"], cle_de_donnees)
+        self._prevenir(self.a_la_connexion)
+        return resultat
 
     def deconnecter(self) -> None:
         with self._lock:
-            self._session = None
+            ouverte, self._session = self._session is not None, None
+        if ouverte:
+            self._prevenir(self.a_la_deconnexion)
 
     # --- Mot de passe oublié ------------------------------------------------------
 
@@ -152,7 +163,9 @@ class AuthService:
                 mot_de_passe_hash=self._hasher.hash(nouveau_mot_de_passe),
                 **self._protections(cle_de_donnees, nouveau_mot_de_passe, nouvelle_cle),
             )
-            self._session = None
+            ouverte, self._session = self._session is not None, None
+        if ouverte:
+            self._prevenir(self.a_la_deconnexion)
         return ResultatRecuperation(nouvelle_cle_de_recuperation=nouvelle_cle)
 
     # --- Interne ------------------------------------------------------------------
@@ -169,6 +182,14 @@ class AuthService:
                 cle_de_donnees, cles.cle_depuis_recuperation(cle_de_recuperation, sel_recup)
             ),
         }
+
+    @staticmethod
+    def _prevenir(abonnes: list[Callable[[], None]]) -> None:
+        for abonne in abonnes:
+            try:
+                abonne()
+            except Exception:
+                log.exception("Un service n'a pas pu traiter l'ouverture ou la fermeture de session")
 
     def _verifier(self, hash_: str, mot_de_passe: str) -> bool:
         try:

@@ -6,7 +6,7 @@ from typing import Any
 from sqlalchemy import func, select
 
 from .db import Database
-from .models import Compte, Entreprise, Poste
+from .models import Compte, Entreprise, Parametre, Poste
 
 
 def _as_dict(row: Any) -> dict[str, Any]:
@@ -108,3 +108,21 @@ class PosteRepository:
         with self.db.session() as s:
             rows = s.execute(select(Poste.statut, func.count()).group_by(Poste.statut))
             return {statut: total for statut, total in rows}
+
+
+class ParametreRepository:
+    def __init__(self, db: Database) -> None:
+        self.db = db
+
+    def get(self, cle: str) -> str | None:
+        with self.db.session() as s:
+            parametre = s.get(Parametre, cle)
+            return parametre.valeur if parametre else None
+
+    def set(self, cle: str, valeur: str) -> None:
+        with self.db.session() as s:
+            parametre = s.get(Parametre, cle)
+            if parametre is None:
+                s.add(Parametre(cle=cle, valeur=valeur))
+            else:
+                parametre.valeur = valeur

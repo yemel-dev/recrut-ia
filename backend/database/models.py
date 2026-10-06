@@ -67,6 +67,15 @@ class Entreprise(Base):
     modifie_le: Mapped[datetime] = mapped_column(DateHeureUTC, default=_now, onupdate=_now)
 
 
+class Parametre(Base):
+    """Préférences de l'application (clé / valeur), par exemple la surveillance automatique de la boîte mail."""
+
+    __tablename__ = "parametres"
+
+    cle: Mapped[str] = mapped_column(String(100), primary_key=True)
+    valeur: Mapped[str] = mapped_column(Text, nullable=False)
+
+
 class Poste(Base):
     """Profil de poste créé par l'entreprise. Seuls les postes « actif » serviront au classement."""
 
