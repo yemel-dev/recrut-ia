@@ -4,7 +4,7 @@
 // ici, section par section, puis imprimé en PDF par webContents.printToPDF dans une fenêtre cachée : JavaScript
 // désactivé, aucune navigation, CSP stricte, toutes les valeurs échappées. Aucune bibliothèque PDF.
 //
-// Pour ajouter une section (ex. : « Entretien »), écrire une fonction (donnees) => HTML et l'ajouter à SECTIONS ;
+// Pour ajouter une section, écrire une fonction (donnees) => HTML et l'ajouter à SECTIONS ;
 // une section qui renvoie une chaîne vide n'est pas affichée.
 
 const { BrowserWindow } = require('electron');
@@ -25,6 +25,12 @@ function duree(mois) {
   const reste = mois % 12;
   if (!ans) return `${reste} mois`;
   return `${ans} an${ans > 1 ? 's' : ''}${reste ? ` ${reste} mois` : ''}`;
+}
+
+/** Une durée en minutes : « 40 min », « 1 h 05 ». (`duree` ci-dessus compte en mois, pour l'expérience.) */
+function minutes(n) {
+  if (n === null || n === undefined) return '';
+  return n < 60 ? `${Math.max(1, n)} min` : `${Math.floor(n / 60)} h ${String(n % 60).padStart(2, '0')}`;
 }
 
 const section = (titre, contenu) => `<section><h2>${esc(titre)}</h2>${contenu}</section>`;
@@ -137,16 +143,65 @@ function decision(d) {
   );
 }
 
+const note = (valeur) => (valeur === null || valeur === undefined ? '<span class="discret">non évalué</span>' : `<strong>${Math.round(valeur)}</strong> / 100`);
+
 function entretien(d) {
-  if (!d.entretien) return ''; // module entretien à venir : rien tant qu'il n'y a pas d'entretien
-  return section('Entretien', `<p>${esc(d.entretien.resume || '')}</p>`);
+  const e = d.entretien;
+  if (!e) return ''; // pas d'entretien terminé : rien dans le rapport
+  const r = e.regard;
+  const comportement = r.calcule
+    ? `<table>
+        ${ligne('Face à l\'écran', `${esc(r.part_attentif)} % du temps observé`)}
+        ${ligne('Regard détourné', `${esc(r.part_regard_detourne)} %`)}
+        ${ligne('Visage absent', `${esc(r.part_visage_absent)} %`)}
+        ${ligne('Plusieurs visages', `${esc(r.part_plusieurs_visages)} %`)}
+        ${ligne('Mouvements de la tête', `${esc(r.agitation_tete_deg_par_min)} °/min`)}
+        ${ligne('Observation', `${esc(minutes(Math.round(r.duree_observee_s / 60)))}${r.calibre ? '' : ' · posture de référence non établie'}`)}
+      </table>`
+    : '<p class="discret">Regard non analysé (le candidat n\'a pas consenti, ou aucune image n\'a pu être analysée).</p>';
+  const v = e.vigilance;
+  const horsRegard = e.signaux.filter((x) => !x.regard);
+  const signaux = (liste) =>
+    liste.length
+      ? `<ul>${liste
+          .map((x) => `<li>${esc(x.a || '—')} · ${esc(x.libelle)}${x.duree_s != null ? ` pendant ${esc(x.duree_s)} s` : ''}${x.raison ? ` (${esc(x.raison)})` : ''}</li>`)
+          .join('')}</ul>`
+      : '<p class="discret">Aucun.</p>';
+  return section(
+    'Entretien vidéo',
+    `<table>
+      ${ligne('Déroulement', `${esc(date(e.debut_le, true))}${e.duree_min !== null ? ` · ${esc(minutes(e.duree_min))}` : ''}`)}
+      ${ligne('Enregistrement', e.enregistre ? 'Oui, conservé chiffré sur l\'ordinateur du recruteur' : 'Non enregistré')}
+      ${ligne('Score d\'entretien', note(e.scores.entretien))}
+      ${ligne('Regard (30 %)', note(e.scores.regard))}
+      ${ligne('Contenu (40 %)', note(e.scores.contenu))}
+      ${ligne('Confiance (30 %)', note(e.scores.confiance))}
+    </table>
+    ${e.resume ? `<h3>Résumé</h3><p>${esc(e.resume).replace(/\n/g, '<br>')}</p>` : ''}
+    <h3>Comportement : regard et mouvements de tête</h3>
+    ${comportement}
+    ${e.signaux.some((x) => x.regard) ? `<h3>Événements relevés par l'analyse du regard</h3>${signaux(e.signaux.filter((x) => x.regard))}` : ''}
+    <h3>Vigilance</h3>
+    <table>
+      ${ligne('Consignes', v.consignes_acceptees_le ? `Le candidat s'est engagé à les respecter (${esc(date(v.consignes_acceptees_le, true))})` : 'Engagement non enregistré')}
+      ${ligne('Consentement', v.consentement ? 'Donné : enregistrement, analyse et sous-titres' : 'Non donné : ni enregistrement, ni analyse')}
+    </table>
+    ${v.consentement ? `<p>Signalements de la page du candidat :</p>${signaux(horsRegard)}` : ''}
+    <p class="avertissement">${esc(e.mention)}</p>`,
+  );
+}
+
+function transcription(d) {
+  const t = d.entretien?.transcription;
+  if (!t) return '';
+  return `<section class="annexe"><h2>Annexe : transcription de l'entretien</h2><pre>${esc(t)}</pre></section>`;
 }
 
 function mention(d) {
   return `<footer>${esc(d.mention)}</footer>`;
 }
 
-const SECTIONS = [entete, candidat, score, profil, potentiel, decision, entretien, mention];
+const SECTIONS = [entete, candidat, score, profil, potentiel, decision, entretien, transcription, mention];
 
 // --- Gabarit ------------------------------------------------------------------------------------------------------
 
@@ -166,6 +221,8 @@ const STYLE = `
   .pastille span { font-size: 7pt; font-weight: 400; margin-top: 2px; }
   .pastille.vide { background: ${COULEURS.line}; color: ${COULEURS.muted}; }
   section { margin-top: 12px; break-inside: avoid; }
+  section.annexe { break-inside: auto; break-before: page; }
+  pre { white-space: pre-wrap; font-family: inherit; font-size: 9pt; line-height: 1.5; margin: 0; }
   table { width: 100%; border-collapse: collapse; }
   th { text-align: left; font-weight: 600; width: 32%; padding: 2px 8px 2px 0; vertical-align: top; }
   td { padding: 2px 0; vertical-align: top; }

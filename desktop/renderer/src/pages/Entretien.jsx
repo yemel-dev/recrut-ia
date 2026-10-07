@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, Circle, Copy, Download, Captions, Eye, Globe, Mic, Power, ShieldAlert, Video, VideoOff } from 'lucide-react';
+import { ArrowLeft, FileDown, Check, Circle, Copy, Download, Captions, Eye, Globe, Mic, Power, ShieldAlert, Video, VideoOff } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../api.js';
@@ -99,8 +99,9 @@ export default function Entretien() {
     setErreur('');
     try {
       const e = await api.put(`/entretiens/${entretienId}/statut`, { statut: 'en_cours' });
-      setEntretien(e);
-      const courant = (await charger()) || e; // consentement le plus récent
+      const complet = await charger();
+      if (!complet) setEntretien((prev) => ({ ...prev, ...e })); // relecture impossible : au moins le nouveau statut, sans perdre les alertes
+      const courant = complet || e; // la fiche complète (alertes, consentement le plus récent) remplace la réponse du statut
       if (courant.consentement_enregistrement) {
         demarrerRegard();
         demarrerSousTitres();
@@ -154,6 +155,21 @@ export default function Entretien() {
       setErreur(err.message);
     } finally {
       setOccupe(false);
+    }
+  };
+
+  const [rapportEnCours, setRapportEnCours] = useState(false);
+  const exporterRapport = async () => {
+    setErreur('');
+    setRapportEnCours(true);
+    try {
+      const resultat = await window.injara.fichiers.exporterRapport(entretien.candidature_id);
+      if (resultat.ok) notifier(`Rapport enregistré : ${resultat.chemin}`, 'succes');
+      else if (!resultat.annule) setErreur(resultat.message);
+    } catch (err) {
+      setErreur(err.message);
+    } finally {
+      setRapportEnCours(false);
     }
   };
 
@@ -238,6 +254,13 @@ export default function Entretien() {
           {enCours && <CarteRegard regard={regard} consentement={entretien.consentement_enregistrement} />}
           {(enCours || entretien.statut === 'termine') && <CarteVigilance entretien={entretien} />}
           {enCours && <CarteSousTitres sousTitres={sousTitres} consentement={entretien.consentement_enregistrement} />}
+          {entretien.statut === 'termine' && (
+            <Carte className="flex flex-col gap-3 text-sm">
+              <h2 className="font-semibold text-navy-900">Rapport</h2>
+              <p className="text-muted">Le rapport PDF du candidat reprend son CV, ce bilan d'entretien (regard, vigilance) et la transcription.</p>
+              <div><Bouton icone={FileDown} chargement={rapportEnCours} onClick={exporterRapport}>Exporter le rapport (PDF)</Bouton></div>
+            </Carte>
+          )}
           {entretien.statut === 'termine' && <CarteBilanRegard entretien={entretien} />}
           {entretien.statut === 'termine' && <CarteTranscription entretien={entretien} />}
 
@@ -384,7 +407,7 @@ function CarteRegard({ regard, consentement }) {
 
 function CarteBilanRegard({ entretien }) {
   const b = entretien.bilan_regard;
-  const alertes = entretien.alertes.filter((a) => LIBELLES_ALERTE[a.type]);
+  const alertes = (entretien.alertes ?? []).filter((a) => LIBELLES_ALERTE[a.type]);
   return (
     <Carte className="flex flex-col gap-3 text-sm">
       <h2 className="flex items-center gap-2 font-semibold text-navy-900"><Eye className="size-4" aria-hidden /> Regard et mouvements de tête</h2>
@@ -467,7 +490,7 @@ const RAISONS = { onglet_masque: 'autre onglet ou fenêtre réduite', fenetre_in
 
 /** Ce que la page du candidat a signalé. Une page web ne voit pas les autres programmes : ce sont des indices, pas des preuves. */
 function CarteVigilance({ entretien }) {
-  const signaux = entretien.alertes.filter((a) => SIGNAUX_PAGE[a.type]);
+  const signaux = (entretien.alertes ?? []).filter((a) => SIGNAUX_PAGE[a.type]);
   return (
     <Carte className="flex flex-col gap-3 text-sm">
       <h2 className="flex items-center gap-2 font-semibold text-navy-900"><ShieldAlert className="size-4" aria-hidden /> Vigilance</h2>

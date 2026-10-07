@@ -5,14 +5,15 @@ les données déjà calculées (extraction, score, potentiel, décision). Rien n
 
 Le rapport porte sur le poste assigné à la candidature ; sans poste assigné, sur le poste où elle obtient le meilleur
 score, et le rapport le précise. Ce qui n'a pas été calculé (adéquation, potentiel, score) est indiqué explicitement.
-La section « entretien » vaut None tant qu'il n'y a pas d'entretien : le gabarit ne l'affiche pas.
+La section « entretien » porte sur le dernier entretien terminé ; elle vaut None sans entretien terminé et le gabarit ne l'affiche pas.
+Elle reprend ce que les modules d'entretien ont déjà calculé (regard, vigilance, transcription) : rien n'est recalculé.
 """
 from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any
 
-from ..database.repositories import CandidatureRepository, EntrepriseRepository, PosteRepository, ScoreRepository
+from ..database.repositories import CandidatureRepository, EntrepriseRepository, EntretienRepository, PosteRepository, ScoreRepository
 from . import coffre
 from .erreurs import Introuvable, SessionRequise
 
@@ -25,6 +26,22 @@ NOMS_CRITERES = {
 }
 NOMS_DECISIONS = {"a_examiner": "À examiner", "retenu": "Retenu", "en_attente": "En attente", "ecarte": "Écarté"}
 MODES = {"reference": "Poste cité dans le mail", "automatique": "Classement automatique", "manuel": "Choix du recruteur"}
+MENTION_ENTRETIEN = (
+    "Le regard et la vigilance sont des indicateurs : ils signalent, ils ne prouvent rien (réfléchir, lire une notification "
+    "ou changer de fenêtre un instant n'a rien d'anormal). Ils ne modifient ni le score du CV ni la décision."
+)
+SIGNAUX = {
+    "regard_detourne": "Regard détourné de l'écran",
+    "visage_absent": "Visage absent de l'image",
+    "plusieurs_visages": "Plusieurs visages dans l'image",
+    "perte_focus": "A quitté la page de l'entretien",
+    "sortie_plein_ecran": "A quitté le plein écran",
+    "plusieurs_ecrans": "Plusieurs écrans détectés",
+    "application_suspecte": "Application suspecte détectée",
+    "surveillance_interrompue": "Surveillance interrompue",
+}
+TYPES_REGARD = ("regard_detourne", "visage_absent", "plusieurs_visages")
+RAISONS = {"onglet_masque": "autre onglet ou fenêtre réduite", "fenetre_inactive": "autre fenêtre au premier plan"}
 STATUTS = {"a_traiter": "En cours de traitement", "classe": "Classée", "a_verifier": "À vérifier", "non_classe": "Non classée"}
 
 
@@ -36,11 +53,13 @@ class RapportService:
         postes: PosteRepository,
         entreprise: EntrepriseRepository,
         cle,
+        entretiens: EntretienRepository | None = None,
     ) -> None:
         self.candidatures = candidatures
         self.scores = scores
         self.postes = postes
         self.entreprise = entreprise
+        self.entretiens = entretiens
         self.cle = cle  # clé de données de la session (note du recruteur chiffrée)
 
     def donnees(self, candidature_id: int) -> dict[str, Any]:
@@ -96,8 +115,56 @@ class RapportService:
                 "note": coffre.dechiffrer_texte(candidature["decision_note"], self._cle()),
                 "le": candidature["decision_le"].isoformat() if candidature["decision_le"] else None,
             },
-            "entretien": None,  # module entretien à venir : section masquée tant qu'elle est vide
+            "entretien": self._entretien(candidature_id),
             "mention": MENTION,
+        }
+
+    def _entretien(self, candidature_id: int) -> dict[str, Any] | None:
+        """Le dernier entretien terminé de la candidature, ou None."""
+        if self.entretiens is None:
+            return None
+        termines = self.entretiens.lister(candidature_id, "termine")
+        if not termines:
+            return None
+        e = termines[0]  # le plus récent
+        debut = e["debut_le"]
+        duree = round((e["fin_le"] - debut).total_seconds() / 60) if debut and e["fin_le"] else None
+
+        def minute(t: datetime) -> str | None:
+            secondes = max(0, int((t - debut).total_seconds())) if debut and t else None
+            return None if secondes is None else f"{secondes // 3600:d}:{secondes % 3600 // 60:02d}:{secondes % 60:02d}"
+
+        signaux = []
+        for a in self.entretiens.alertes(e["id"]):
+            details = a["details"] or {}
+            signaux.append({
+                "type": a["type_alerte"],
+                "libelle": SIGNAUX.get(a["type_alerte"], a["type_alerte"]),
+                "regard": a["type_alerte"] in TYPES_REGARD,
+                "a": minute(a["horodatage"]),
+                "duree_s": details.get("duree_s"),
+                "raison": RAISONS.get(details.get("raison")),
+            })
+        bilan = e["bilan_regard"]
+        return {
+            "id": e["id"],
+            "debut_le": debut.isoformat() if debut else None,
+            "fin_le": e["fin_le"].isoformat() if e["fin_le"] else None,
+            "duree_min": duree,
+            "enregistre": bool(e["fichier_enregistrement"]),
+            "scores": {
+                "entretien": e["score_entretien"], "regard": e["score_regard"],
+                "contenu": e["score_contenu"], "confiance": e["score_confiance"],
+            },
+            "regard": {"calcule": True, **bilan} if bilan else {"calcule": False},
+            "vigilance": {
+                "consentement": bool(e["consentement_enregistrement"]),
+                "consignes_acceptees_le": e["consignes_acceptees_le"].isoformat() if e["consignes_acceptees_le"] else None,
+            },
+            "signaux": signaux,
+            "resume": e["resume"],
+            "transcription": coffre.dechiffrer_texte(e["transcription"], self._cle()),
+            "mention": MENTION_ENTRETIEN,
         }
 
     def _score_du_rapport(self, candidature: dict, scores: list[dict]) -> tuple[dict | None, str | None]:

@@ -95,7 +95,8 @@ def construire_services(db: Database, settings: Settings, modele: ModeleSemantiq
         signalisation=SignalisationService(),
         tunnel=tunnel,
         rapport=RapportService(
-            CandidatureRepository(db), ScoreRepository(db), PosteRepository(db), EntrepriseRepository(db), cle=auth.cle_session
+            CandidatureRepository(db), ScoreRepository(db), PosteRepository(db), EntrepriseRepository(db), cle=auth.cle_session,
+            entretiens=EntretienRepository(db),
         ),
     )
 
