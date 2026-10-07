@@ -24,9 +24,9 @@
         </ul>
         <label class="consentement">
           <input type="checkbox" id="consentement" />
-          <span>J'autorise le recruteur à enregistrer cet entretien (image et son) et à analyser mon regard et mes mouvements de tête pendant l'entretien. Rien n'est envoyé ailleurs : tout reste sur son ordinateur.</span>
+          <span>J'autorise le recruteur à enregistrer cet entretien (image et son) à analyser mon regard et mes mouvements de tête, et à transcrire la parole en sous-titres pendant l'entretien. Rien n'est envoyé ailleurs : tout reste sur son ordinateur.</span>
         </label>
-        <p class="aide">Cette case est facultative : sans elle, l'entretien a lieu mais n'est ni enregistré ni analysé.</p>
+        <p class="aide">Cette case est facultative : sans elle, l'entretien a lieu mais n'est ni enregistré, ni analysé, ni sous-titré.</p>
         <button id="rejoindre" type="button" class="bouton">Autoriser la caméra et le micro, puis rejoindre</button>
         <p id="erreur-acces" class="erreur" role="alert" hidden></p>
       </section>
@@ -36,6 +36,7 @@
           <video id="video-recruteur" autoplay playsinline></video>
           <p id="attente" class="attente">En attente du recruteur…</p>
           <video id="video-local" autoplay playsinline muted></video>
+          <p id="sous-titres" class="sous-titres" aria-live="polite" hidden></p>
         </div>
         <div class="barre">
           <span id="etat" class="etat" role="status"></span>

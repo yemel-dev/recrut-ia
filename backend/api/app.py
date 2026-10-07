@@ -20,6 +20,7 @@ from ..database.repositories import (
 )
 from ..ia.ocr import MoteurOCR
 from ..ia.regard import NOM_MODELE_VISAGE, AnalyseurVisage
+from ..ia.transcription import Transcripteur, dossier_whisper
 from ..ia.semantique import NOM_MODELE, ModeleSemantique, dossier_modeles
 from ..services.agent_mail import AgentMailService
 from ..services.auth import AuthService
@@ -27,6 +28,7 @@ from ..services.candidatures import CandidaturesService
 from ..services.entreprise import EntrepriseService
 from ..services.entretiens import EntretiensService
 from ..services.regard import RegardService
+from ..services.sous_titres import SousTitresService
 from ..services.postes import PostesService
 from ..services.signalisation import SignalisationService
 from ..services.tunnel import TunnelService
@@ -50,6 +52,7 @@ class Services:
     rapport: RapportService
     entretiens: EntretiensService
     regard: RegardService
+    sous_titres: SousTitresService
     signalisation: SignalisationService
     tunnel: TunnelService
 
@@ -72,6 +75,7 @@ def construire_services(db: Database, settings: Settings, modele: ModeleSemantiq
         entreprise=EntrepriseRepository(db), dossier_enregistrements=settings.data_dir / "enregistrements",
     )
     regard = RegardService(entretiens.entretiens, AnalyseurVisage(modeles / NOM_MODELE_VISAGE))
+    sous_titres = SousTitresService(entretiens.entretiens, Transcripteur(dossier_whisper(modeles)), auth.cle_session)
     tunnel = TunnelService()
 
     auth.a_la_connexion += [agent_mail.session_ouverte, traitement.demarrer]
@@ -87,6 +91,7 @@ def construire_services(db: Database, settings: Settings, modele: ModeleSemantiq
         candidatures=candidatures,
         entretiens=entretiens,
         regard=regard,
+        sous_titres=sous_titres,
         signalisation=SignalisationService(),
         tunnel=tunnel,
         rapport=RapportService(

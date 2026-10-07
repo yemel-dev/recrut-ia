@@ -27,6 +27,8 @@ const TAILLE_MAX_IDENTIFIANTS = 64 * 1024;
 const TAILLE_MAX_MORCEAU = 16 * 1024 * 1024; // comme le backend
 const TAILLE_MAX_SIGNAL = 64 * 1024;
 const TAILLE_MAX_IMAGE = 512 * 1024; // comme le backend
+const TAILLE_MAX_EXTRAIT = 30 * 16000 * 4; // 30 s de son 16 kHz en flottants 32 bits, comme le backend
+const LOCUTEURS = ['recruteur', 'candidat'];
 const DOSSIER_OUVERTS = path.join(os.tmpdir(), 'injara-cv-ouverts');
 
 /** Efface les CV déchiffrés pour consultation. Un fichier encore ouvert dans un logiciel (verrouillé sous Windows)
@@ -269,6 +271,16 @@ function installerPontApi({ backend, origineAutorisee, fenetre }) {
     const tampon = ArrayBuffer.isView(image) ? Buffer.from(image.buffer, image.byteOffset, image.byteLength) : image instanceof ArrayBuffer ? Buffer.from(image) : null;
     if (!idValide(entretienId) || !tampon || tampon.length === 0 || tampon.length > TAILLE_MAX_IMAGE) throw new Error('Requête invalide.');
     return envoyer('PUT', `/entretiens/${entretienId}/regard`, tampon, 'image/jpeg');
+  });
+
+  // Sous-titres : un extrait de son (flottants 32 bits, mono, 16 kHz) ; le backend renvoie les phrases reconnues.
+  ipcMain.handle('injara:sous-titres-audio', (event, entretienId, locuteur, debut, audio) => {
+    verifierOrigine(event);
+    const tampon = audio instanceof ArrayBuffer ? Buffer.from(audio) : ArrayBuffer.isView(audio) ? Buffer.from(audio.buffer, audio.byteOffset, audio.byteLength) : null;
+    if (!idValide(entretienId) || !LOCUTEURS.includes(locuteur) || !Number.isFinite(debut) || debut < 0 || !tampon || tampon.length === 0 || tampon.length > TAILLE_MAX_EXTRAIT) {
+      throw new Error('Requête invalide.');
+    }
+    return envoyer('PUT', `/entretiens/${entretienId}/sous-titres?locuteur=${locuteur}&debut=${debut.toFixed(1)}`, tampon, 'application/octet-stream');
   });
 
   // Le fichier est déchiffré par le backend et écrit en flux : une heure d'entretien ne passe jamais entière en mémoire.

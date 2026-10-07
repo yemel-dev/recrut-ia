@@ -119,7 +119,21 @@
     };
   }
 
-  async function traiter({ type, donnees, recruteur }) {
+  // Sous-titres (en différé) : la dernière phrase, effacée après quelques secondes de silence.
+  let effacement = null;
+  function sousTitre({ locuteur, texte }) {
+    const zone = $('sous-titres');
+    zone.replaceChildren();
+    const qui = document.createElement('small');
+    qui.textContent = locuteur === 'candidat' ? 'Vous' : 'Recruteur';
+    zone.append(qui, document.createTextNode(String(texte).slice(0, 400)));  // textContent seulement : jamais de HTML
+    zone.hidden = false;
+    clearTimeout(effacement);
+    effacement = setTimeout(() => { zone.hidden = true; }, 8000);
+  }
+
+  async function traiter({ type, donnees, recruteur, ...reste }) {
+    if (type === 'soustitre') { sousTitre(reste); return; }
     if (type === 'presence') {
       if (!recruteur) { fermerPair(); etat('En attente du recruteur…'); }
       return;

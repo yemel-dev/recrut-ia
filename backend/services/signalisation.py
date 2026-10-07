@@ -111,6 +111,15 @@ class SignalisationService:
             await destinataire.send_text(json.dumps({"type": message["type"], "donnees": message.get("donnees")}))
         return True
 
+    async def vers_candidat(self, code: str, message: dict[str, Any]) -> None:
+        """Message du serveur au candidat (sous-titres), s'il est dans la salle."""
+        salle = self._salles.get(code)
+        if salle is not None and salle.candidat is not None:
+            try:
+                await salle.candidat.send_text(json.dumps(message))
+            except Exception:  # noqa: BLE001  (canal mort : nettoyé à la déconnexion)
+                pass
+
     async def fermer(self, code: str) -> None:
         """Ferme la salle (entretien terminé ou annulé)."""
         salle = self._salles.pop(code, None)

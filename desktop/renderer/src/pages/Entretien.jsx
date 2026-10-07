@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, Circle, Copy, Download, Eye, Globe, Mic, Power, Video, VideoOff } from 'lucide-react';
+import { ArrowLeft, Check, Circle, Copy, Download, Captions, Eye, Globe, Mic, Power, Video, VideoOff } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../api.js';
@@ -7,6 +7,7 @@ import { Alerte, Bouton, Carte, Chargement, Confirmation } from '../components/u
 import { STATUTS_ENTRETIEN } from '../constantes.js';
 import { creerEnregistreur, enregistrementPossible } from '../entretiens/enregistreur.js';
 import { creerAnalyseurRegard } from '../entretiens/regard.js';
+import { creerSousTitreur } from '../entretiens/sousTitres.js';
 import { useSalle } from '../entretiens/useSalle.js';
 import { formaterDateHeure } from '../format.js';
 
@@ -22,6 +23,8 @@ export default function Entretien() {
   const salle = useSalle(entretienId);
   const enregistreur = useRef(null);
   const analyseur = useRef(null);
+  const sousTitreur = useRef(null);
+  const [sousTitres, setSousTitres] = useState({ actif: false, lignes: [], enAttente: 0, message: '' });
   const [regard, setRegard] = useState({ actif: false, etat: null, evenements: [], message: '' });
   const refDistant = useRef(null);
   const refLocal = useRef(null);
@@ -52,15 +55,18 @@ export default function Entretien() {
   useEffect(() => {
     if (refLocal.current) refLocal.current.srcObject = salle.fluxLocal;
     enregistreur.current?.brancherAudio('local', salle.fluxLocal);
+    sousTitreur.current?.brancher('recruteur', salle.fluxLocal);
   }, [salle.fluxLocal]);
   useEffect(() => {
     if (refDistant.current) refDistant.current.srcObject = salle.fluxDistant;
     enregistreur.current?.brancherAudio('distant', salle.fluxDistant); // le candidat s'est reconnecté : nouveau flux, même fichier
+    sousTitreur.current?.brancher('candidat', salle.fluxDistant);
   }, [salle.fluxDistant]);
 
   // Quitter la page pendant l'enregistrement : on envoie ce qui reste (l'entretien reste « en cours »).
   useEffect(() => () => void enregistreur.current?.arreter(), []);
   useEffect(() => () => analyseur.current?.arreter(), []);
+  useEffect(() => () => void sousTitreur.current?.arreter(), []);
 
   const demarrerRegard = () => {
     const a = creerAnalyseurRegard({
@@ -75,6 +81,19 @@ export default function Entretien() {
     setRegard({ actif: true, etat: null, evenements: [], message: '' });
   };
 
+  const demarrerSousTitres = () => {
+    const s = creerSousTitreur({
+      entretienId,
+      onSegments: (segments) => setSousTitres((c) => ({ ...c, lignes: [...c.lignes, ...segments].slice(-8) })),
+      onEtat: ({ enAttente }) => setSousTitres((c) => ({ ...c, enAttente })),
+      onErreur: (message) => setSousTitres((c) => ({ ...c, message })),
+    });
+    s.brancher('recruteur', salle.fluxLocal);
+    s.brancher('candidat', salle.fluxDistant);
+    sousTitreur.current = s;
+    setSousTitres({ actif: true, lignes: [], enAttente: 0, message: '' });
+  };
+
   const demarrer = async () => {
     setOccupe(true);
     setErreur('');
@@ -82,7 +101,10 @@ export default function Entretien() {
       const e = await api.put(`/entretiens/${entretienId}/statut`, { statut: 'en_cours' });
       setEntretien(e);
       const courant = (await charger()) || e; // consentement le plus récent
-      if (courant.consentement_enregistrement) demarrerRegard();
+      if (courant.consentement_enregistrement) {
+        demarrerRegard();
+        demarrerSousTitres();
+      }
       if (courant.consentement_enregistrement && enregistrementPossible()) {
         const enr = creerEnregistreur({
           entretienId,
@@ -109,6 +131,11 @@ export default function Entretien() {
     setOccupe(true);
     setErreur('');
     try {
+      if (sousTitreur.current) {
+        await sousTitreur.current.arreter(); // les derniers extraits sont transcrits avant la fin de l'entretien
+        sousTitreur.current = null;
+        setSousTitres((c) => ({ ...c, actif: false }));
+      }
       analyseur.current?.arreter(); // plus d'images : le backend calcule le bilan à la fin de l'entretien
       analyseur.current = null;
       setRegard((r) => ({ ...r, actif: false }));
@@ -209,7 +236,9 @@ export default function Entretien() {
           )}
 
           {enCours && <CarteRegard regard={regard} consentement={entretien.consentement_enregistrement} />}
+          {enCours && <CarteSousTitres sousTitres={sousTitres} consentement={entretien.consentement_enregistrement} />}
           {entretien.statut === 'termine' && <CarteBilanRegard entretien={entretien} />}
+          {entretien.statut === 'termine' && <CarteTranscription entretien={entretien} />}
 
           {entretien.statut === 'termine' && (
             <Carte className="flex flex-col gap-3">
@@ -377,6 +406,52 @@ function CarteBilanRegard({ entretien }) {
           )}
           <p className="text-xs text-muted">Indicateur seulement : il ne modifie ni le score du CV ni votre décision.</p>
         </>
+      )}
+    </Carte>
+  );
+}
+
+const NOMS_LOCUTEURS = { recruteur: 'Recruteur', candidat: 'Candidat' };
+
+/** Sous-titres en différé : ils arrivent quelques secondes après la parole. */
+function CarteSousTitres({ sousTitres, consentement }) {
+  return (
+    <Carte className="flex flex-col gap-3 text-sm">
+      <h2 className="flex items-center gap-2 font-semibold text-navy-900"><Captions className="size-4" aria-hidden /> Sous-titres</h2>
+      {!consentement ? (
+        <p className="text-muted">Le candidat n'a pas consenti : la parole n'est pas transcrite.</p>
+      ) : sousTitres.message ? (
+        <Alerte>{sousTitres.message}</Alerte>
+      ) : !sousTitres.actif ? (
+        <p className="text-muted">Les sous-titres démarrent avec l'entretien.</p>
+      ) : (
+        <>
+          {sousTitres.lignes.length === 0 ? (
+            <p className="text-muted">En attente de parole…</p>
+          ) : (
+            <ul className="flex flex-col gap-1.5">
+              {sousTitres.lignes.map((l, i) => (
+                <li key={i}><span className="font-semibold text-navy-900">{NOMS_LOCUTEURS[l.locuteur]} : </span>{l.texte}</li>
+              ))}
+            </ul>
+          )}
+          <p className="text-xs text-muted">
+            Sous-titres en différé : ils apparaissent quelques secondes après la parole{sousTitres.enAttente > 0 ? ` (${sousTitres.enAttente} extrait${sousTitres.enAttente > 1 ? 's' : ''} en cours de transcription)` : ''}. Le son n'est pas conservé, seul le texte l'est.
+          </p>
+        </>
+      )}
+    </Carte>
+  );
+}
+
+function CarteTranscription({ entretien }) {
+  return (
+    <Carte className="flex flex-col gap-3 text-sm">
+      <h2 className="flex items-center gap-2 font-semibold text-navy-900"><Captions className="size-4" aria-hidden /> Transcription</h2>
+      {entretien.transcription ? (
+        <pre className="max-h-96 overflow-auto whitespace-pre-wrap font-sans leading-relaxed text-navy-900">{entretien.transcription}</pre>
+      ) : (
+        <p className="text-muted">Aucune transcription pour cet entretien (pas de consentement, ou aucune parole transcrite).</p>
       )}
     </Carte>
   );
