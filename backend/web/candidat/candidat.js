@@ -34,12 +34,18 @@
     montrer('accueil');
   }
 
+  // Rien ne démarre sans l'engagement : la case commande le bouton.
+  $('engagement').addEventListener('change', () => { $('rejoindre').disabled = !$('engagement').checked; });
+
   $('rejoindre').addEventListener('click', async () => {
     const erreur = $('erreur-acces');
+    const vigilance = $('consentement').checked;
+    if (vigilance) entrerPleinEcran(); // tout de suite : le navigateur n'accepte le plein écran qu'après un clic
     erreur.hidden = true;
     if (!navigator.mediaDevices?.getUserMedia) {
       erreur.textContent = "Ce navigateur ne permet pas la visioconférence. Utilisez Chrome, Edge ou Firefox à jour, en connexion sécurisée (https).";
       erreur.hidden = false;
+      sortirPleinEcran();
       return;
     }
     try {
@@ -47,24 +53,27 @@
     } catch {
       erreur.textContent = "Impossible d'accéder à la caméra et au micro. Autorisez-les dans votre navigateur (icône à gauche de l'adresse), puis réessayez.";
       erreur.hidden = false;
+      sortirPleinEcran();
       return;
     }
     try {
       const r = await fetch(`/public/api/${encodeURIComponent(code)}/consentement`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accepte: $('consentement').checked }),
+        body: JSON.stringify({ accepte: vigilance, consignes: $('engagement').checked }),
       });
       if (!r.ok) throw new Error();
     } catch {
       erreur.textContent = "Votre choix n'a pas pu être enregistré. Vérifiez votre connexion et réessayez.";
       erreur.hidden = false;
       flux.getTracks().forEach((t) => t.stop());
+      sortirPleinEcran();
       return;
     }
     $('video-local').srcObject = flux;
     montrer('entretien');
     connecter();
+    if (vigilance) surveiller();
   });
 
   $('micro').addEventListener('click', () => {
@@ -148,7 +157,58 @@
     }
   }
 
+  // --- Vigilance (seulement avec l'accord du candidat) -----------------------------------------------------
+  // Une page web ne voit ni les autres programmes ni les autres fenêtres : elle sait seulement quand elle perd la
+  // vue (onglet changé, fenêtre inactive), quand le plein écran est quitté et si l'ordinateur a plusieurs écrans.
+  // Les signaux vont au recruteur ; ils sont indicatifs (une notification qui passe peut les déclencher).
+  const DUREE_MIN_ABSENCE = 2000;
+  let surveillance = false;
+  let parti = null;
+
+  function signaler(type, details = {}) {
+    fetch(`/public/api/${encodeURIComponent(code)}/signal`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type, ...details }), keepalive: true,
+    }).catch(() => {});  // un signal perdu ne doit jamais gêner l'entretien
+  }
+
+  function entrerPleinEcran() {
+    try { document.documentElement.requestFullscreen?.()?.catch(() => {}); } catch { /* non pris en charge */ }
+  }
+  function sortirPleinEcran() {
+    try { if (document.fullscreenElement) document.exitFullscreen(); } catch { /* déjà sorti */ }
+  }
+  $('plein-ecran').addEventListener('click', entrerPleinEcran);
+
+  function absent(raison) { if (surveillance && parti === null) parti = { debut: Date.now(), raison }; }
+  function revenu() {
+    if (!surveillance || parti === null) return;
+    const { debut, raison } = parti;
+    parti = null;
+    if (Date.now() - debut >= DUREE_MIN_ABSENCE) signaler('perte_focus', { duree_s: Math.round((Date.now() - debut) / 100) / 10, raison });
+  }
+
+  function surveiller() {
+    surveillance = true;
+    const peutPleinEcran = Boolean(document.documentElement.requestFullscreen);
+    let etaitPleinEcran = Boolean(document.fullscreenElement);  // déjà entré avant que la surveillance démarre
+    document.addEventListener('visibilitychange', () => (document.hidden ? absent('onglet_masque') : revenu()));
+    window.addEventListener('blur', () => absent('fenetre_inactive'));
+    window.addEventListener('focus', revenu);
+    document.addEventListener('fullscreenchange', () => {
+      const actif = Boolean(document.fullscreenElement);
+      if (actif) etaitPleinEcran = true;
+      if (surveillance && etaitPleinEcran && !actif) signaler('sortie_plein_ecran');
+      $('rappel-plein-ecran').hidden = !surveillance || actif || !peutPleinEcran;
+    });
+    // Second écran : Chrome et Edge l'indiquent sans demander de permission ; ailleurs on ne peut pas le savoir.
+    if (window.screen?.isExtended) signaler('plusieurs_ecrans');
+    if (window.screen) window.screen.addEventListener?.('change', () => { if (window.screen.isExtended) signaler('plusieurs_ecrans'); });
+  }
+
   function arreter() {
+    surveillance = false;
+    $('rappel-plein-ecran').hidden = true;
+    sortirPleinEcran();
     termine = true;
     if (ws) ws.close();
     fermerPair();

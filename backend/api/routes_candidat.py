@@ -10,7 +10,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from ..services.erreurs import Introuvable
 from ..services.signalisation import serveurs_ice
@@ -31,6 +31,13 @@ router = APIRouter(prefix="/public", tags=["Entretien (candidat)"])
 
 class Consentement(BaseModel):
     accepte: bool
+    consignes: bool = False  # le candidat s'engage à fermer les autres applications et fenêtres
+
+
+class Signal(BaseModel):
+    type: str
+    duree_s: float | None = Field(default=None, ge=0, le=86400)
+    raison: str | None = Field(default=None, max_length=40)
 
 
 def _fichier(nom: str, type_: str) -> FileResponse:
@@ -61,7 +68,14 @@ def presenter(code: str, request: Request, response: Response):
 @router.post("/api/{code}/consentement")
 def consentement(code: str, corps: Consentement, request: Request, response: Response):
     response.headers.update(EN_TETES)
-    return request.app.state.services.entretiens.consentement_candidat(code, corps.accepte)
+    return request.app.state.services.entretiens.consentement_candidat(code, corps.accepte, corps.consignes)
+
+
+@router.post("/api/{code}/signal", status_code=204)
+def signal(code: str, corps: Signal, request: Request, response: Response):
+    response.headers.update(EN_TETES)
+    details = corps.model_dump(exclude={"type"}, exclude_none=True)
+    request.app.state.services.entretiens.signal_candidat(code, corps.type, details)
 
 
 @router.websocket("/ws/candidat/{code}")

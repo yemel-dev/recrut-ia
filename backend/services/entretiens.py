@@ -22,7 +22,12 @@ STATUTS = ("planifie", "en_cours", "termine", "annule")
 TYPES_ALERTE = (
     "application_suspecte", "perte_focus", "surveillance_interrompue",
     "regard_detourne", "visage_absent", "plusieurs_visages",  # relevées par l'analyse du regard (services/regard.py)
+    "sortie_plein_ecran", "plusieurs_ecrans",  # relevées par la page du candidat (perte_focus l'est aussi)
 )
+# Ce que la page du candidat a le droit de signaler : « application_suspecte » et « surveillance_interrompue » sont
+# réservés à un éventuel programme compagnon, de confiance, qui verrait les processus de l'ordinateur.
+SIGNAUX_CANDIDAT = ("perte_focus", "sortie_plein_ecran", "plusieurs_ecrans")
+MAX_SIGNAUX_CANDIDAT = 300  # par entretien : la route est publique, elle ne doit pas permettre de saturer la base
 TRANSITIONS = {
     "en_cours": ("planifie",),
     "termine": ("en_cours",),
@@ -178,10 +183,29 @@ class EntretiensService:
             "consentement_enregistrement": entretien["consentement_enregistrement"],
         }
 
-    def consentement_candidat(self, code: str, accepte: bool) -> dict[str, Any]:
+    def consentement_candidat(self, code: str, accepte: bool, consignes: bool = False) -> dict[str, Any]:
         entretien = self.entretien_du_lien(code)
-        self.entretiens.maj(entretien["id"], consentement_enregistrement=accepte, consentement_le=_maintenant())
+        champs: dict[str, Any] = {"consentement_enregistrement": accepte, "consentement_le": _maintenant()}
+        if consignes:
+            champs["consignes_acceptees_le"] = _maintenant()
+        self.entretiens.maj(entretien["id"], **champs)
         return self.presenter_au_candidat(code)
+
+    def signal_candidat(self, code: str, type_signal: str, details: dict[str, Any]) -> bool:
+        """Signal de vigilance envoyé par la page du candidat (il quitte la page, le plein écran, a un second écran).
+
+        Pas de session : le code du lien suffit, mais seulement pour ces signaux, pendant l'entretien et avec le
+        consentement du candidat. Renvoie False si le signal est ignoré (la page n'a pas à s'en préoccuper).
+        """
+        entretien = self.entretien_du_lien(code)
+        if type_signal not in SIGNAUX_CANDIDAT:
+            raise ErreurValidation({"type": "Signal inconnu."})
+        if entretien["statut"] != "en_cours" or not entretien["consentement_enregistrement"]:
+            return False
+        if len(self.entretiens.alertes(entretien["id"])) >= MAX_SIGNAUX_CANDIDAT:
+            return False
+        self.entretiens.ajouter_alerte(entretien["id"], type_signal, details)
+        return True
 
     # --- Enregistrement : chiffré au fil de l'eau, jamais en clair sur le disque -----------------------------
 
@@ -229,6 +253,7 @@ class EntretiensService:
             "statut": e["statut"],
             "consentement_enregistrement": e["consentement_enregistrement"],
             "enregistrement": bool(e["fichier_enregistrement"]),
+            "consignes_acceptees_le": e["consignes_acceptees_le"],
             "debut_le": e["debut_le"],
             "fin_le": e["fin_le"],
             "score_regard": e["score_regard"],

@@ -22,12 +22,22 @@
           <li>Utilisez de préférence un ordinateur, avec Chrome, Edge ou Firefox à jour.</li>
           <li>Le recruteur voit et entend ce que votre caméra et votre micro captent.</li>
         </ul>
+        <h2 class="sous-titre">Avant de commencer</h2>
+        <ul class="consignes">
+          <li>Fermez tous les autres onglets et fenêtres de navigateur, ainsi que les applications de messagerie, de notes, d'assistant ou de traduction.</li>
+          <li>Éteignez ou éloignez téléphone, tablette et second écran, et n'utilisez aucune aide pendant l'entretien.</li>
+          <li>L'entretien s'ouvre en plein écran. Si vous quittez cette page ou le plein écran, le recruteur en est informé.</li>
+        </ul>
+        <label class="consentement">
+          <input type="checkbox" id="engagement" />
+          <span>Je m'engage à respecter ces consignes. <strong>(obligatoire)</strong></span>
+        </label>
         <label class="consentement">
           <input type="checkbox" id="consentement" />
-          <span>J'autorise le recruteur à enregistrer cet entretien (image et son) à analyser mon regard et mes mouvements de tête, et à transcrire la parole en sous-titres pendant l'entretien. Rien n'est envoyé ailleurs : tout reste sur son ordinateur.</span>
+          <span>J'autorise le recruteur à enregistrer cet entretien (image et son) à analyser mon regard et mes mouvements de tête, à transcrire la parole en sous-titres, et à être informé si je quitte la page de l'entretien. Rien n'est envoyé ailleurs : tout reste sur son ordinateur.</span>
         </label>
-        <p class="aide">Cette case est facultative : sans elle, l'entretien a lieu mais n'est ni enregistré, ni analysé, ni sous-titré.</p>
-        <button id="rejoindre" type="button" class="bouton">Autoriser la caméra et le micro, puis rejoindre</button>
+        <p class="aide">Cette case est facultative : sans elle, l'entretien a lieu mais n'est ni enregistré, ni analysé, ni sous-titré, et vos changements de page ne sont pas relevés.</p>
+        <button id="rejoindre" type="button" class="bouton" disabled>Autoriser la caméra et le micro, puis rejoindre</button>
         <p id="erreur-acces" class="erreur" role="alert" hidden></p>
       </section>
 
@@ -36,6 +46,7 @@
           <video id="video-recruteur" autoplay playsinline></video>
           <p id="attente" class="attente">En attente du recruteur…</p>
           <video id="video-local" autoplay playsinline muted></video>
+          <p id="rappel-plein-ecran" class="rappel" hidden>Revenez en plein écran. <button id="plein-ecran" type="button" class="bouton secondaire">Plein écran</button></p>
           <p id="sous-titres" class="sous-titres" aria-live="polite" hidden></p>
         </div>
         <div class="barre">

@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, Circle, Copy, Download, Captions, Eye, Globe, Mic, Power, Video, VideoOff } from 'lucide-react';
+import { ArrowLeft, Check, Circle, Copy, Download, Captions, Eye, Globe, Mic, Power, ShieldAlert, Video, VideoOff } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../api.js';
@@ -236,6 +236,7 @@ export default function Entretien() {
           )}
 
           {enCours && <CarteRegard regard={regard} consentement={entretien.consentement_enregistrement} />}
+          {(enCours || entretien.statut === 'termine') && <CarteVigilance entretien={entretien} />}
           {enCours && <CarteSousTitres sousTitres={sousTitres} consentement={entretien.consentement_enregistrement} />}
           {entretien.statut === 'termine' && <CarteBilanRegard entretien={entretien} />}
           {entretien.statut === 'termine' && <CarteTranscription entretien={entretien} />}
@@ -453,6 +454,44 @@ function CarteTranscription({ entretien }) {
       ) : (
         <p className="text-muted">Aucune transcription pour cet entretien (pas de consentement, ou aucune parole transcrite).</p>
       )}
+    </Carte>
+  );
+}
+
+const SIGNAUX_PAGE = {
+  perte_focus: 'A quitté la page de l\'entretien',
+  sortie_plein_ecran: 'A quitté le plein écran',
+  plusieurs_ecrans: 'Plusieurs écrans détectés',
+};
+const RAISONS = { onglet_masque: 'autre onglet ou fenêtre réduite', fenetre_inactive: 'autre fenêtre au premier plan' };
+
+/** Ce que la page du candidat a signalé. Une page web ne voit pas les autres programmes : ce sont des indices, pas des preuves. */
+function CarteVigilance({ entretien }) {
+  const signaux = entretien.alertes.filter((a) => SIGNAUX_PAGE[a.type]);
+  return (
+    <Carte className="flex flex-col gap-3 text-sm">
+      <h2 className="flex items-center gap-2 font-semibold text-navy-900"><ShieldAlert className="size-4" aria-hidden /> Vigilance</h2>
+      <p className={entretien.consignes_acceptees_le ? 'text-emerald-700' : 'text-muted'}>
+        {entretien.consignes_acceptees_le
+          ? `Le candidat s'est engagé à fermer les autres applications et fenêtres (${formaterDateHeure(entretien.consignes_acceptees_le)}).`
+          : "Le candidat ne s'est pas (encore) engagé à respecter les consignes."}
+      </p>
+      {!entretien.consentement_enregistrement ? (
+        <p className="text-muted">Le candidat n'a pas consenti : ses changements de page ne sont pas relevés.</p>
+      ) : signaux.length === 0 ? (
+        <p className="text-muted">Aucun signalement : le candidat est resté sur la page de l'entretien.</p>
+      ) : (
+        <ul className="flex flex-col gap-1.5">
+          {signaux.map((a) => (
+            <li key={a.id} className="flex flex-wrap gap-x-2">
+              <span className="text-muted">{formaterDateHeure(a.horodatage)}</span>
+              <span className="font-medium text-navy-900">{SIGNAUX_PAGE[a.type]}</span>
+              {a.details?.duree_s != null && <span className="text-muted">pendant {a.details.duree_s} s{a.details.raison ? ` (${RAISONS[a.details.raison] || a.details.raison})` : ''}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="text-xs text-muted">Un navigateur ne voit pas les autres programmes : il signale seulement que le candidat quitte la page, le plein écran, ou a un second écran. Une notification qui passe peut aussi le déclencher. Aucun contrôle des applications n'est possible.</p>
     </Carte>
   );
 }

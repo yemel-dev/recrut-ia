@@ -201,6 +201,7 @@ class Entretien(Base):
     statut: Mapped[str] = mapped_column(String(20), default="planifie", server_default=text("'planifie'"), index=True)  # planifie | en_cours | termine | annule
     consentement_enregistrement: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("0"))
     consentement_le: Mapped[datetime | None] = mapped_column(DateHeureUTC)
+    consignes_acceptees_le: Mapped[datetime | None] = mapped_column(DateHeureUTC)  # le candidat s'est engagé à fermer les autres applications
     debut_le: Mapped[datetime | None] = mapped_column(DateHeureUTC)
     fin_le: Mapped[datetime | None] = mapped_column(DateHeureUTC)
 
