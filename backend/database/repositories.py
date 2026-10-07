@@ -6,7 +6,7 @@ from typing import Any
 from sqlalchemy import and_, func, or_, select
 
 from .db import Database
-from .models import Candidature, Compte, Entreprise, Parametre, Poste, Score
+from .models import AlerteTriche, Candidature, Compte, Entretien, Entreprise, Parametre, Poste, Score
 
 
 def _as_dict(row: Any) -> dict[str, Any]:
@@ -332,3 +332,56 @@ class ScoreRepository:
                     "potentiel_niveau": score.potentiel_niveau,
                 })
             return resultat
+
+
+class EntretienRepository:
+    def __init__(self, db: Database) -> None:
+        self.db = db
+
+    def creer(self, **fields: Any) -> dict[str, Any]:
+        with self.db.session() as s:
+            entretien = Entretien(**fields)
+            s.add(entretien)
+            s.flush()
+            return _as_dict(entretien)
+
+    def get(self, entretien_id: int) -> dict[str, Any] | None:
+        with self.db.session() as s:
+            entretien = s.get(Entretien, entretien_id)
+            return _as_dict(entretien) if entretien else None
+
+    def get_par_code(self, code: str) -> dict[str, Any] | None:
+        with self.db.session() as s:
+            entretien = s.scalars(select(Entretien).where(Entretien.code_invitation == code)).first()
+            return _as_dict(entretien) if entretien else None
+
+    def maj(self, entretien_id: int, **fields: Any) -> dict[str, Any] | None:
+        with self.db.session() as s:
+            entretien = s.get(Entretien, entretien_id)
+            if entretien is None:
+                return None
+            for key, value in fields.items():
+                setattr(entretien, key, value)
+            s.flush()
+            return _as_dict(entretien)
+
+    def lister(self, candidature_id: int | None = None, statut: str | None = None) -> list[dict[str, Any]]:
+        query = select(Entretien).order_by(Entretien.cree_le.desc(), Entretien.id.desc())
+        if candidature_id is not None:
+            query = query.where(Entretien.candidature_id == candidature_id)
+        if statut:
+            query = query.where(Entretien.statut == statut)
+        with self.db.session() as s:
+            return [_as_dict(e) for e in s.scalars(query)]
+
+    def ajouter_alerte(self, entretien_id: int, type_alerte: str, details: dict[str, Any]) -> dict[str, Any]:
+        with self.db.session() as s:
+            alerte = AlerteTriche(entretien_id=entretien_id, type_alerte=type_alerte, details=details)
+            s.add(alerte)
+            s.flush()
+            return _as_dict(alerte)
+
+    def alertes(self, entretien_id: int) -> list[dict[str, Any]]:
+        query = select(AlerteTriche).where(AlerteTriche.entretien_id == entretien_id).order_by(AlerteTriche.horodatage, AlerteTriche.id)
+        with self.db.session() as s:
+            return [_as_dict(a) for a in s.scalars(query)]

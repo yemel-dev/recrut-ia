@@ -12,6 +12,7 @@ from ..database.db import Database
 from ..database.repositories import (
     CandidatureRepository,
     CompteRepository,
+    EntretienRepository,
     EntrepriseRepository,
     ParametreRepository,
     PosteRepository,
@@ -23,12 +24,13 @@ from ..services.agent_mail import AgentMailService
 from ..services.auth import AuthService
 from ..services.candidatures import CandidaturesService
 from ..services.entreprise import EntrepriseService
+from ..services.entretiens import EntretiensService
 from ..services.postes import PostesService
 from ..services.rapport import RapportService
 from ..services.tableau_de_bord import TableauDeBordService
 from ..services.traitement import TraitementService
 from ..services.erreurs import Conflit, ErreurService, ErreurValidation, Introuvable, NonAutorise, SessionRequise
-from . import routes_agent, routes_auth, routes_candidatures, routes_metier
+from . import routes_agent, routes_auth, routes_candidatures, routes_entretiens, routes_metier
 from .securite import JetonDeLancementMiddleware
 
 
@@ -42,6 +44,7 @@ class Services:
     traitement: TraitementService
     candidatures: CandidaturesService
     rapport: RapportService
+    entretiens: EntretiensService
 
 
 def construire_services(db: Database, settings: Settings, modele: ModeleSemantique | None = None) -> Services:
@@ -57,6 +60,8 @@ def construire_services(db: Database, settings: Settings, modele: ModeleSemantiq
     )
     candidatures = CandidaturesService(CandidatureRepository(db), ScoreRepository(db), PosteRepository(db), traitement)
 
+    entretiens = EntretiensService(EntretienRepository(db), CandidatureRepository(db), PosteRepository(db), auth.cle_session)
+
     auth.a_la_connexion += [agent_mail.session_ouverte, traitement.demarrer]
     auth.a_la_deconnexion += [agent_mail.session_fermee, traitement.arreter]
     postes.a_la_modification.append(traitement.postes_modifies)
@@ -68,6 +73,7 @@ def construire_services(db: Database, settings: Settings, modele: ModeleSemantiq
         agent_mail=agent_mail,
         traitement=traitement,
         candidatures=candidatures,
+        entretiens=entretiens,
         rapport=RapportService(
             CandidatureRepository(db), ScoreRepository(db), PosteRepository(db), EntrepriseRepository(db), cle=auth.cle_session
         ),
@@ -89,6 +95,7 @@ def create_app(settings: Settings, modele: ModeleSemantique | None = None) -> Fa
     app.include_router(routes_auth.router)
     app.include_router(routes_metier.router)
     app.include_router(routes_candidatures.router)
+    app.include_router(routes_entretiens.router)
     routes_agent.monter(app)
     return app
 

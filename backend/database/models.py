@@ -1,7 +1,6 @@
 """Modèles SQLAlchemy du socle INJARA.
 
-Une installation = une entreprise = un compte. Les tables des entretiens seront ajoutées avec leur module.
-"""
+Une installation = une entreprise = un compte."""
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
@@ -186,3 +185,45 @@ class Score(Base):
     potentiel_niveau: Mapped[str | None] = mapped_column(String(20))
     potentiel: Mapped[dict | None] = mapped_column(JSON)
     calcule_le: Mapped[datetime] = mapped_column(DateHeureUTC, default=_now, onupdate=_now)
+
+
+class Entretien(Base):
+    """Module 5 : un entretien vidéo avec un candidat, rejoint par un code d'invitation."""
+
+    __tablename__ = "entretiens"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    candidature_id: Mapped[int] = mapped_column(ForeignKey("candidatures.id", ondelete="CASCADE"), nullable=False, index=True)
+    poste_id: Mapped[int | None] = mapped_column(ForeignKey("postes.id", ondelete="SET NULL"), index=True)
+    code_invitation: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    date_entretien: Mapped[datetime | None] = mapped_column(DateHeureUTC)
+    statut: Mapped[str] = mapped_column(String(20), default="planifie", server_default=text("'planifie'"), index=True)  # planifie | en_cours | termine | annule
+    consentement_enregistrement: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("0"))
+    consentement_le: Mapped[datetime | None] = mapped_column(DateHeureUTC)
+    debut_le: Mapped[datetime | None] = mapped_column(DateHeureUTC)
+    fin_le: Mapped[datetime | None] = mapped_column(DateHeureUTC)
+
+    # Scores d'entretien (sur 100) : regard 30 %, contenu 40 %, confiance 30 %. Le regard n'est qu'un indicateur.
+    score_regard: Mapped[float | None] = mapped_column(Float)
+    score_contenu: Mapped[float | None] = mapped_column(Float)
+    score_confiance: Mapped[float | None] = mapped_column(Float)
+    score_entretien: Mapped[float | None] = mapped_column(Float)
+
+    transcription: Mapped[str | None] = mapped_column(Text)  # chiffrée avec la clé de données (services/coffre.py)
+    fichier_enregistrement: Mapped[str | None] = mapped_column(Text)  # enregistrement chiffré, seulement après consentement
+    resume: Mapped[str | None] = mapped_column(Text)
+
+    cree_le: Mapped[datetime] = mapped_column(DateHeureUTC, default=_now)
+    modifie_le: Mapped[datetime] = mapped_column(DateHeureUTC, default=_now, onupdate=_now)
+
+
+class AlerteTriche(Base):
+    """Un signal anti-triche relevé pendant un entretien (application suspecte, perte de focus...)."""
+
+    __tablename__ = "alertes_triche"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    entretien_id: Mapped[int] = mapped_column(ForeignKey("entretiens.id", ondelete="CASCADE"), nullable=False, index=True)
+    type_alerte: Mapped[str] = mapped_column(String(50), nullable=False)
+    details: Mapped[dict] = mapped_column(JSON, default=dict)
+    horodatage: Mapped[datetime] = mapped_column(DateHeureUTC, default=_now)
