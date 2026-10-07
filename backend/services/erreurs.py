@@ -33,3 +33,7 @@ class Introuvable(ErreurService):
 
 class Conflit(ErreurService):
     pass
+
+
+class Indisponible(ErreurService):
+    """Une fonction dont dépend la demande n'est pas disponible sur ce poste (ex. : aucun tunnel installé)."""

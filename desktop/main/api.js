@@ -10,10 +10,12 @@
 
 const { app, dialog, ipcMain, shell } = require('electron');
 const crypto = require('node:crypto');
+const fsFlux = require('node:fs');
 const fs = require('node:fs/promises');
 const http = require('node:http');
 const os = require('node:os');
 const path = require('node:path');
+const { pipeline } = require('node:stream/promises');
 const { gabaritRapport, genererPdf, nomDeFichier } = require('./rapport');
 
 const METHODES = new Set(['GET', 'POST', 'PUT', 'DELETE']);
@@ -22,6 +24,8 @@ const EXTENSIONS_IMPORT = new Set(['.pdf', '.docx', '.zip']);
 const EXTENSIONS_CV = new Set(['.pdf', '.docx']);
 const TAILLE_MAX_IMPORT = 200 * 1024 * 1024; // comme l'agent : 200 Mo par archive
 const TAILLE_MAX_IDENTIFIANTS = 64 * 1024;
+const TAILLE_MAX_MORCEAU = 16 * 1024 * 1024; // comme le backend
+const TAILLE_MAX_SIGNAL = 64 * 1024;
 const DOSSIER_OUVERTS = path.join(os.tmpdir(), 'injara-cv-ouverts');
 
 /** Efface les CV déchiffrés pour consultation. Un fichier encore ouvert dans un logiciel (verrouillé sous Windows)
@@ -38,6 +42,7 @@ async function viderCVOuverts() {
 
 function installerPontApi({ backend, origineAutorisee, fenetre }) {
   let jetonSession = null;
+  let salle = null; // connexion de signalisation de l'entretien en cours : { ws }
   viderCVOuverts();
 
   // Requête HTTP vers le backend, sans délai maximal : la liaison Gmail attend que l'utilisateur
@@ -85,6 +90,7 @@ function installerPontApi({ backend, origineAutorisee, fenetre }) {
     const sessionRefusee = statut === 401 && donnees?.code === 'session_requise';
     if (finDeSession || sessionRefusee) {
       jetonSession = null;
+      fermerSalle();
       viderCVOuverts();
     }
     return { ok, statut, donnees };
@@ -184,6 +190,119 @@ function installerPontApi({ backend, origineAutorisee, fenetre }) {
     }
     return { ok: true, chemin: filePath };
   });
+
+  // --- Salle de visio (entretien vidéo) ---------------------------------------------------------------------
+  // La signalisation WebRTC passe par ici : l'interface n'a ni le port du backend, ni le droit d'ouvrir un réseau.
+
+  function fermerSalle() {
+    if (!salle) return;
+    const { ws } = salle;
+    salle = null;
+    try {
+      ws.close();
+    } catch {
+      // déjà fermée
+    }
+  }
+
+  const idValide = (id) => Number.isSafeInteger(id) && id > 0;
+
+  ipcMain.handle('injara:salle-ouvrir', async (event, entretienId) => {
+    verifierOrigine(event);
+    if (!idValide(entretienId)) throw new Error('Requête invalide.');
+    fermerSalle();
+    const reponse = await envoyer('POST', `/entretiens/${entretienId}/salle`, Buffer.from('{}', 'utf8'), 'application/json');
+    if (!reponse.ok) return reponse;
+    const { ticket, ice } = reponse.donnees;
+    const emetteur = event.sender;
+    const ws = new WebSocket(`ws://127.0.0.1:${backend.port}/public/ws/recruteur?ticket=${encodeURIComponent(ticket)}`);
+    salle = { ws };
+    const actif = () => salle?.ws === ws && !emetteur.isDestroyed();
+    ws.addEventListener('message', (e) => {
+      if (actif()) emetteur.send('injara:salle-message', String(e.data));
+    });
+    ws.addEventListener('close', (e) => {
+      const etaitActive = actif();
+      if (salle?.ws === ws) salle = null;
+      if (etaitActive) emetteur.send('injara:salle-fermee', { code: e.code });
+    });
+    try {
+      await new Promise((resolve, reject) => {
+        ws.addEventListener('open', resolve, { once: true });
+        ws.addEventListener('error', () => reject(new Error('connexion refusée')), { once: true });
+      });
+    } catch {
+      if (salle?.ws === ws) salle = null;
+      return { ok: false, statut: 0, donnees: { detail: "La salle d'entretien n'a pas pu être ouverte." } };
+    }
+    return { ok: true, statut: 200, donnees: { ice } };
+  });
+
+  ipcMain.handle('injara:salle-envoyer', (event, texte) => {
+    verifierOrigine(event);
+    if (typeof texte !== 'string' || texte.length > TAILLE_MAX_SIGNAL) throw new Error('Requête invalide.');
+    if (salle?.ws.readyState === WebSocket.OPEN) salle.ws.send(texte);
+  });
+
+  ipcMain.handle('injara:salle-fermer', (event) => {
+    verifierOrigine(event);
+    fermerSalle();
+  });
+
+  // --- Enregistrement de l'entretien -------------------------------------------------------------------------
+
+  ipcMain.handle('injara:enregistrement-morceau', async (event, entretienId, morceau) => {
+    verifierOrigine(event);
+    const tampon = ArrayBuffer.isView(morceau)
+      ? Buffer.from(morceau.buffer, morceau.byteOffset, morceau.byteLength)
+      : morceau instanceof ArrayBuffer
+        ? Buffer.from(morceau)
+        : null;
+    if (!idValide(entretienId) || !tampon || tampon.length === 0 || tampon.length > TAILLE_MAX_MORCEAU) throw new Error('Requête invalide.');
+    return envoyer('PUT', `/entretiens/${entretienId}/enregistrement`, tampon, 'application/octet-stream');
+  });
+
+  // Le fichier est déchiffré par le backend et écrit en flux : une heure d'entretien ne passe jamais entière en mémoire.
+  ipcMain.handle('injara:exporter-enregistrement', async (event, entretienId) => {
+    verifierOrigine(event);
+    if (!idValide(entretienId)) throw new Error('Requête invalide.');
+    const { canceled, filePath } = await dialog.showSaveDialog(fenetre(), {
+      title: "Enregistrer l'entretien",
+      defaultPath: path.join(app.getPath('videos'), `entretien-${entretienId}.webm`),
+      filters: [{ name: 'Vidéo WebM', extensions: ['webm'] }],
+    });
+    if (canceled || !filePath) return { annule: true };
+    return telecharger(`/entretiens/${entretienId}/enregistrement`, filePath);
+  });
+
+  function telecharger(chemin, destination) {
+    const partiel = `${destination}.part`;
+    const enTetes = { 'X-Injara-Token': backend.token };
+    if (jetonSession) enTetes['X-Injara-Session'] = jetonSession;
+    return new Promise((resolve) => {
+      const echec = (message) => fs.rm(partiel, { force: true }).finally(() => resolve({ ok: false, message }));
+      http
+        .get({ host: '127.0.0.1', port: backend.port, path: chemin, headers: enTetes }, async (reponse) => {
+          if (reponse.statusCode !== 200) {
+            const morceaux = [];
+            reponse.on('data', (m) => morceaux.push(m));
+            reponse.on('end', () => {
+              const { donnees } = interpreter(chemin, reponse.statusCode, Buffer.concat(morceaux).toString('utf8'));
+              resolve({ ok: false, message: donnees?.detail || "L'enregistrement est indisponible." });
+            });
+            return;
+          }
+          try {
+            await pipeline(reponse, fsFlux.createWriteStream(partiel, { mode: 0o600 }));
+            await fs.rename(partiel, destination);
+            resolve({ ok: true, chemin: destination });
+          } catch (err) {
+            echec(`L'enregistrement n'a pas pu être écrit : ${err.message}`);
+          }
+        })
+        .on('error', () => echec("Le moteur INJARA ne répond plus. Redémarrez l'application."));
+    });
+  }
 
   // --- Identifiants Google (credentials.json) --------------------------------------------------
 

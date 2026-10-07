@@ -3,14 +3,18 @@
 Cycle de vie : planifie -> en_cours -> termine ; un entretien planifié ou en cours peut être annulé.
 Le score d'entretien reste un indicateur (le regard surtout) : il ne modifie ni le score CV ni la décision du recruteur.
 La transcription est chiffrée en base avec la clé de données de la session, comme les textes des CV.
+Le candidat n'a pas de session : il accède à son entretien par le code du lien (valide jusqu'à `expire_le`) et donne
+lui-même son consentement. L'enregistrement n'est accepté qu'après ce consentement ; il est chiffré morceau par morceau.
 """
 from __future__ import annotations
 
 import secrets
-from datetime import datetime, timezone
-from typing import Any, Callable
+from itertools import chain
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from typing import Any, Callable, Iterator
 
-from ..database.repositories import CandidatureRepository, EntretienRepository, PosteRepository
+from ..database.repositories import CandidatureRepository, EntretienRepository, EntrepriseRepository, PosteRepository
 from . import coffre
 from .erreurs import Conflit, ErreurValidation, Introuvable, SessionRequise
 
@@ -22,6 +26,8 @@ TRANSITIONS = {
     "annule": ("planifie", "en_cours"),
 }
 LONGUEUR_MAX_RESUME = 4000
+VALIDITE_LIEN = timedelta(days=7)  # après la date prévue (ou la création, sans date)
+TAILLE_MAX_MORCEAU = 16 * 1024 * 1024
 
 
 def _maintenant() -> datetime:
@@ -35,10 +41,14 @@ class EntretiensService:
         candidatures: CandidatureRepository,
         postes: PosteRepository,
         cle: Callable[[], bytes | None],
+        entreprise: EntrepriseRepository,
+        dossier_enregistrements: Path,
     ) -> None:
         self.entretiens = entretiens
         self.candidatures = candidatures
         self.postes = postes
+        self.entreprise = entreprise
+        self.dossier_enregistrements = dossier_enregistrements
         self._cle_session = cle
 
     def planifier(self, candidature_id: int, date_entretien: datetime | None = None) -> dict[str, Any]:
@@ -54,6 +64,7 @@ class EntretiensService:
             poste_id=candidature["poste_id"],
             code_invitation=secrets.token_urlsafe(12),
             date_entretien=date_entretien,
+            expire_le=(date_entretien or _maintenant()) + VALIDITE_LIEN,
         )
         return self._resume(entretien)
 
@@ -131,6 +142,77 @@ class EntretiensService:
         self.entretiens.maj(entretien_id, **champs)
         return self.consulter(entretien_id)
 
+    # --- Côté candidat : accès par le code du lien, sans session --------------------------------------------
+
+    def entretien_du_lien(self, code: str) -> dict[str, Any]:
+        """L'entretien d'un lien encore valable. Même message pour un code inconnu, expiré ou d'un entretien clos."""
+        return self._verifier_lien(self.entretiens.get_par_code(code) if code else None)
+
+    def pour_invitation(self, entretien_id: int) -> dict[str, Any]:
+        """L'entretien du recruteur, à condition que son lien soit encore valable (pour donner le lien ou ouvrir la salle)."""
+        return self._verifier_lien(self._get(entretien_id))
+
+    @staticmethod
+    def _verifier_lien(entretien: dict[str, Any] | None) -> dict[str, Any]:
+        if (
+            entretien is None
+            or entretien["statut"] not in ("planifie", "en_cours")
+            or (entretien["expire_le"] is not None and entretien["expire_le"] < _maintenant())
+        ):
+            raise Introuvable("Ce lien d'entretien est invalide ou a expiré.")
+        return entretien
+
+    def presenter_au_candidat(self, code: str) -> dict[str, Any]:
+        entretien = self.entretien_du_lien(code)
+        poste = self.postes.get(entretien["poste_id"]) if entretien["poste_id"] else None
+        entreprise = self.entreprise.get() or {}
+        return {
+            "entreprise": entreprise.get("nom") or "",
+            "poste": poste["intitule"] if poste else "",
+            "date_entretien": entretien["date_entretien"],
+            "statut": entretien["statut"],
+            "consentement_enregistrement": entretien["consentement_enregistrement"],
+        }
+
+    def consentement_candidat(self, code: str, accepte: bool) -> dict[str, Any]:
+        entretien = self.entretien_du_lien(code)
+        self.entretiens.maj(entretien["id"], consentement_enregistrement=accepte, consentement_le=_maintenant())
+        return self.presenter_au_candidat(code)
+
+    # --- Enregistrement : chiffré au fil de l'eau, jamais en clair sur le disque -----------------------------
+
+    def ajouter_enregistrement(self, entretien_id: int, donnees: bytes) -> None:
+        entretien = self._get(entretien_id)
+        if not entretien["consentement_enregistrement"]:
+            raise Conflit("Le candidat n'a pas consenti à l'enregistrement.")
+        if entretien["statut"] != "en_cours":
+            raise Conflit("L'enregistrement n'est possible que pendant l'entretien.")
+        if not donnees:
+            raise ErreurValidation({"enregistrement": "Morceau vide."})
+        if len(donnees) > TAILLE_MAX_MORCEAU:
+            raise ErreurValidation({"enregistrement": "Morceau trop volumineux."})
+        cle = self._cle()
+        nom = entretien["fichier_enregistrement"] or f"entretien-{entretien_id}.webm.injara"
+        self.dossier_enregistrements.mkdir(parents=True, exist_ok=True)
+        coffre.ajouter_morceau(self.dossier_enregistrements / nom, donnees, cle)
+        if not entretien["fichier_enregistrement"]:
+            self.entretiens.maj(entretien_id, fichier_enregistrement=nom)
+
+    def lire_enregistrement(self, entretien_id: int) -> Iterator[bytes]:
+        """Enregistrement déchiffré, morceau par morceau (le fichier complet n'est jamais chargé en mémoire)."""
+        entretien = self._get(entretien_id)
+        nom = entretien["fichier_enregistrement"]
+        chemin = self.dossier_enregistrements / nom if nom else None
+        if chemin is None or not chemin.is_file():
+            raise Introuvable("Cet entretien n'a pas d'enregistrement.")
+        cle = self._cle()
+        morceaux = coffre.lire_morceaux(chemin, cle)
+        try:
+            premier = next(morceaux, b"")  # une clé ou un fichier invalide se voit dès le premier morceau, avant l'envoi
+        except coffre.Indechiffrable:
+            raise Conflit("L'enregistrement est illisible avec cette session.") from None
+        return chain([premier], morceaux)
+
     def _resume(self, e: dict[str, Any]) -> dict[str, Any]:
         return {
             "id": e["id"],
@@ -138,8 +220,11 @@ class EntretiensService:
             "poste_id": e["poste_id"],
             "code_invitation": e["code_invitation"],
             "date_entretien": e["date_entretien"],
+            "expire_le": e["expire_le"],
+            "cree_le": e["cree_le"],
             "statut": e["statut"],
             "consentement_enregistrement": e["consentement_enregistrement"],
+            "enregistrement": bool(e["fichier_enregistrement"]),
             "debut_le": e["debut_le"],
             "fin_le": e["fin_le"],
             "score_regard": e["score_regard"],

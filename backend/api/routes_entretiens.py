@@ -5,8 +5,12 @@ from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, Request
+from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from ..services.erreurs import Indisponible
+from ..services.signalisation import serveurs_ice
 from .securite import session_requise
 
 router = APIRouter(tags=["Entretiens"], dependencies=[Depends(session_requise)])
@@ -62,8 +66,11 @@ def consulter(entretien_id: int, request: Request):
 
 
 @router.put("/entretiens/{entretien_id}/statut")
-def changer_statut(entretien_id: int, corps: Statut, request: Request):
-    return _service(request).changer_statut(entretien_id, corps.statut)
+async def changer_statut(entretien_id: int, corps: Statut, request: Request):
+    resultat = await run_in_threadpool(_service(request).changer_statut, entretien_id, corps.statut)
+    if resultat["statut"] in ("termine", "annule"):  # la salle de visio se ferme avec l'entretien
+        await request.app.state.services.signalisation.fermer(resultat["code_invitation"])
+    return resultat
 
 
 @router.put("/entretiens/{entretien_id}/consentement")
@@ -79,3 +86,55 @@ def alerte(entretien_id: int, corps: Alerte, request: Request):
 @router.put("/entretiens/{entretien_id}/resultats")
 def resultats(entretien_id: int, corps: Resultats, request: Request):
     return _service(request).enregistrer_resultats(entretien_id, **corps.model_dump())
+
+
+# --- Accès à distance, lien du candidat, salle de visio ---------------------------------------------------
+
+
+@router.get("/tunnel")
+def etat_tunnel(request: Request):
+    return request.app.state.services.tunnel.etat()
+
+
+@router.post("/tunnel")
+def demarrer_tunnel(request: Request):
+    return request.app.state.services.tunnel.demarrer()
+
+
+@router.delete("/tunnel")
+def arreter_tunnel(request: Request):
+    tunnel = request.app.state.services.tunnel
+    tunnel.arreter()
+    return tunnel.etat()
+
+
+@router.get("/entretiens/{entretien_id}/lien")
+def lien(entretien_id: int, request: Request):
+    entretien = _service(request).pour_invitation(entretien_id)
+    url = request.app.state.services.tunnel.url
+    if url is None:
+        raise Indisponible("L'accès à distance n'est pas activé : activez-le pour obtenir le lien du candidat.")
+    return {"lien": f"{url}/public/entretien/{entretien['code_invitation']}", "expire_le": entretien["expire_le"]}
+
+
+@router.post("/entretiens/{entretien_id}/salle")
+def salle(entretien_id: int, request: Request):
+    """Ticket à usage unique pour que l'interface du recruteur ouvre sa connexion de signalisation."""
+    entretien = _service(request).pour_invitation(entretien_id)
+    return {"ticket": request.app.state.services.signalisation.creer_ticket(entretien["code_invitation"]), "ice": serveurs_ice()}
+
+
+# --- Enregistrement (chiffré, après consentement du candidat) ---------------------------------------------
+
+
+@router.put("/entretiens/{entretien_id}/enregistrement", status_code=204)
+async def ajouter_enregistrement(entretien_id: int, request: Request):
+    """Un morceau de l'enregistrement, en octets bruts, à la suite des précédents."""
+    donnees = await request.body()
+    await run_in_threadpool(_service(request).ajouter_enregistrement, entretien_id, donnees)
+
+
+@router.get("/entretiens/{entretien_id}/enregistrement")
+def lire_enregistrement(entretien_id: int, request: Request):
+    morceaux = _service(request).lire_enregistrement(entretien_id)
+    return StreamingResponse(morceaux, media_type="application/octet-stream")

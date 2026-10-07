@@ -26,11 +26,13 @@ from ..services.candidatures import CandidaturesService
 from ..services.entreprise import EntrepriseService
 from ..services.entretiens import EntretiensService
 from ..services.postes import PostesService
+from ..services.signalisation import SignalisationService
+from ..services.tunnel import TunnelService
 from ..services.rapport import RapportService
 from ..services.tableau_de_bord import TableauDeBordService
 from ..services.traitement import TraitementService
-from ..services.erreurs import Conflit, ErreurService, ErreurValidation, Introuvable, NonAutorise, SessionRequise
-from . import routes_agent, routes_auth, routes_candidatures, routes_entretiens, routes_metier
+from ..services.erreurs import Conflit, ErreurService, ErreurValidation, Indisponible, Introuvable, NonAutorise, SessionRequise
+from . import routes_agent, routes_auth, routes_candidat, routes_candidatures, routes_entretiens, routes_metier
 from .securite import JetonDeLancementMiddleware
 
 
@@ -45,6 +47,8 @@ class Services:
     candidatures: CandidaturesService
     rapport: RapportService
     entretiens: EntretiensService
+    signalisation: SignalisationService
+    tunnel: TunnelService
 
 
 def construire_services(db: Database, settings: Settings, modele: ModeleSemantique | None = None) -> Services:
@@ -60,10 +64,14 @@ def construire_services(db: Database, settings: Settings, modele: ModeleSemantiq
     )
     candidatures = CandidaturesService(CandidatureRepository(db), ScoreRepository(db), PosteRepository(db), traitement)
 
-    entretiens = EntretiensService(EntretienRepository(db), CandidatureRepository(db), PosteRepository(db), auth.cle_session)
+    entretiens = EntretiensService(
+        EntretienRepository(db), CandidatureRepository(db), PosteRepository(db), auth.cle_session,
+        entreprise=EntrepriseRepository(db), dossier_enregistrements=settings.data_dir / "enregistrements",
+    )
+    tunnel = TunnelService()
 
     auth.a_la_connexion += [agent_mail.session_ouverte, traitement.demarrer]
-    auth.a_la_deconnexion += [agent_mail.session_fermee, traitement.arreter]
+    auth.a_la_deconnexion += [agent_mail.session_fermee, traitement.arreter, tunnel.arreter]
     postes.a_la_modification.append(traitement.postes_modifies)
     return Services(
         auth=auth,
@@ -74,6 +82,8 @@ def construire_services(db: Database, settings: Settings, modele: ModeleSemantiq
         traitement=traitement,
         candidatures=candidatures,
         entretiens=entretiens,
+        signalisation=SignalisationService(),
+        tunnel=tunnel,
         rapport=RapportService(
             CandidatureRepository(db), ScoreRepository(db), PosteRepository(db), EntrepriseRepository(db), cle=auth.cle_session
         ),
@@ -96,11 +106,12 @@ def create_app(settings: Settings, modele: ModeleSemantique | None = None) -> Fa
     app.include_router(routes_metier.router)
     app.include_router(routes_candidatures.router)
     app.include_router(routes_entretiens.router)
+    app.include_router(routes_candidat.router)
     routes_agent.monter(app)
     return app
 
 
-_STATUTS = {ErreurValidation: 422, NonAutorise: 401, SessionRequise: 401, Introuvable: 404, Conflit: 409}
+_STATUTS = {ErreurValidation: 422, NonAutorise: 401, SessionRequise: 401, Introuvable: 404, Conflit: 409, Indisponible: 503}
 
 
 def _gestionnaires_erreurs(app: FastAPI) -> None:

@@ -38,6 +38,7 @@ function creerFenetre() {
       sandbox: true,
       webSecurity: true,
       spellcheck: true,
+      backgroundThrottling: false, // un entretien enregistré continue même si la fenêtre est réduite
     },
   });
 
@@ -56,10 +57,17 @@ function creerFenetre() {
 }
 
 async function demarrer() {
-  // Seule la copie dans le presse-papiers (clé de récupération) est permise ; caméra, micro, etc. sont refusés.
+  // Permis : la copie dans le presse-papiers (clé de récupération, lien du candidat) et, pour l'interface d'INJARA
+  // seulement, la caméra et le micro de l'entretien vidéo (jamais l'écran). Tout le reste est refusé.
   const PERMISSIONS = new Set(['clipboard-sanitized-write']);
-  session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) => callback(PERMISSIONS.has(permission)));
-  session.defaultSession.setPermissionCheckHandler((_wc, permission) => PERMISSIONS.has(permission));
+  const autorise = (wc, permission, details) => {
+    if (PERMISSIONS.has(permission)) return true;
+    if (permission !== 'media' || !wc || !origineAutorisee(wc.getURL())) return false;
+    const types = details?.mediaTypes;
+    return !types || types.every((t) => t === 'video' || t === 'audio');
+  };
+  session.defaultSession.setPermissionRequestHandler((wc, permission, callback, details) => callback(autorise(wc, permission, details)));
+  session.defaultSession.setPermissionCheckHandler((wc, permission, _origine, details) => autorise(wc, permission, details));
   if (!URL_DEV) Menu.setApplicationMenu(null);
 
   // INJARA_DATA_DIR permet d'utiliser un autre dossier de données (tests, démonstration).

@@ -17,6 +17,7 @@ import {
 } from '../candidatures/elements.jsx';
 import { Alerte, Bouton, Carte, Champ, Chargement, ZoneTexte } from '../components/ui.jsx';
 import { STATUTS } from '../constantes.js';
+import CarteEntretien from '../entretiens/CarteEntretien.jsx';
 import { formaterDateHeure } from '../format.js';
 
 export default function FicheCandidature() {
@@ -232,6 +233,7 @@ export default function FicheCandidature() {
               action(() => api.put(`/candidatures/${id}/decision`, { decision, note }), 'Décision enregistrée. Le score et le classement ne changent pas.')
             }
           />
+          <CarteEntretien candidatureId={fiche.id} decision={fiche.decision} />
           <Carte className="flex flex-col gap-3 text-sm">
             <h2 className="font-semibold text-navy-900">Lu dans le CV</h2>
             {fiche.statut_lecture !== 'lue' ? (

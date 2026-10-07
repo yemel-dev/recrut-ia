@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>Entretien vidéo</title>
+    <link rel="stylesheet" href="/public/candidat.css" />
+  </head>
+  <body>
+    <main>
+      <section id="ecran-message" class="carte" hidden>
+        <h1 id="message-titre"></h1>
+        <p id="message-texte"></p>
+      </section>
+
+      <section id="ecran-accueil" class="carte" hidden>
+        <h1>Entretien vidéo</h1>
+        <p id="accueil-contexte"></p>
+        <ul class="consignes">
+          <li>Installez-vous dans un endroit calme et bien éclairé, face à la caméra.</li>
+          <li>Utilisez de préférence un ordinateur, avec Chrome, Edge ou Firefox à jour.</li>
+          <li>Le recruteur voit et entend ce que votre caméra et votre micro captent.</li>
+        </ul>
+        <label class="consentement">
+          <input type="checkbox" id="consentement" />
+          <span>J'autorise le recruteur à enregistrer cet entretien (image et son). Cet enregistrement reste sur son ordinateur.</span>
+        </label>
+        <p class="aide">Cette case est facultative : sans elle, l'entretien a lieu mais n'est pas enregistré.</p>
+        <button id="rejoindre" type="button" class="bouton">Autoriser la caméra et le micro, puis rejoindre</button>
+        <p id="erreur-acces" class="erreur" role="alert" hidden></p>
+      </section>
+
+      <section id="ecran-entretien" hidden>
+        <div class="scene">
+          <video id="video-recruteur" autoplay playsinline></video>
+          <p id="attente" class="attente">En attente du recruteur…</p>
+          <video id="video-local" autoplay playsinline muted></video>
+        </div>
+        <div class="barre">
+          <span id="etat" class="etat" role="status"></span>
+          <button id="micro" type="button" class="bouton secondaire">Couper le micro</button>
+          <button id="quitter" type="button" class="bouton danger">Quitter l'entretien</button>
+        </div>
+      </section>
+    </main>
+    <script src="/public/candidat.js"></script>
+  </body>
+</html>

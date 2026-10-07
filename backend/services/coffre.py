@@ -21,6 +21,7 @@ PREFIXE_TEXTE = "injara:v1:"
 TAILLE_NONCE = 12
 _AAD_FICHIER = b"injara:cv:v1"
 _AAD_TEXTE = b"injara:texte:v1"
+_AAD_MORCEAU = b"injara:enregistrement:v1"
 
 
 class Indechiffrable(Exception):
@@ -68,6 +69,29 @@ def lire_fichier(chemin: str | Path, cle: bytes) -> bytes:
     if cible.is_file():
         return _dechiffrer(cible.read_bytes(), cle, _AAD_FICHIER)
     return Path(chemin).read_bytes()
+
+
+# --- Enregistrements (écrits au fil de l'eau, jamais en clair sur le disque) ----------------------------------------
+
+
+def ajouter_morceau(chemin: str | Path, donnees: bytes, cle: bytes) -> None:
+    """Ajoute un morceau chiffré à la fin du fichier : longueur (4 octets) || nonce || chiffré."""
+    chiffre = _chiffrer(donnees, cle, _AAD_MORCEAU)
+    with open(chemin, "ab") as f:
+        f.write(len(chiffre).to_bytes(4, "big") + chiffre)
+        f.flush()
+        os.fsync(f.fileno())
+
+
+def lire_morceaux(chemin: str | Path, cle: bytes):
+    """Morceaux en clair, dans l'ordre. Lève Indechiffrable si le fichier est altéré ou tronqué au milieu d'un morceau."""
+    with open(chemin, "rb") as f:
+        while entete := f.read(4):
+            taille = int.from_bytes(entete, "big")
+            chiffre = f.read(taille)
+            if len(entete) < 4 or len(chiffre) < taille:
+                raise Indechiffrable("Enregistrement incomplet.")
+            yield _dechiffrer(chiffre, cle, _AAD_MORCEAU)
 
 
 # --- Textes en base ---------------------------------------------------------------------------------------

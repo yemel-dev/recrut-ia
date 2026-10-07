@@ -2,6 +2,7 @@
 
 1. Jeton de lancement : généré par Electron à chaque démarrage, exigé sur TOUTES les requêtes (en-tête X-Injara-Token).
    Un autre programme de l'ordinateur ne peut donc pas interroger l'API, même s'il trouve le port.
+   Seule exception : les routes publiques de l'entretien (`/public/`), par où le candidat arrive via le tunnel.
 2. Session : exigée sur toutes les routes sauf création de compte, connexion et récupération (en-tête X-Injara-Session).
 """
 from __future__ import annotations
@@ -16,6 +17,7 @@ from ..services.erreurs import SessionRequise
 
 EN_TETE_JETON = "x-injara-token"
 EN_TETE_SESSION = "X-Injara-Session"
+PREFIXE_PUBLIC = "/public/"  # routes du candidat (routes_candidat.py) ; chacune s'authentifie par le code de son lien
 
 
 class JetonDeLancementMiddleware:
@@ -24,7 +26,7 @@ class JetonDeLancementMiddleware:
         self.jeton = jeton.encode("utf-8")
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope["type"] == "http":
+        if scope["type"] == "http" and not scope["path"].startswith(PREFIXE_PUBLIC):
             recu = dict(scope["headers"]).get(EN_TETE_JETON.encode("ascii"), b"")
             if not hmac.compare_digest(recu, self.jeton):
                 await _refuser(send)

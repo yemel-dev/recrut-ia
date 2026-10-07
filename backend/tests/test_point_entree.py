@@ -41,3 +41,22 @@ def test_sous_processus_pendant_la_surveillance_puis_arret_a_la_fermeture():
         garde.cancel()
         if enfant.poll() is None:
             enfant.kill()
+
+
+def test_nettoyage_a_la_fermeture_du_tube(tmp_path):
+    """Si Electron s'arrête, le tunnel public doit être coupé avant la sortie : le lien ne doit pas rester ouvert."""
+    marque = tmp_path / "nettoye"
+    code = (
+        "import threading\n"
+        "from pathlib import Path\n"
+        "from backend.__main__ import _detacher_stdin, _surveiller_parent\n"
+        f"threading.Thread(target=_surveiller_parent, args=(_detacher_stdin(), lambda: Path({str(marque)!r}).write_text('ok')), daemon=True).start()\n"
+        "threading.Event().wait()\n"
+    )
+    enfant = subprocess.Popen([sys.executable, "-c", code], cwd=RACINE, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    try:
+        enfant.stdin.close()
+        assert enfant.wait(timeout=30) == 0
+    finally:
+        enfant.kill()
+    assert marque.read_text() == "ok"

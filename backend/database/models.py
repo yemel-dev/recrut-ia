@@ -197,6 +197,7 @@ class Entretien(Base):
     poste_id: Mapped[int | None] = mapped_column(ForeignKey("postes.id", ondelete="SET NULL"), index=True)
     code_invitation: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
     date_entretien: Mapped[datetime | None] = mapped_column(DateHeureUTC)
+    expire_le: Mapped[datetime | None] = mapped_column(DateHeureUTC)  # au-delà, le lien d'invitation ne fonctionne plus
     statut: Mapped[str] = mapped_column(String(20), default="planifie", server_default=text("'planifie'"), index=True)  # planifie | en_cours | termine | annule
     consentement_enregistrement: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("0"))
     consentement_le: Mapped[datetime | None] = mapped_column(DateHeureUTC)

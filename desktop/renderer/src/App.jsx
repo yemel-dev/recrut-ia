@@ -2,6 +2,7 @@ import { HashRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import Disposition from './components/Disposition.jsx';
 import BoiteMail from './pages/BoiteMail.jsx';
 import Candidatures from './pages/Candidatures.jsx';
+import Entretien from './pages/Entretien.jsx';
 import FicheCandidature from './pages/FicheCandidature.jsx';
 import { Alerte, Chargement } from './components/ui.jsx';
 import Connexion from './pages/Connexion.jsx';
@@ -56,6 +57,7 @@ function Routeur() {
           <Route path="/entreprise" element={<ProfilEntreprise />} />
           <Route path="/candidatures" element={<Candidatures />} />
           <Route path="/candidatures/:id" element={<FicheCandidature />} />
+          <Route path="/entretiens/:id" element={<Entretien />} />
           <Route path="/boite-mail" element={<BoiteMail />} />
           <Route path="/postes" element={<Postes />} />
           <Route path="/postes/nouveau" element={<PosteFormulaire />} />

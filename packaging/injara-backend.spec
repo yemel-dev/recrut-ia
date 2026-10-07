@@ -13,7 +13,7 @@ racine = Path(SPECPATH).parent
 datas, binaries, hiddenimports = [], [], []
 
 # Bibliothèques à chargement dynamique : on prend tout (modules, données, bibliothèques natives).
-for paquet in ("sentence_transformers", "transformers", "tokenizers", "rapidocr", "onnxruntime", "uvicorn"):
+for paquet in ("sentence_transformers", "transformers", "tokenizers", "rapidocr", "onnxruntime", "uvicorn", "websockets"):
     d, b, h = collect_all(paquet)
     datas += d
     binaries += b
@@ -29,6 +29,7 @@ for paquet in (
     except Exception:  # paquet absent de cet environnement : rien à copier
         pass
 
+datas += [(str(racine / "backend" / "web"), "backend/web")]  # page web du candidat (entretien vidéo)
 datas += collect_data_files("docx")  # modèle de document de python-docx
 datas += collect_data_files("googleapiclient", includes=["discovery_cache/documents/gmail.v1.json"])
 hiddenimports += collect_submodules("backend")

@@ -39,7 +39,7 @@ def _detacher_stdin() -> int:
     return fd
 
 
-def _surveiller_parent(fd: int) -> None:
+def _surveiller_parent(fd: int, nettoyer=None) -> None:
     """Bloque jusqu'à la fermeture du tube d'Electron (arrêté ou planté), puis termine le processus."""
     try:
         while os.read(fd, 1024):
@@ -47,6 +47,8 @@ def _surveiller_parent(fd: int) -> None:
     except OSError:
         pass
     logging.getLogger("injara").info("Electron s'est arrêté : arrêt du backend.")
+    if nettoyer is not None:
+        nettoyer()  # le tunnel ne doit pas survivre à l'application : il laisserait le lien public ouvert
     os._exit(0)
 
 
@@ -64,13 +66,18 @@ def main() -> int:
     # dans la file au lieu d'être refusées.
     sock.listen(128)
     port = sock.getsockname()[1]
+    tunnel = app.state.services.tunnel
+    tunnel.port = port
 
     if os.getenv("INJARA_WATCH_STDIN", "1") == "1":
-        threading.Thread(target=_surveiller_parent, args=(_detacher_stdin(),), name="surveillance-parent", daemon=True).start()
+        threading.Thread(target=_surveiller_parent, args=(_detacher_stdin(), tunnel.arreter), name="surveillance-parent", daemon=True).start()
 
     print(f"INJARA_PORT={port}", flush=True)
     config = uvicorn.Config(app, log_level="warning", access_log=False)
-    uvicorn.Server(config).run(sockets=[sock])
+    try:
+        uvicorn.Server(config).run(sockets=[sock])
+    finally:
+        tunnel.arreter()
     return 0
 
 
