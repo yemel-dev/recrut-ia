@@ -26,6 +26,7 @@ const TAILLE_MAX_IMPORT = 200 * 1024 * 1024; // comme l'agent : 200 Mo par archi
 const TAILLE_MAX_IDENTIFIANTS = 64 * 1024;
 const TAILLE_MAX_MORCEAU = 16 * 1024 * 1024; // comme le backend
 const TAILLE_MAX_SIGNAL = 64 * 1024;
+const TAILLE_MAX_IMAGE = 512 * 1024; // comme le backend
 const DOSSIER_OUVERTS = path.join(os.tmpdir(), 'injara-cv-ouverts');
 
 /** Efface les CV déchiffrés pour consultation. Un fichier encore ouvert dans un logiciel (verrouillé sous Windows)
@@ -260,6 +261,14 @@ function installerPontApi({ backend, origineAutorisee, fenetre }) {
         : null;
     if (!idValide(entretienId) || !tampon || tampon.length === 0 || tampon.length > TAILLE_MAX_MORCEAU) throw new Error('Requête invalide.');
     return envoyer('PUT', `/entretiens/${entretienId}/enregistrement`, tampon, 'application/octet-stream');
+  });
+
+  // Analyse du regard : une image (JPEG) du candidat, envoyée au backend local qui renvoie l'état du moment.
+  ipcMain.handle('injara:regard-image', (event, entretienId, image) => {
+    verifierOrigine(event);
+    const tampon = ArrayBuffer.isView(image) ? Buffer.from(image.buffer, image.byteOffset, image.byteLength) : image instanceof ArrayBuffer ? Buffer.from(image) : null;
+    if (!idValide(entretienId) || !tampon || tampon.length === 0 || tampon.length > TAILLE_MAX_IMAGE) throw new Error('Requête invalide.');
+    return envoyer('PUT', `/entretiens/${entretienId}/regard`, tampon, 'image/jpeg');
   });
 
   // Le fichier est déchiffré par le backend et écrit en flux : une heure d'entretien ne passe jamais entière en mémoire.

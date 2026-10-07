@@ -1,13 +1,15 @@
-"""Télécharge une fois le modèle Sentence-BERT dans le dossier des modèles (accès Internet requis).
+"""Télécharge une fois les modèles dans le dossier des modèles (accès Internet requis) : Sentence-BERT et Face Landmarker.
 
     python -m backend.ia.telecharger_modele
 
-Ensuite, INJARA le charge depuis le disque, hors ligne. Sans ce modèle, le critère « adéquation » est ignoré.
+Ensuite, INJARA les charge depuis le disque, hors ligne. Sans Sentence-BERT, le critère « adéquation » est ignoré ;
+sans Face Landmarker (4 Mo), l'analyse du regard en entretien est indisponible.
 """
 from __future__ import annotations
 
 import sys
 
+from .regard import telecharger_modele_visage
 from .semantique import DEPOT_MODELE, NOM_MODELE, dossier_modeles
 
 
@@ -25,7 +27,9 @@ def main() -> int:
         allow_patterns=["*.json", "*.txt", "*.model", "model.safetensors", "1_Pooling/*"],
         ignore_patterns=["onnx/*", "openvino/*"],
     )
-    print("Modèle prêt. INJARA l'utilisera au prochain lancement.")
+    print("Téléchargement du modèle d'analyse du regard (environ 4 Mo)…")
+    telecharger_modele_visage(dossier_modeles())
+    print("Modèles prêts. INJARA les utilisera au prochain lancement.")
     return 0
 
 

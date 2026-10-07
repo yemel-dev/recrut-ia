@@ -213,6 +213,7 @@ class Entretien(Base):
     transcription: Mapped[str | None] = mapped_column(Text)  # chiffrée avec la clé de données (services/coffre.py)
     fichier_enregistrement: Mapped[str | None] = mapped_column(Text)  # enregistrement chiffré, seulement après consentement
     resume: Mapped[str | None] = mapped_column(Text)
+    bilan_regard: Mapped[dict | None] = mapped_column(JSON)  # synthèse de l'analyse du regard et de la tête (ia/regard.py)
 
     cree_le: Mapped[datetime] = mapped_column(DateHeureUTC, default=_now)
     modifie_le: Mapped[datetime] = mapped_column(DateHeureUTC, default=_now, onupdate=_now)

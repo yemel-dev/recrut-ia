@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, Circle, Copy, Download, Globe, Mic, Power, Video, VideoOff } from 'lucide-react';
+import { ArrowLeft, Check, Circle, Copy, Download, Eye, Globe, Mic, Power, Video, VideoOff } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../api.js';
@@ -6,6 +6,7 @@ import { useAgent } from '../agent/ContexteAgent.jsx';
 import { Alerte, Bouton, Carte, Chargement, Confirmation } from '../components/ui.jsx';
 import { STATUTS_ENTRETIEN } from '../constantes.js';
 import { creerEnregistreur, enregistrementPossible } from '../entretiens/enregistreur.js';
+import { creerAnalyseurRegard } from '../entretiens/regard.js';
 import { useSalle } from '../entretiens/useSalle.js';
 import { formaterDateHeure } from '../format.js';
 
@@ -20,6 +21,8 @@ export default function Entretien() {
   const [enregistrement, setEnregistrement] = useState('inactif'); // inactif | actif | erreur
   const salle = useSalle(entretienId);
   const enregistreur = useRef(null);
+  const analyseur = useRef(null);
+  const [regard, setRegard] = useState({ actif: false, etat: null, evenements: [], message: '' });
   const refDistant = useRef(null);
   const refLocal = useRef(null);
 
@@ -57,6 +60,20 @@ export default function Entretien() {
 
   // Quitter la page pendant l'enregistrement : on envoie ce qui reste (l'entretien reste « en cours »).
   useEffect(() => () => void enregistreur.current?.arreter(), []);
+  useEffect(() => () => analyseur.current?.arreter(), []);
+
+  const demarrerRegard = () => {
+    const a = creerAnalyseurRegard({
+      entretienId,
+      onResultat: ({ etat, evenements }) =>
+        setRegard((r) => ({ ...r, actif: true, etat, evenements: [...evenements.map((e) => ({ ...e, a: new Date() })), ...r.evenements].slice(0, 5) })),
+      onErreur: (message) => setRegard((r) => ({ ...r, actif: false, message })),
+    });
+    a.definirVideo(refDistant.current);
+    a.demarrer();
+    analyseur.current = a;
+    setRegard({ actif: true, etat: null, evenements: [], message: '' });
+  };
 
   const demarrer = async () => {
     setOccupe(true);
@@ -65,6 +82,7 @@ export default function Entretien() {
       const e = await api.put(`/entretiens/${entretienId}/statut`, { statut: 'en_cours' });
       setEntretien(e);
       const courant = (await charger()) || e; // consentement le plus récent
+      if (courant.consentement_enregistrement) demarrerRegard();
       if (courant.consentement_enregistrement && enregistrementPossible()) {
         const enr = creerEnregistreur({
           entretienId,
@@ -91,6 +109,9 @@ export default function Entretien() {
     setOccupe(true);
     setErreur('');
     try {
+      analyseur.current?.arreter(); // plus d'images : le backend calcule le bilan à la fin de l'entretien
+      analyseur.current = null;
+      setRegard((r) => ({ ...r, actif: false }));
       // L'enregistrement est clos avant l'entretien : le backend refuse les morceaux d'un entretien terminé.
       if (enregistreur.current) {
         const complet = await enregistreur.current.arreter();
@@ -186,6 +207,9 @@ export default function Entretien() {
               </p>
             </Carte>
           )}
+
+          {enCours && <CarteRegard regard={regard} consentement={entretien.consentement_enregistrement} />}
+          {entretien.statut === 'termine' && <CarteBilanRegard entretien={entretien} />}
 
           {entretien.statut === 'termine' && (
             <Carte className="flex flex-col gap-3">
@@ -287,6 +311,71 @@ function CarteInvitation({ entretien }) {
             <Alerte>Aucun outil de tunnel n'est installé sur cet ordinateur (cloudflared ou ngrok). Installez-en un, puis revenez ici.</Alerte>
           )}
           <Bouton icone={Globe} chargement={occupe} disabled={!tunnel.disponible} onClick={basculer}>Activer l'accès à distance</Bouton>
+        </>
+      )}
+    </Carte>
+  );
+}
+
+const ETATS_REGARD = {
+  attentif: ['Face à l\'écran', 'bg-emerald-50 text-emerald-700'],
+  regard_detourne: ['Regard détourné', 'bg-amber-50 text-amber-700'],
+  visage_absent: ['Visage absent', 'bg-danger-50 text-danger'],
+  plusieurs_visages: ['Plusieurs visages', 'bg-danger-50 text-danger'],
+};
+const LIBELLES_ALERTE = { regard_detourne: 'Regard détourné', visage_absent: 'Visage absent', plusieurs_visages: 'Plusieurs visages dans l\'image' };
+
+/** Indicateur en direct. Ce n'est qu'une aide : un regard qui s'éloigne un instant n'a rien d'anormal. */
+function CarteRegard({ regard, consentement }) {
+  const [libelle, couleur] = ETATS_REGARD[regard.etat] || ['En attente d\'images…', 'bg-mist text-muted'];
+  return (
+    <Carte className="flex flex-col gap-3 text-sm">
+      <h2 className="flex items-center gap-2 font-semibold text-navy-900"><Eye className="size-4" aria-hidden /> Regard et mouvements de tête</h2>
+      {!consentement ? (
+        <p className="text-muted">Le candidat n'a pas consenti : son regard n'est pas analysé.</p>
+      ) : regard.message ? (
+        <Alerte>{regard.message}</Alerte>
+      ) : !regard.actif ? (
+        <p className="text-muted">L'analyse démarre avec l'entretien.</p>
+      ) : (
+        <>
+          <span className={`inline-flex w-fit rounded-full px-3 py-1 font-semibold ${couleur}`}>{libelle}</span>
+          {regard.evenements.length > 0 && (
+            <ul className="flex flex-col gap-1 text-xs text-muted">
+              {regard.evenements.map((e, i) => <li key={i}>{e.a.toLocaleTimeString('fr-FR')} · {LIBELLES_ALERTE[e.type] || e.type}</li>)}
+            </ul>
+          )}
+          <p className="text-xs text-muted">Indicateur seulement : il ne décide de rien. Les images ne sont pas conservées.</p>
+        </>
+      )}
+    </Carte>
+  );
+}
+
+function CarteBilanRegard({ entretien }) {
+  const b = entretien.bilan_regard;
+  const alertes = entretien.alertes.filter((a) => LIBELLES_ALERTE[a.type]);
+  return (
+    <Carte className="flex flex-col gap-3 text-sm">
+      <h2 className="flex items-center gap-2 font-semibold text-navy-900"><Eye className="size-4" aria-hidden /> Regard et mouvements de tête</h2>
+      {!b ? (
+        <p className="text-muted">Aucune analyse pour cet entretien (pas de consentement, ou aucune image analysée).</p>
+      ) : (
+        <>
+          <p className="text-2xl font-bold text-navy-900">{Math.round(entretien.score_regard)}<span className="text-sm font-medium text-muted"> / 100</span></p>
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-1">
+            <dt className="text-muted">Face à l'écran</dt><dd>{b.part_attentif} %</dd>
+            <dt className="text-muted">Regard détourné</dt><dd>{b.part_regard_detourne} %</dd>
+            <dt className="text-muted">Visage absent</dt><dd>{b.part_visage_absent} %</dd>
+            <dt className="text-muted">Plusieurs visages</dt><dd>{b.part_plusieurs_visages} %</dd>
+            <dt className="text-muted">Agitation de la tête</dt><dd>{b.agitation_tete_deg_par_min} °/min</dd>
+          </dl>
+          {alertes.length > 0 && (
+            <ul className="flex flex-col gap-1 border-t border-line pt-2 text-xs text-muted">
+              {alertes.map((a) => <li key={a.id}>{formaterDateHeure(a.horodatage)} · {LIBELLES_ALERTE[a.type]}</li>)}
+            </ul>
+          )}
+          <p className="text-xs text-muted">Indicateur seulement : il ne modifie ni le score du CV ni votre décision.</p>
         </>
       )}
     </Carte>

@@ -25,6 +25,8 @@ contextBridge.exposeInMainWorld('injara', {
     /** Messages de signalisation reçus ; renvoie la fonction qui se désabonne. */
     surMessage: (rappel) => abonner('injara:salle-message', (_e, texte) => rappel(texte)),
     surFermeture: (rappel) => abonner('injara:salle-fermee', (_e, infos) => rappel(infos.code)),
+    /** Une image JPEG du candidat pour l'analyse du regard ; renvoie { ok, donnees: { etat, mesure, evenements } }. */
+    envoyerImageRegard: (entretienId, image) => ipcRenderer.invoke('injara:regard-image', entretienId, image),
     envoyerMorceau: (entretienId, morceau) => ipcRenderer.invoke('injara:enregistrement-morceau', entretienId, morceau),
     /** Boîte « Enregistrer sous » puis écriture du fichier déchiffré. Renvoie { ok, chemin }, { annule } ou { ok: false, message }. */
     exporterEnregistrement: (entretienId) => ipcRenderer.invoke('injara:exporter-enregistrement', entretienId),

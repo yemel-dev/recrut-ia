@@ -68,6 +68,9 @@ def consulter(entretien_id: int, request: Request):
 @router.put("/entretiens/{entretien_id}/statut")
 async def changer_statut(entretien_id: int, corps: Statut, request: Request):
     resultat = await run_in_threadpool(_service(request).changer_statut, entretien_id, corps.statut)
+    if resultat["statut"] == "termine":
+        await run_in_threadpool(request.app.state.services.regard.cloturer, entretien_id)
+        resultat = _service(request).consulter(entretien_id)  # avec le score de regard
     if resultat["statut"] in ("termine", "annule"):  # la salle de visio se ferme avec l'entretien
         await request.app.state.services.signalisation.fermer(resultat["code_invitation"])
     return resultat
@@ -122,6 +125,21 @@ def salle(entretien_id: int, request: Request):
     """Ticket à usage unique pour que l'interface du recruteur ouvre sa connexion de signalisation."""
     entretien = _service(request).pour_invitation(entretien_id)
     return {"ticket": request.app.state.services.signalisation.creer_ticket(entretien["code_invitation"]), "ice": serveurs_ice()}
+
+
+# --- Analyse du regard et de la tête -----------------------------------------------------------------------
+
+
+@router.get("/regard")
+def etat_regard(request: Request):
+    return {"disponible": request.app.state.services.regard.disponible()}
+
+
+@router.put("/entretiens/{entretien_id}/regard")
+async def analyser_regard(entretien_id: int, request: Request):
+    """Une image (JPEG) du candidat ; renvoie son état du moment et les événements relevés."""
+    image = await request.body()
+    return await run_in_threadpool(request.app.state.services.regard.analyser_image, entretien_id, image)
 
 
 # --- Enregistrement (chiffré, après consentement du candidat) ---------------------------------------------

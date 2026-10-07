@@ -19,7 +19,10 @@ from . import coffre
 from .erreurs import Conflit, ErreurValidation, Introuvable, SessionRequise
 
 STATUTS = ("planifie", "en_cours", "termine", "annule")
-TYPES_ALERTE = ("application_suspecte", "perte_focus", "surveillance_interrompue")
+TYPES_ALERTE = (
+    "application_suspecte", "perte_focus", "surveillance_interrompue",
+    "regard_detourne", "visage_absent", "plusieurs_visages",  # relevées par l'analyse du regard (services/regard.py)
+)
 TRANSITIONS = {
     "en_cours": ("planifie",),
     "termine": ("en_cours",),
@@ -79,6 +82,7 @@ class EntretiensService:
         return {
             **self._resume(entretien),
             "resume": entretien["resume"],
+            "bilan_regard": entretien["bilan_regard"],
             "transcription": coffre.dechiffrer_texte(entretien["transcription"], self._cle()),
             "alertes": [{"id": a["id"], "type": a["type_alerte"], "details": a["details"], "horodatage": a["horodatage"]} for a in alertes],
         }
