@@ -252,6 +252,13 @@ def test_enregistrement_refuse_hors_entretien_en_cours(connecte, entretien):
     assert _morceau(connecte, entretien, b"video").status_code == 409  # encore « planifie »
 
 
+def test_enregistrement_mp4_reconnu_au_premier_morceau(connecte, settings, entretien):
+    _demarrer(connecte, entretien)
+    assert _morceau(connecte, entretien, b"\x00\x00\x00\x18ftypisom" + b"\x00" * 20).status_code == 204
+    assert (settings.data_dir / "enregistrements" / f"entretien-{entretien['id']}.mp4.injara").is_file()
+    assert connecte.get(f"/entretiens/{entretien['id']}").json()["format_enregistrement"] == "mp4"
+
+
 def test_enregistrement_chiffre_et_relu_a_l_identique(connecte, app, settings, entretien):
     _demarrer(connecte, entretien)
     morceaux = [b"EBML-entete", b"\x00\x01" * 5000, "accentué".encode()]
@@ -266,6 +273,7 @@ def test_enregistrement_chiffre_et_relu_a_l_identique(connecte, app, settings, e
     assert reponse.status_code == 200 and reponse.content == b"".join(morceaux)
     assert connecte.get(f"/entretiens/{entretien['id']}").json()["transcription"] is None
     assert connecte.get("/entretiens").json()[0]["enregistrement"] is True
+    assert connecte.get(f"/entretiens/{entretien['id']}").json()["format_enregistrement"] == "webm"
 
 
 def test_morceau_vide_ou_trop_gros_refuse(connecte, entretien, monkeypatch):

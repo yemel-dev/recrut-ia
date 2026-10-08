@@ -277,10 +277,12 @@ function installerPontApi({ backend, origineAutorisee, fenetre }) {
   ipcMain.handle('injara:exporter-enregistrement', async (event, entretienId) => {
     verifierOrigine(event);
     if (!idValide(entretienId)) throw new Error('Requête invalide.');
+    const fiche = await envoyer('GET', `/entretiens/${entretienId}`);
+    const extension = fiche.donnees?.format_enregistrement === 'webm' ? 'webm' : 'mp4';
     const { canceled, filePath } = await dialog.showSaveDialog(fenetre(), {
       title: "Enregistrer l'entretien",
-      defaultPath: path.join(app.getPath('videos'), `entretien-${entretienId}.webm`),
-      filters: [{ name: 'Vidéo WebM', extensions: ['webm'] }],
+      defaultPath: path.join(app.getPath('videos'), `entretien-${entretienId}.${extension}`),
+      filters: [{ name: extension === 'mp4' ? 'Vidéo MP4' : 'Vidéo WebM', extensions: [extension] }],
     });
     if (canceled || !filePath) return { annule: true };
     return telecharger(`/entretiens/${entretienId}/enregistrement`, filePath);

@@ -220,7 +220,7 @@ class EntretiensService:
         if len(donnees) > TAILLE_MAX_MORCEAU:
             raise ErreurValidation({"enregistrement": "Morceau trop volumineux."})
         cle = self._cle()
-        nom = entretien["fichier_enregistrement"] or f"entretien-{entretien_id}.webm.injara"
+        nom = entretien["fichier_enregistrement"] or f"entretien-{entretien_id}.{_format_video(donnees)}.injara"
         self.dossier_enregistrements.mkdir(parents=True, exist_ok=True)
         coffre.ajouter_morceau(self.dossier_enregistrements / nom, donnees, cle)
         if not entretien["fichier_enregistrement"]:
@@ -253,6 +253,7 @@ class EntretiensService:
             "statut": e["statut"],
             "consentement_enregistrement": e["consentement_enregistrement"],
             "enregistrement": bool(e["fichier_enregistrement"]),
+            "format_enregistrement": _format_video_nom(e["fichier_enregistrement"]),
             "consignes_acceptees_le": e["consignes_acceptees_le"],
             "debut_le": e["debut_le"],
             "fin_le": e["fin_le"],
@@ -282,3 +283,12 @@ def _score_entretien(regard: float | None, contenu: float | None, confiance: flo
     if not presentes:
         return None
     return round(sum(v * p for v, p in presentes) / sum(p for _, p in presentes), 1)
+
+
+def _format_video(premier_morceau: bytes) -> str:
+    """Conteneur du premier morceau : MP4 (« ftyp » aux octets 4 à 8) ou, à défaut, WebM."""
+    return "mp4" if premier_morceau[4:8] == b"ftyp" else "webm"
+
+
+def _format_video_nom(nom: str | None) -> str | None:
+    return None if not nom else "mp4" if ".mp4." in nom else "webm"

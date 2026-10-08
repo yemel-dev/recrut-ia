@@ -26,7 +26,8 @@ visio depuis INJARA. Le candidat n'installe rien : il ouvre le lien dans son nav
 3. **Le média.** Image et son passent en pair-à-pair (WebRTC), pas par le tunnel. Sur le même réseau local cela
    marche seul. Entre deux réseaux différents, il faut souvent un **relais TURN** (voir plus bas).
 4. **L'enregistrement.** Fait localement par le recruteur (`enregistreur.js`), chiffré avec la clé de données de la
-   session (AES-256-GCM, `coffre.py`).
+   session (AES-256-GCM, `coffre.py`). Format : MP4 (H.264) quand le moteur d'Electron sait l'encoder, WebM en
+   repli ; le backend reconnaît le conteneur au premier morceau et l'export garde la bonne extension.
 
 ## Analyse du regard (étape 2)
 

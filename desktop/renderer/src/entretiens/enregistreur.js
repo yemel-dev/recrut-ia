@@ -8,9 +8,12 @@ const LARGEUR = 1280;
 const HAUTEUR = 720;
 const IMAGES_PAR_SECONDE = 25;
 const DUREE_MORCEAU_MS = 5000;
-const TYPE_MIME = 'video/webm;codecs=vp8,opus';
+// MP4 (H.264) d'abord : lisible partout et encodé par le matériel quand il existe, donc plus fluide. WebM en repli.
+const TYPES_MIME = ['video/mp4;codecs=avc1.640028,opus', 'video/mp4;codecs=avc1.42E01E,opus', 'video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp8,opus'];
 
-export const enregistrementPossible = () => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(TYPE_MIME);
+const typeMime = () => (typeof MediaRecorder === 'undefined' ? undefined : TYPES_MIME.find((t) => MediaRecorder.isTypeSupported(t)));
+
+export const enregistrementPossible = () => typeMime() !== undefined;
 
 export function creerEnregistreur({ entretienId, onErreur }) {
   const canvas = document.createElement('canvas');
@@ -76,7 +79,7 @@ export function creerEnregistreur({ entretienId, onErreur }) {
       audio.resume();
       minuteur = setInterval(dessiner, 1000 / IMAGES_PAR_SECONDE);
       const flux = new MediaStream([...canvas.captureStream(IMAGES_PAR_SECONDE).getVideoTracks(), ...sortieAudio.stream.getAudioTracks()]);
-      enregistreur = new MediaRecorder(flux, { mimeType: TYPE_MIME, videoBitsPerSecond: 1_500_000 });
+      enregistreur = new MediaRecorder(flux, { mimeType: typeMime(), videoBitsPerSecond: 2_500_000, audioBitsPerSecond: 128_000 });
       enregistreur.ondataavailable = (e) => {
         if (e.data.size > 0) envoyer(e.data);
       };
