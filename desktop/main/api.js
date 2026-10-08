@@ -273,16 +273,6 @@ function installerPontApi({ backend, origineAutorisee, fenetre }) {
     return envoyer('PUT', `/entretiens/${entretienId}/regard`, tampon, 'image/jpeg');
   });
 
-  // Sous-titres : un extrait de son (flottants 32 bits, mono, 16 kHz) ; le backend renvoie les phrases reconnues.
-  ipcMain.handle('injara:sous-titres-audio', (event, entretienId, locuteur, debut, audio) => {
-    verifierOrigine(event);
-    const tampon = audio instanceof ArrayBuffer ? Buffer.from(audio) : ArrayBuffer.isView(audio) ? Buffer.from(audio.buffer, audio.byteOffset, audio.byteLength) : null;
-    if (!idValide(entretienId) || !LOCUTEURS.includes(locuteur) || !Number.isFinite(debut) || debut < 0 || !tampon || tampon.length === 0 || tampon.length > TAILLE_MAX_EXTRAIT) {
-      throw new Error('Requête invalide.');
-    }
-    return envoyer('PUT', `/entretiens/${entretienId}/sous-titres?locuteur=${locuteur}&debut=${debut.toFixed(1)}`, tampon, 'application/octet-stream');
-  });
-
   // Le fichier est déchiffré par le backend et écrit en flux : une heure d'entretien ne passe jamais entière en mémoire.
   ipcMain.handle('injara:exporter-enregistrement', async (event, entretienId) => {
     verifierOrigine(event);

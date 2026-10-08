@@ -184,24 +184,18 @@ function entretien(d) {
     <h3>Vigilance</h3>
     <table>
       ${ligne('Consignes', v.consignes_acceptees_le ? `Le candidat s'est engagé à les respecter (${esc(date(v.consignes_acceptees_le, true))})` : 'Engagement non enregistré')}
-      ${ligne('Consentement', v.consentement ? 'Donné : enregistrement, analyse et sous-titres' : 'Non donné : ni enregistrement, ni analyse')}
+      ${ligne('Consentement', v.consentement ? 'Donné : enregistrement et analyse' : 'Non donné : ni enregistrement, ni analyse')}
     </table>
     ${v.consentement ? `<p>Signalements de la page du candidat :</p>${signaux(horsRegard)}` : ''}
     <p class="avertissement">${esc(e.mention)}</p>`,
   );
 }
 
-function transcription(d) {
-  const t = d.entretien?.transcription;
-  if (!t) return '';
-  return `<section class="annexe"><h2>Annexe : transcription de l'entretien</h2><pre>${esc(t)}</pre></section>`;
-}
-
 function mention(d) {
   return `<footer>${esc(d.mention)}</footer>`;
 }
 
-const SECTIONS = [entete, candidat, score, profil, potentiel, decision, entretien, transcription, mention];
+const SECTIONS = [entete, candidat, score, profil, potentiel, decision, entretien, mention];
 
 // --- Gabarit ------------------------------------------------------------------------------------------------------
 
@@ -221,7 +215,6 @@ const STYLE = `
   .pastille span { font-size: 7pt; font-weight: 400; margin-top: 2px; }
   .pastille.vide { background: ${COULEURS.line}; color: ${COULEURS.muted}; }
   section { margin-top: 12px; break-inside: avoid; }
-  section.annexe { break-inside: auto; break-before: page; }
   pre { white-space: pre-wrap; font-family: inherit; font-size: 9pt; line-height: 1.5; margin: 0; }
   table { width: 100%; border-collapse: collapse; }
   th { text-align: left; font-weight: 600; width: 32%; padding: 2px 8px 2px 0; vertical-align: top; }

@@ -1,16 +1,15 @@
-"""Télécharge une fois les modèles dans le dossier des modèles (accès Internet requis) : Sentence-BERT, Face Landmarker et Whisper.
+"""Télécharge une fois les modèles dans le dossier des modèles (accès Internet requis) : Sentence-BERT et Face Landmarker.
 
     python -m backend.ia.telecharger_modele
 
 Ensuite, INJARA les charge depuis le disque, hors ligne. Sans Sentence-BERT, le critère « adéquation » est ignoré ;
-sans Face Landmarker (4 Mo), l'analyse du regard en entretien est indisponible ; sans Whisper, il n'y a pas de sous-titres.
+sans Face Landmarker (4 Mo), l'analyse du regard en entretien est indisponible.
 """
 from __future__ import annotations
 
 import sys
 
 from .regard import telecharger_modele_visage
-from .transcription import nom_modele, telecharger_modele_whisper
 from .semantique import DEPOT_MODELE, NOM_MODELE, dossier_modeles
 
 
@@ -30,8 +29,6 @@ def main() -> int:
     )
     print("Téléchargement du modèle d'analyse du regard (environ 4 Mo)…")
     telecharger_modele_visage(dossier_modeles())
-    print(f"Téléchargement du modèle de transcription « {nom_modele()} » (INJARA_WHISPER_MODELE pour en changer)…")
-    telecharger_modele_whisper(dossier_modeles())
     print("Modèles prêts. INJARA les utilisera au prochain lancement.")
     return 0
 

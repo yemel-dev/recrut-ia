@@ -6,7 +6,7 @@ les données déjà calculées (extraction, score, potentiel, décision). Rien n
 Le rapport porte sur le poste assigné à la candidature ; sans poste assigné, sur le poste où elle obtient le meilleur
 score, et le rapport le précise. Ce qui n'a pas été calculé (adéquation, potentiel, score) est indiqué explicitement.
 La section « entretien » porte sur le dernier entretien terminé ; elle vaut None sans entretien terminé et le gabarit ne l'affiche pas.
-Elle reprend ce que les modules d'entretien ont déjà calculé (regard, vigilance, transcription) : rien n'est recalculé.
+Elle reprend ce que les modules d'entretien ont déjà calculé (regard, vigilance) : rien n'est recalculé.
 """
 from __future__ import annotations
 
@@ -163,7 +163,6 @@ class RapportService:
             },
             "signaux": signaux,
             "resume": e["resume"],
-            "transcription": coffre.dechiffrer_texte(e["transcription"], self._cle()),
             "mention": MENTION_ENTRETIEN,
         }
 

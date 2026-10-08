@@ -5,7 +5,7 @@ Ils portent encore l'ancien nom du produit, **RecrutIA** : le produit s'appelle 
 
 | Document | Contenu |
 |---|---|
-| `entretien-video.md` | Module entretien vidéo : lien candidat, WebRTC, regard, sous-titres, vigilance, rapport, TURN |
+| `entretien-video.md` | Module entretien vidéo : lien candidat, WebRTC, regard, vigilance, rapport, TURN |
 | `sources/RecrutIA_Cahier_Charges_Technique.docx` | Vision, six modules fonctionnels, schéma de base, dépendances, feuille de route |
 | `sources/RecrutIA_Rapport_Reunion_19092026.docx` | Réunion de cadrage : agent mail, scénario profil de poste → tri, choix Python + Electron |
 | `sources/RecrutIA_Repartition_Taches.docx` | Rôles de l'équipe et planning |

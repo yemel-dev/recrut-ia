@@ -41,7 +41,7 @@ a = Analysis(
     binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,
-    excludes=["tkinter", "matplotlib", "IPython", "pytest", "mediapipe", "whisper"],
+    excludes=["tkinter", "matplotlib", "IPython", "pytest", "mediapipe"],
     noarchive=False,
 )
 pyz = PYZ(a.pure)

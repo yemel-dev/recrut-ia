@@ -171,27 +171,6 @@ async def analyser_regard(entretien_id: int, request: Request):
     return await run_in_threadpool(request.app.state.services.regard.analyser_image, entretien_id, image)
 
 
-# --- Sous-titres (Whisper, en différé) ----------------------------------------------------------------------
-
-
-@router.get("/sous-titres")
-def etat_sous_titres(request: Request):
-    sous_titres = request.app.state.services.sous_titres
-    return {"disponible": sous_titres.disponible(), "modele": sous_titres.transcripteur.nom}
-
-
-@router.put("/entretiens/{entretien_id}/sous-titres")
-async def sous_titres(entretien_id: int, locuteur: str, debut: float, request: Request):
-    """Un extrait de son (flottants 32 bits little-endian, mono, 16 kHz) ; renvoie les phrases reconnues."""
-    services = request.app.state.services
-    segments = await run_in_threadpool(services.sous_titres.transcrire, entretien_id, locuteur, debut, await request.body())
-    if segments:  # le candidat voit aussi les sous-titres, de lui-même et du recruteur
-        entretien = await run_in_threadpool(_service(request).pour_invitation, entretien_id)
-        for segment in segments:
-            await services.signalisation.vers_candidat(entretien["code_invitation"], {"type": "soustitre", **segment})
-    return {"segments": segments}
-
-
 # --- Enregistrement (chiffré, après consentement du candidat) ---------------------------------------------
 
 

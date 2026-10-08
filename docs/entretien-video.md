@@ -9,7 +9,6 @@ visio depuis INJARA. Le candidat n'installe rien : il ouvre le lien dans son nav
 |---|---|---|
 | 1 | Lien candidat, visio WebRTC, enregistrement local chiffré | Fait |
 | 2 | Analyse du regard et des mouvements de tête (MediaPipe) | Fait |
-| 3 | Sous-titres en différé des deux côtés (Whisper) | Fait |
 | 4 | Consignes et vigilance dans le navigateur du candidat | Fait |
 | 5 | Section « entretien » du rapport PDF | Fait |
 | + | Serveur TURN (Cloudflare ou manuel) pour les candidats distants | Fait |
@@ -36,12 +35,6 @@ fixe la posture de référence. Seuils : tête 25° (lacet) et 20° (tangage), r
 Score = part du temps où le candidat est attentif. Routes : `PUT /entretiens/{id}/regard`, `GET .../regard`.
 Le modèle se télécharge dans `modeles/` (ignoré par git).
 
-## Sous-titres (étape 3)
-
-`backend/ia/transcription.py` : Whisper sur CPU, morceaux de 10 s en 16 kHz mono, filtre de silence et filtre
-d'hallucinations. Route `PUT /entretiens/{id}/sous-titres`. Variables : `INJARA_WHISPER_MODELE` (défaut `small`,
-`base` ou `tiny` si lent) et `INJARA_WHISPER_LANGUE` (défaut `fr`, vide = détection).
-
 ## Consignes et vigilance (étape 4)
 
 Avant d'entrer, le candidat doit accepter les consignes (fermer les autres applications, etc.). La page signale
@@ -52,7 +45,7 @@ programme compagnon n'est prévu. Le recruteur voit ces signaux dans `CarteVigil
 ## Rapport (étape 5)
 
 `RapportService` ajoute la section entretien (durée, regard, vigilance, mention) ; `desktop/main/rapport.js`
-l'imprime en PDF avec la transcription. Bouton d'export sur la page Entretien.
+l'imprime en PDF. Bouton d'export sur la page Entretien.
 
 ## Serveur TURN
 
@@ -72,18 +65,18 @@ Les valeurs Cloudflare ne vont **jamais** dans le code : uniquement dans `.env` 
 ## Fichiers principaux
 
 - Backend : `backend/web/candidat/` (page candidat), `backend/api/routes_candidat.py`,
-  `backend/api/routes_entretiens.py`, `backend/services/{entretiens,signalisation,tunnel,reseau,regard,sous_titres,rapport}.py`,
-  `backend/ia/{regard,transcription}.py`.
+  `backend/api/routes_entretiens.py`, `backend/services/{entretiens,signalisation,tunnel,reseau,regard,rapport}.py`,
+  `backend/ia/regard.py`.
 - Interface : `desktop/renderer/src/entretiens/`, `desktop/renderer/src/pages/Entretien.jsx`,
   `desktop/main/{api,rapport}.js`.
-- Tests : `backend/tests/test_{entretien_visio,regard,sous_titres,vigilance,rapport_entretien,reseau}.py`.
+- Tests : `backend/tests/test_{entretien_visio,regard,vigilance,rapport_entretien,reseau}.py`.
 
 ## Limites connues
 
-- MediaPipe et Whisper sont exclus de l'installeur (`packaging/injara-backend.spec`) : regard et sous-titres
-  indisponibles dans la version installée tant qu'ils n'y sont pas intégrés.
+- MediaPipe est exclu de l'installeur (`packaging/injara-backend.spec`) : l'analyse du regard est
+  indisponible dans la version installée tant qu'il n'y est pas intégré.
 - Seuils du regard non calibrés sur de vrais entretiens.
-- Capture audio dans Electron et vidéo réelle via Electron peu testées.
+- La vidéo réelle via Electron est peu testée.
 - Les scores `contenu` et `confiance` n'ont pas encore de module qui les produise.
 - L'installation n'a pas de `.env` : le TURN Cloudflare doit y être configuré ou saisi à la main.
 
