@@ -3,8 +3,10 @@
 Le recruteur l'active explicitement (rien n'est exposé avant) et il s'arrête à la déconnexion. Seules les routes
 publiques de l'entretien (`/public/...`) répondent sans le jeton de lancement ; tout le reste de l'API reste refusé.
 
-Outils pris en charge, détectés dans le PATH : cloudflared (tunnel rapide, sans compte), puis ngrok (compte requis).
-INJARA_URL_PUBLIQUE force une adresse existante (nom de domaine, reverse proxy) : aucun tunnel n'est alors lancé.
+Adresse stable (recommandé) : un tunnel Cloudflare nommé, géré à part (service cloudflared), pointe un domaine vers
+le port local du backend. On renseigne alors INJARA_URL_PUBLIQUE (ex. https://meet.injara.site) et INJARA_PORT (le port
+visé par le tunnel) : INJARA ne lance aucun tunnel.
+Sans cela, repli sur un tunnel rapide cloudflared (adresse trycloudflare.com aléatoire, sans compte), détecté dans le PATH.
 """
 from __future__ import annotations
 
@@ -24,7 +26,6 @@ log = logging.getLogger("injara.tunnel")
 
 DELAI_DEMARRAGE = 30.0
 _MOTIF_CLOUDFLARED = re.compile(r"https://[a-z0-9-]+\.trycloudflare\.com")
-_MOTIF_NGROK = re.compile(r'"url":\s*"(https://[^"]+)"')
 
 
 class TunnelService:
@@ -60,7 +61,7 @@ class TunnelService:
             port = self.port
             commande = self._commande(port or 0)
             if commande is None or not port:
-                raise Indisponible("Aucun outil de tunnel n'est installé (cloudflared ou ngrok). Installez-en un pour inviter à distance.")
+                raise Indisponible("Aucun outil de tunnel n'est installé cloudflared). Installez-le, ou configurez INJARA_URL_PUBLIQUE, pour inviter à distance.")
             nom, args, motif = commande
             options = {"creationflags": subprocess.CREATE_NO_WINDOW} if sys.platform == "win32" else {}
             processus = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors="replace", **options)
@@ -86,8 +87,6 @@ class TunnelService:
         adresse = f"http://127.0.0.1:{port}"
         if chemin := shutil.which("cloudflared"):
             return "cloudflared", [chemin, "tunnel", "--no-autoupdate", "--url", adresse], _MOTIF_CLOUDFLARED
-        if chemin := shutil.which("ngrok"):
-            return "ngrok", [chemin, "http", adresse, "--log", "stdout", "--log-format", "json"], _MOTIF_NGROK
         return None
 
     @staticmethod

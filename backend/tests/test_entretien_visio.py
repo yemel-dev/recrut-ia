@@ -226,10 +226,6 @@ def test_tunnel_arrete_a_la_deconnexion(app, connecte, monkeypatch):
 
 def test_motifs_d_adresse_de_tunnel():
     assert _MOTIF_CLOUDFLARED.search("2026 INF |  https://quiet-owl-12.trycloudflare.com  |").group(0) == "https://quiet-owl-12.trycloudflare.com"
-    from backend.services.tunnel import _MOTIF_NGROK
-
-    ligne = '{"lvl":"info","msg":"started tunnel","url":"https://a1b2.ngrok-free.app"}'
-    assert _MOTIF_NGROK.search(ligne).group(1) == "https://a1b2.ngrok-free.app"
 
 
 # --- Enregistrement --------------------------------------------------------------------------------------

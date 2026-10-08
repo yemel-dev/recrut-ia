@@ -129,24 +129,33 @@ export default function Entretien() {
     }
   };
 
+  const DELAI_SOUS_TITRES_MS = 15_000;
+  const DELAI_ENREGISTREMENT_MS = 30_000;
+  /** Résultat de la promesse, ou `false` si elle dépasse le délai (elle continue alors en arrière-plan). */
+  const attendreAuPlus = (promesse, ms) =>
+    Promise.race([promesse.then((v) => (v === undefined ? true : v)), new Promise((r) => setTimeout(() => r(false), ms))]);
+
   const terminer = async () => {
     setOccupe(true);
     setErreur('');
     try {
       if (sousTitreur.current) {
-        await sousTitreur.current.arreter(); // les derniers extraits sont transcrits avant la fin de l'entretien
+        // Les derniers extraits sont transcrits avant la fin de l'entretien, mais pas au-delà d'un délai : une
+        // transcription lente (Whisper sur processeur) ne doit pas empêcher de terminer.
+        const fini = await attendreAuPlus(sousTitreur.current.arreter(), DELAI_SOUS_TITRES_MS);
         sousTitreur.current = null;
         setSousTitres((c) => ({ ...c, actif: false }));
+        if (!fini) notifier('La fin de la transcription a pris trop de temps : les derniers passages ne figureront pas.', 'info');
       }
       analyseur.current?.arreter(); // plus d'images : le backend calcule le bilan à la fin de l'entretien
       analyseur.current = null;
       setRegard((r) => ({ ...r, actif: false }));
       // L'enregistrement est clos avant l'entretien : le backend refuse les morceaux d'un entretien terminé.
       if (enregistreur.current) {
-        const complet = await enregistreur.current.arreter();
+        const complet = await attendreAuPlus(enregistreur.current.arreter(), DELAI_ENREGISTREMENT_MS);
         enregistreur.current = null;
         setEnregistrement('inactif');
-        if (!complet) setErreur("L'enregistrement est incomplet : un morceau n'a pas pu être enregistré.");
+        if (complet !== true) setErreur("L'enregistrement est incomplet : un morceau n'a pas pu être enregistré.");
       }
       setEntretien(await api.put(`/entretiens/${entretienId}/statut`, { statut: 'termine' }));
       salle.fermer();
@@ -363,7 +372,7 @@ function CarteInvitation({ entretien }) {
             Pour que le candidat vous rejoigne, INJARA ouvre un accès temporaire depuis Internet vers la seule page d'entretien. Le reste d'INJARA reste inaccessible, et l'accès se coupe à votre déconnexion.
           </p>
           {!tunnel.disponible && (
-            <Alerte>Aucun outil de tunnel n'est installé sur cet ordinateur (cloudflared ou ngrok). Installez-en un, puis revenez ici.</Alerte>
+            <Alerte>Aucun outil de tunnel n'est installé sur cet ordinateur (cloudflared). Installez-le, puis revenez ici.</Alerte>
           )}
           <Bouton icone={Globe} chargement={occupe} disabled={!tunnel.disponible} onClick={basculer}>Activer l'accès à distance</Bouton>
         </>

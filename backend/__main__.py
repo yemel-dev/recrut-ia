@@ -52,6 +52,16 @@ def _surveiller_parent(fd: int, nettoyer=None) -> None:
     os._exit(0)
 
 
+def _port_demande() -> int:
+    """Port fixe (INJARA_PORT) quand un tunnel nommé pointe dessus ; sinon 0 : un port libre choisi par le système."""
+    brut = (os.getenv("INJARA_PORT") or "").strip()
+    if not brut:
+        return 0
+    if not brut.isdigit() or not 0 < int(brut) < 65536:
+        raise SystemExit(f"Erreur : INJARA_PORT invalide ({brut!r}).")
+    return int(brut)
+
+
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s [backend] %(message)s", stream=sys.stderr)
     try:
@@ -61,7 +71,7 @@ def main() -> int:
         return 2
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind((HOTE, 0))
+    sock.bind((HOTE, _port_demande()))
     # Écouter avant d'annoncer le port : les requêtes arrivées pendant le démarrage d'uvicorn attendent
     # dans la file au lieu d'être refusées.
     sock.listen(128)

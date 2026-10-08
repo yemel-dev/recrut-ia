@@ -16,8 +16,10 @@ visio depuis INJARA. Le candidat n'installe rien : il ouvre le lien dans son nav
 
 ## Comment ça marche
 
-1. **Le lien.** Le backend démarre un tunnel (cloudflared, sinon ngrok) vers une page servie sous `/public/`.
-   `INJARA_URL_PUBLIQUE` force une adresse fixe. HTTPS est obligatoire : sans lui le navigateur refuse la caméra.
+1. **Le lien.** Une page servie sous `/public/` est exposée par un tunnel Cloudflare nommé (domaine stable,
+   par ex. `https://meet.injara.site`, géré par le service `cloudflared` de la machine). On renseigne
+   `INJARA_URL_PUBLIQUE` et `INJARA_PORT` (le port local visé par le tunnel) dans `.env` : INJARA ne lance alors
+   aucun tunnel. Sans cela, repli sur un tunnel rapide `cloudflared` (adresse aléatoire). ngrok n'est plus géré. HTTPS est obligatoire : sans lui le navigateur refuse la caméra.
 2. **La signalisation.** Candidat et recruteur se parlent par WebSocket (`backend/services/signalisation.py`) pour
    échanger offre, réponse et candidats ICE. Le recruteur s'y connecte depuis le processus principal Electron.
    Les routes `/public/` n'utilisent pas le jeton de lancement : chacune s'authentifie par le code d'invitation
