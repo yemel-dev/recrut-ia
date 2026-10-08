@@ -14,6 +14,20 @@ MOT_DE_PASSE = "motdepasse-solide-2026"
 KDF_RAPIDE = KdfParams(time_cost=1, memory_cost_kib=8 * 1024, parallelism=1)
 
 
+NOMS_A_ISOLER = ("CLOUDFLARE_TURN_TOKEN_ID", "CLOUDFLARE_API_TOKEN", "INJARA_ICE_SERVERS")
+
+
+def _isoler_environnement(monkeypatch) -> None:
+    """Les clés du développeur (.env, environnement) ne doivent jamais servir aux tests : aucun appel réel à Cloudflare."""
+    for nom in NOMS_A_ISOLER:
+        monkeypatch.delenv(nom, raising=False)
+
+
+@pytest.fixture(autouse=True)
+def sans_identifiants_cloudflare(monkeypatch):
+    _isoler_environnement(monkeypatch)
+
+
 @pytest.fixture
 def settings(tmp_path) -> Settings:
     # Dossier de modèles vide : les tests ne chargent jamais le vrai modèle Sentence-BERT.
@@ -21,8 +35,9 @@ def settings(tmp_path) -> Settings:
 
 
 @pytest.fixture
-def app(settings):
+def app(settings, monkeypatch):
     app = create_app(settings)
+    _isoler_environnement(monkeypatch)  # create_app charge .env (agent mail) : on réefface juste après
     yield app
     app.state.services.traitement.arreter()
     app.state.services.agent_mail.arreter()

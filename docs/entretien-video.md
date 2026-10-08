@@ -1,0 +1,91 @@
+# Module entretien vidéo
+
+Le recruteur planifie un entretien depuis une candidature, envoie un lien au candidat, et mène l'entretien en
+visio depuis INJARA. Le candidat n'installe rien : il ouvre le lien dans son navigateur.
+
+## Fonctionnalités
+
+| # | Fonctionnalité | État |
+|---|---|---|
+| 1 | Lien candidat, visio WebRTC, enregistrement local chiffré | Fait |
+| 2 | Analyse du regard et des mouvements de tête (MediaPipe) | Fait |
+| 3 | Sous-titres en différé des deux côtés (Whisper) | Fait |
+| 4 | Consignes et vigilance dans le navigateur du candidat | Fait |
+| 5 | Section « entretien » du rapport PDF | Fait |
+| + | Serveur TURN (Cloudflare ou manuel) pour les candidats distants | Fait |
+
+## Comment ça marche
+
+1. **Le lien.** Le backend démarre un tunnel (cloudflared, sinon ngrok) vers une page servie sous `/public/`.
+   `INJARA_URL_PUBLIQUE` force une adresse fixe. HTTPS est obligatoire : sans lui le navigateur refuse la caméra.
+2. **La signalisation.** Candidat et recruteur se parlent par WebSocket (`backend/services/signalisation.py`) pour
+   échanger offre, réponse et candidats ICE. Le recruteur s'y connecte depuis le processus principal Electron.
+   Les routes `/public/` n'utilisent pas le jeton de lancement : chacune s'authentifie par le code d'invitation
+   ou par un ticket à usage unique (60 s).
+3. **Le média.** Image et son passent en pair-à-pair (WebRTC), pas par le tunnel. Sur le même réseau local cela
+   marche seul. Entre deux réseaux différents, il faut souvent un **relais TURN** (voir plus bas).
+4. **L'enregistrement.** Fait localement par le recruteur (`enregistreur.js`), chiffré avec la clé de données de la
+   session (AES-256-GCM, `coffre.py`).
+
+## Analyse du regard (étape 2)
+
+`backend/ia/regard.py` : MediaPipe Face Landmarker (blendshapes et matrice de transformation). Une calibration
+fixe la posture de référence. Seuils : tête 25° (lacet) et 20° (tangage), regard 0,35 / 0,40, événement après 3 s.
+Score = part du temps où le candidat est attentif. Routes : `PUT /entretiens/{id}/regard`, `GET .../regard`.
+Le modèle se télécharge dans `modeles/` (ignoré par git).
+
+## Sous-titres (étape 3)
+
+`backend/ia/transcription.py` : Whisper sur CPU, morceaux de 10 s en 16 kHz mono, filtre de silence et filtre
+d'hallucinations. Route `PUT /entretiens/{id}/sous-titres`. Variables : `INJARA_WHISPER_MODELE` (défaut `small`,
+`base` ou `tiny` si lent) et `INJARA_WHISPER_LANGUE` (défaut `fr`, vide = détection).
+
+## Consignes et vigilance (étape 4)
+
+Avant d'entrer, le candidat doit accepter les consignes (fermer les autres applications, etc.). La page signale
+au backend (`POST /public/api/{code}/signal`, 300 signaux max) : changement d'onglet, perte de focus, sortie du
+plein écran, second écran. **Limite assumée** : un navigateur ne voit pas les autres applications ; aucun
+programme compagnon n'est prévu. Le recruteur voit ces signaux dans `CarteVigilance`.
+
+## Rapport (étape 5)
+
+`RapportService` ajoute la section entretien (durée, regard, vigilance, mention) ; `desktop/main/rapport.js`
+l'imprime en PDF avec la transcription. Bouton d'export sur la page Entretien.
+
+## Serveur TURN
+
+Sans relais, un candidat derrière certains réseaux (CGNAT, pare-feu) reste sur « connexion en cours ».
+`backend/services/reseau.py` choisit les serveurs ICE dans cet ordre :
+
+1. `INJARA_ICE_SERVERS` (variable d'environnement) ;
+2. TURN saisi à la main dans l'interface (stocké chiffré) ;
+3. **Cloudflare Realtime TURN**, si `CLOUDFLARE_TURN_TOKEN_ID` et `CLOUDFLARE_API_TOKEN` sont dans `.env` :
+   identifiants temporaires (24 h), renouvelés automatiquement, mis en pause 60 s après un échec ;
+4. STUN seul.
+
+Le bouton « Tester le serveur » (page Entretien) vérifie qu'un candidat de type `relay` est obtenu
+(`testTurn.js`). Routes : `GET /reseau`, `PUT`/`DELETE /reseau/turn`, `GET /reseau/test`.
+Les valeurs Cloudflare ne vont **jamais** dans le code : uniquement dans `.env` (voir `.env.example`).
+
+## Fichiers principaux
+
+- Backend : `backend/web/candidat/` (page candidat), `backend/api/routes_candidat.py`,
+  `backend/api/routes_entretiens.py`, `backend/services/{entretiens,signalisation,tunnel,reseau,regard,sous_titres,rapport}.py`,
+  `backend/ia/{regard,transcription}.py`.
+- Interface : `desktop/renderer/src/entretiens/`, `desktop/renderer/src/pages/Entretien.jsx`,
+  `desktop/main/{api,rapport}.js`.
+- Tests : `backend/tests/test_{entretien_visio,regard,sous_titres,vigilance,rapport_entretien,reseau}.py`.
+
+## Limites connues
+
+- MediaPipe et Whisper sont exclus de l'installeur (`packaging/injara-backend.spec`) : regard et sous-titres
+  indisponibles dans la version installée tant qu'ils n'y sont pas intégrés.
+- Seuils du regard non calibrés sur de vrais entretiens.
+- Capture audio dans Electron et vidéo réelle via Electron peu testées.
+- Les scores `contenu` et `confiance` n'ont pas encore de module qui les produise.
+- L'installation n'a pas de `.env` : le TURN Cloudflare doit y être configuré ou saisi à la main.
+
+## Suite envisagée
+
+Diagnostic de connexion (états ICE, type de candidat retenu), service INJARA hébergé (domaine stable,
+signalisation et coturn à identifiants éphémères), reconnexion automatique.

@@ -10,7 +10,6 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from ..services.erreurs import Indisponible
-from ..services.signalisation import serveurs_ice
 from .securite import session_requise
 
 router = APIRouter(tags=["Entretiens"], dependencies=[Depends(session_requise)])
@@ -124,7 +123,37 @@ def lien(entretien_id: int, request: Request):
 def salle(entretien_id: int, request: Request):
     """Ticket à usage unique pour que l'interface du recruteur ouvre sa connexion de signalisation."""
     entretien = _service(request).pour_invitation(entretien_id)
-    return {"ticket": request.app.state.services.signalisation.creer_ticket(entretien["code_invitation"]), "ice": serveurs_ice()}
+    return {"ticket": request.app.state.services.signalisation.creer_ticket(entretien["code_invitation"]), "ice": request.app.state.services.reseau.serveurs_ice()}
+
+
+# --- Réseau de la visio : serveur TURN ----------------------------------------------------------------------
+
+
+class Turn(BaseModel):
+    urls: list[str]
+    username: str
+    credential: str
+
+
+@router.get("/reseau")
+def etat_reseau(request: Request):
+    return request.app.state.services.reseau.etat()
+
+
+@router.put("/reseau/turn")
+def configurer_turn(corps: Turn, request: Request):
+    return request.app.state.services.reseau.configurer(corps.urls, corps.username, corps.credential)
+
+
+@router.delete("/reseau/turn")
+def supprimer_turn(request: Request):
+    return request.app.state.services.reseau.supprimer()
+
+
+@router.get("/reseau/test")
+def serveurs_a_tester(request: Request):
+    """Les serveurs avec leurs identifiants, pour que l'interface vérifie que le TURN relaie bien (candidat « relay »)."""
+    return {"ice": request.app.state.services.reseau.pour_test()}
 
 
 # --- Analyse du regard et de la tête -----------------------------------------------------------------------

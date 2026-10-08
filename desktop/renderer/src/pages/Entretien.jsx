@@ -6,6 +6,7 @@ import { useAgent } from '../agent/ContexteAgent.jsx';
 import { Alerte, Bouton, Carte, Chargement, Confirmation } from '../components/ui.jsx';
 import { STATUTS_ENTRETIEN } from '../constantes.js';
 import { creerEnregistreur, enregistrementPossible } from '../entretiens/enregistreur.js';
+import { testerTurn } from '../entretiens/testTurn.js';
 import { creerAnalyseurRegard } from '../entretiens/regard.js';
 import { creerSousTitreur } from '../entretiens/sousTitres.js';
 import { useSalle } from '../entretiens/useSalle.js';
@@ -354,6 +355,7 @@ function CarteInvitation({ entretien }) {
           <Bouton variante="secondaire" icone={copie ? Check : Copy} onClick={copier}>{copie ? 'Lien copié' : 'Copier le lien'}</Bouton>
           {lien.expire_le && <p className="text-xs text-muted">Valable jusqu'au {formaterDateHeure(lien.expire_le)}.</p>}
           <Bouton variante="discret" chargement={occupe} onClick={basculer}>Désactiver l'accès à distance</Bouton>
+          <ReseauTurn />
         </>
       ) : (
         <>
@@ -516,5 +518,109 @@ function CarteVigilance({ entretien }) {
       )}
       <p className="text-xs text-muted">Un navigateur ne voit pas les autres programmes : il signale seulement que le candidat quitte la page, le plein écran, ou a un second écran. Une notification qui passe peut aussi le déclencher. Aucun contrôle des applications n'est possible.</p>
     </Carte>
+  );
+}
+
+/** Serveur TURN : relaie la vidéo quand la connexion directe échoue (réseau d'entreprise, partage de connexion, éloignement). */
+function ReseauTurn() {
+  const [etat, setEtat] = useState(null);
+  const [champs, setChamps] = useState({ urls: '', username: '', credential: '' });
+  const [message, setMessage] = useState(null); // { ok, texte }
+  const [occupe, setOccupe] = useState(false);
+
+  const charger = useCallback(() => api.get('/reseau').then(setEtat, () => {}), []);
+  useEffect(() => {
+    charger();
+  }, [charger]);
+
+  const enregistrer = async (e) => {
+    e.preventDefault();
+    setOccupe(true);
+    setMessage(null);
+    try {
+      const urls = champs.urls.split(/[\s,]+/).filter(Boolean);
+      setEtat(await api.put('/reseau/turn', { urls, username: champs.username, credential: champs.credential }));
+      setChamps({ urls: '', username: '', credential: '' });
+      setMessage({ ok: true, texte: 'Serveur TURN enregistré. Testez-le maintenant.' });
+    } catch (err) {
+      setMessage({ ok: false, texte: err.message });
+    } finally {
+      setOccupe(false);
+    }
+  };
+
+  const tester = async () => {
+    setOccupe(true);
+    setMessage(null);
+    try {
+      const { ice } = await api.get('/reseau/test');
+      const resultat = await testerTurn(ice);
+      setMessage({ ok: resultat.ok, texte: resultat.message });
+    } catch (err) {
+      setMessage({ ok: false, texte: err.message });
+    } finally {
+      setOccupe(false);
+    }
+  };
+
+  const retirer = async () => {
+    setOccupe(true);
+    setMessage(null);
+    try {
+      setEtat(await api.delete('/reseau/turn'));
+    } catch (err) {
+      setMessage({ ok: false, texte: err.message });
+    } finally {
+      setOccupe(false);
+    }
+  };
+
+  const champ = 'w-full rounded-lg border border-line bg-white px-3 py-2 text-xs text-navy-900';
+  return (
+    <details className="border-t border-line pt-3">
+      <summary className="cursor-pointer font-medium text-navy-900">
+        Le candidat n'arrive pas à se connecter ? {(etat?.turn.configure || etat?.cloudflare.configure) && <span className="ml-1 text-xs font-normal text-emerald-700">(TURN configuré)</span>}
+      </summary>
+      <div className="mt-3 flex flex-col gap-3">
+        <p className="text-muted">
+          Quand la connexion directe est impossible (réseau d'entreprise, partage de connexion, grande distance), le candidat reste sur « connexion en cours ». Un serveur TURN relaie alors la vidéo, toujours chiffrée.
+          Prenez-en un chez un fournisseur (offre gratuite possible) ou installez le vôtre (coturn), puis saisissez ses informations.
+        </p>
+        {etat?.source_forcee && <Alerte>La variable INJARA_ICE_SERVERS est définie : elle remplace cette configuration.</Alerte>}
+        {etat?.cloudflare.configure && !etat.turn.configure && (
+          <div className="flex flex-col gap-2 rounded-lg bg-mist p-3 text-xs">
+            <p><strong>Cloudflare TURN</strong> est configuré dans le fichier .env : des identifiants temporaires sont demandés automatiquement.</p>
+            <div><Bouton variante="secondaire" chargement={occupe} onClick={tester}>Tester le serveur</Bouton></div>
+          </div>
+        )}
+        {etat?.turn.configure && (
+          <div className="flex flex-col gap-2 rounded-lg bg-mist p-3 text-xs">
+            <p><strong>Adresses :</strong> {etat.turn.urls.join(', ')}</p>
+            <p><strong>Utilisateur :</strong> {etat.turn.username} · mot de passe enregistré (chiffré)</p>
+            <div className="flex gap-2">
+              <Bouton variante="secondaire" chargement={occupe} onClick={tester}>Tester le serveur</Bouton>
+              <Bouton variante="discret" disabled={occupe} onClick={retirer}>Retirer</Bouton>
+            </div>
+          </div>
+        )}
+        {message && (message.ok ? <p className="rounded-lg bg-emerald-50 px-3 py-2 text-emerald-700" role="status">{message.texte}</p> : <Alerte>{message.texte}</Alerte>)}
+        <form onSubmit={enregistrer} className="flex flex-col gap-2">
+          <label className="flex flex-col gap-1 text-xs font-medium text-navy-900">
+            Adresses du serveur (une par ligne)
+            <textarea required rows={2} value={champs.urls} onChange={(e) => setChamps({ ...champs, urls: e.target.value })} placeholder={'turn:relais.exemple.com:3478\nturns:relais.exemple.com:443'} className={champ} />
+          </label>
+          <label className="flex flex-col gap-1 text-xs font-medium text-navy-900">
+            Nom d'utilisateur
+            <input required value={champs.username} onChange={(e) => setChamps({ ...champs, username: e.target.value })} autoComplete="off" className={champ} />
+          </label>
+          <label className="flex flex-col gap-1 text-xs font-medium text-navy-900">
+            Mot de passe
+            <input required type="password" value={champs.credential} onChange={(e) => setChamps({ ...champs, credential: e.target.value })} autoComplete="off" className={champ} />
+          </label>
+          <div><Bouton type="submit" chargement={occupe}>{etat?.turn.configure ? 'Remplacer' : 'Enregistrer'}</Bouton></div>
+          <p className="text-xs text-muted">Ces identifiants sont transmis au navigateur du candidat, qui en a besoin pour se connecter : utilisez un compte dédié, que vous pouvez révoquer.</p>
+        </form>
+      </div>
+    </details>
   );
 }

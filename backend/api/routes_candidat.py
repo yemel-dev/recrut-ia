@@ -13,7 +13,6 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from ..services.erreurs import Introuvable
-from ..services.signalisation import serveurs_ice
 
 DOSSIER_WEB = Path(__file__).resolve().parents[1] / "web" / "candidat"
 EN_TETES = {
@@ -62,7 +61,7 @@ def style():
 @router.get("/api/{code}")
 def presenter(code: str, request: Request, response: Response):
     response.headers.update(EN_TETES)
-    return {**request.app.state.services.entretiens.presenter_au_candidat(code), "ice": serveurs_ice()}
+    return {**request.app.state.services.entretiens.presenter_au_candidat(code), "ice": request.app.state.services.reseau.serveurs_ice()}
 
 
 @router.post("/api/{code}/consentement")

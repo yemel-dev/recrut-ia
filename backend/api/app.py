@@ -28,6 +28,7 @@ from ..services.candidatures import CandidaturesService
 from ..services.entreprise import EntrepriseService
 from ..services.entretiens import EntretiensService
 from ..services.regard import RegardService
+from ..services.reseau import ReseauService
 from ..services.sous_titres import SousTitresService
 from ..services.postes import PostesService
 from ..services.signalisation import SignalisationService
@@ -52,6 +53,7 @@ class Services:
     rapport: RapportService
     entretiens: EntretiensService
     regard: RegardService
+    reseau: ReseauService
     sous_titres: SousTitresService
     signalisation: SignalisationService
     tunnel: TunnelService
@@ -76,6 +78,7 @@ def construire_services(db: Database, settings: Settings, modele: ModeleSemantiq
     )
     regard = RegardService(entretiens.entretiens, AnalyseurVisage(modeles / NOM_MODELE_VISAGE))
     sous_titres = SousTitresService(entretiens.entretiens, Transcripteur(dossier_whisper(modeles)), auth.cle_session)
+    reseau = ReseauService(ParametreRepository(db), auth.cle_session)
     tunnel = TunnelService()
 
     auth.a_la_connexion += [agent_mail.session_ouverte, traitement.demarrer]
@@ -91,6 +94,7 @@ def construire_services(db: Database, settings: Settings, modele: ModeleSemantiq
         candidatures=candidatures,
         entretiens=entretiens,
         regard=regard,
+        reseau=reseau,
         sous_titres=sous_titres,
         signalisation=SignalisationService(),
         tunnel=tunnel,
