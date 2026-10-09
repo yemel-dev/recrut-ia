@@ -3,7 +3,9 @@
 À partir de l'adresse, on trouve qui héberge la boîte et comment s'y connecter :
 - adresses grand public connues (Gmail, Yahoo, Outlook…) : réglages connus d'avance ;
 - domaine de l'entreprise : on lit ses serveurs de messagerie (enregistrements MX) pour reconnaître l'hébergeur
-  (Google Workspace, Microsoft 365, OVHcloud…) ; sinon on essaie les serveurs habituels (imap.domaine, mail.domaine).
+  (Google Workspace, Microsoft 365, OVHcloud, Spacemail…) ; sinon on essaie les serveurs habituels du domaine et de
+  l'hébergeur des MX (imap.…, mail.…). Un serveur n'est retenu que s'il répond vraiment comme une boîte mail
+  (connexion chiffrée et accueil IMAP), pas seulement s'il accepte la connexion.
 La méthode proposée est « google » (fenêtre de connexion Google) ou « mot_de_passe » (mot de passe de la boîte, ou
 mot de passe d'application avec des étapes guidées), ou « impossible » avec une explication simple.
 """
@@ -11,6 +13,7 @@ from __future__ import annotations
 
 import logging
 import socket
+import ssl
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass, field
@@ -72,6 +75,7 @@ _HEBERGEURS_MX: list[tuple[str, str, str]] = [
     ("hostinger.com", "Hostinger", "imap.hostinger.com"),
     ("gandi.net", "Gandi", "mail.gandi.net"),
     ("privateemail.com", "Namecheap", "mail.privateemail.com"),
+    ("spacemail.com", "Spacemail", "mail.spacemail.com"),
     ("yandex", "Yandex", "imap.yandex.com"),
 ]
 
@@ -98,11 +102,19 @@ def _serveurs_mx(domaine: str) -> list[str]:
 
 
 def _repond(hote: str, port: int = PORT_IMAP) -> bool:
+    """Le serveur répond comme une boîte mail : connexion chiffrée valide et accueil IMAP (« * OK »)."""
     try:
-        with socket.create_connection((hote, port), timeout=DELAI_S):
-            return True
-    except OSError:
+        with socket.create_connection((hote, port), timeout=DELAI_S) as brut:
+            brut.settimeout(DELAI_S)
+            with ssl.create_default_context().wrap_socket(brut, server_hostname=hote) as chiffre:
+                return chiffre.recv(64).startswith(b"* OK")
+    except (OSError, ssl.SSLError):
         return False
+
+
+def _domaine_hebergeur(serveur_mx: str) -> str:
+    """mx1.spacemail.com -> spacemail.com (deux derniers niveaux ; suffit pour essayer imap./mail. de l'hébergeur)."""
+    return ".".join(serveur_mx.split(".")[-2:])
 
 
 class DetectionBoite:
@@ -176,8 +188,10 @@ class DetectionBoite:
             for fragment, nom, hote in _HEBERGEURS_MX:
                 if fragment in serveur:
                     return nom, hote
-        # Hébergeur inconnu : serveurs habituels, puis le serveur MX lui-même (petits hébergeurs, serveur maison)
-        candidats = list(dict.fromkeys([f"imap.{domaine}", f"mail.{domaine}", *mx[:1]]))
+        # Hébergeur inconnu : serveurs habituels du domaine, puis ceux de l'hébergeur des MX, puis le serveur MX
+        # lui-même (petits hébergeurs, serveur maison)
+        hebergeur = [f"{prefixe}.{_domaine_hebergeur(mx[0])}" for prefixe in ("imap", "mail")] if mx else []
+        candidats = list(dict.fromkeys([f"imap.{domaine}", f"mail.{domaine}", *hebergeur, *mx[:1]]))
         with ThreadPoolExecutor(max_workers=len(candidats)) as groupe:
             reponses = list(groupe.map(self._repond, candidats))
         for hote, ok in zip(candidats, reponses):

@@ -40,6 +40,7 @@ def test_gmail_sans_connexion_google_configuree_mot_de_passe_guide():
         (["aspmx.l.google.com"], "Google Workspace", "google", "imap.gmail.com"),
         (["cabinet-cm.mail.protection.outlook.com"], "Microsoft 365", "mot_de_passe", "outlook.office365.com"),
         (["mx1.mail.ovh.net", "mx2.mail.ovh.net"], "OVHcloud", "mot_de_passe", "ssl0.ovh.net"),
+        (["mx1.spacemail.com", "mx2.spacemail.com"], "Spacemail", "mot_de_passe", "mail.spacemail.com"),
     ],
 )
 def test_domaine_de_l_entreprise_reconnu_a_ses_serveurs(mx, fournisseur, methode, hote):
@@ -56,6 +57,16 @@ def test_hebergeur_inconnu_serveurs_habituels_essayes():
     assert sorted(appels) == ["imap.cabinet.cm", "mail.cabinet.cm"]
     d.detecter("autre@cabinet.cm")
     assert len(appels) == 2  # résultat gardé pour le domaine
+
+
+def test_serveur_de_l_hebergeur_des_mx_essaye():
+    """mail.domaine accepte la connexion mais ne répond pas comme une boîte : on essaie le serveur de l'hébergeur."""
+    d, appels = detection(mx=["mx1.petithebergeur.net"], repondent={"mail.petithebergeur.net"})
+    r = d.detecter("rh@cabinet.cm")
+    assert r.hote == "mail.petithebergeur.net"
+    assert sorted(appels) == sorted(
+        ["imap.cabinet.cm", "mail.cabinet.cm", "imap.petithebergeur.net", "mail.petithebergeur.net", "mx1.petithebergeur.net"]
+    )
 
 
 def test_serveur_introuvable_et_adresse_invalide():

@@ -76,7 +76,7 @@ l'écran :
 | `@gmail.com`, ou domaine hébergé chez Google (serveurs MX Google) | « Se connecter avec Google » si la connexion Google est configurée sur le poste ; sinon mot de passe d'application, avec les étapes et un bouton vers la page Google |
 | `@yahoo.*` | mot de passe d'application, étapes guidées et bouton vers la page Yahoo |
 | `@outlook.*`, `@hotmail.*`, `@live.*` | explication : Microsoft n'accepte plus la connexion depuis d'autres applications |
-| domaine de l'entreprise | hébergeur reconnu à ses serveurs MX (Microsoft 365, OVHcloud, Zoho, Hostinger, Gandi, Namecheap) ; sinon `imap.domaine` puis `mail.domaine` sont essayés ; en dernier recours, le serveur est demandé |
+| domaine de l'entreprise | hébergeur reconnu à ses serveurs MX (Microsoft 365, OVHcloud, Zoho, Hostinger, Gandi, Namecheap, Spacemail) ; sinon `imap.`/`mail.` du domaine, puis de l'hébergeur des MX, puis le serveur MX sont essayés (retenu seulement s'il répond comme une boîte mail : TLS et accueil IMAP) ; en dernier recours, le serveur est demandé |
 
 Après la connexion, l'envoi est essayé tout de suite et le résultat est affiché en clair (« Réception des
 candidatures : prête », « Mails aux candidats : prêts » ou la raison). Routes : `GET /boite/detection`,
