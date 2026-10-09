@@ -44,7 +44,7 @@ export default function CreationCompte() {
 
   if (cle) {
     return (
-      <EcranPublic titre="Votre compte est créé" sousTitre="Dernière étape : conservez votre clé de récupération." largeur="max-w-lg">
+      <EcranPublic titre="Votre compte est créé" sousTitre="Dernière étape : conservez votre clé de récupération." largeur="max-w-md">
         <CleRecuperation
           cle={cle}
           onContinuer={async () => {
@@ -61,7 +61,7 @@ export default function CreationCompte() {
       titre="Bienvenue sur INJARA"
       sousTitre="Créez le compte de votre entreprise. Il protège l'accès à l'application sur cet ordinateur."
     >
-      <form onSubmit={soumettre} noValidate className="flex flex-col gap-4">
+      <form onSubmit={soumettre} noValidate className="flex flex-col gap-5">
         <Alerte>{erreurGenerale}</Alerte>
         <Champ label="Email" erreur={erreurs.email} obligatoire>
           {(a) => <Saisie {...a} type="email" autoComplete="username" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} />}
@@ -72,7 +72,7 @@ export default function CreationCompte() {
         <Champ label="Confirmer le mot de passe" erreur={erreurs.confirmation} obligatoire>
           {(a) => <MotDePasse {...a} autoComplete="new-password" value={confirmation} onChange={(e) => setConfirmation(e.target.value)} />}
         </Champ>
-        <Bouton type="submit" chargement={envoi} className="mt-2">Créer le compte</Bouton>
+        <Bouton type="submit" taille="lg" chargement={envoi} className="mt-2">Créer le compte</Bouton>
       </form>
     </EcranPublic>
   );

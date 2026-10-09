@@ -33,7 +33,7 @@ export default function Connexion() {
 
   return (
     <EcranPublic titre="Connexion" sousTitre="Accédez à l'espace recrutement de votre entreprise.">
-      <form onSubmit={soumettre} noValidate className="flex flex-col gap-4">
+      <form onSubmit={soumettre} noValidate className="flex flex-col gap-5">
         <Alerte>{erreur}</Alerte>
         <Champ label="Email">
           {(a) => <Saisie {...a} type="email" autoComplete="username" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} />}
@@ -41,8 +41,8 @@ export default function Connexion() {
         <Champ label="Mot de passe">
           {(a) => <MotDePasse {...a} autoComplete="current-password" value={motDePasse} onChange={(e) => setMotDePasse(e.target.value)} />}
         </Champ>
-        <Bouton type="submit" chargement={envoi} className="mt-2">Se connecter</Bouton>
-        <Link to="/mot-de-passe-oublie" className="text-center text-sm font-medium text-brand-700 hover:underline">
+        <Bouton type="submit" taille="lg" chargement={envoi} className="mt-2">Se connecter</Bouton>
+        <Link to="/mot-de-passe-oublie" className="self-center text-sm font-medium text-accent-texte underline-offset-4 hover:underline">
           Mot de passe oublié ?
         </Link>
       </form>

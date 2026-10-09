@@ -49,7 +49,7 @@ export default function MotDePasseOublie() {
       <EcranPublic
         titre="Mot de passe modifié"
         sousTitre="Votre ancienne clé de récupération n'est plus valable. Voici la nouvelle."
-        largeur="max-w-lg"
+        largeur="max-w-md"
       >
         <CleRecuperation
           cle={nouvelleCle}
@@ -67,7 +67,7 @@ export default function MotDePasseOublie() {
       titre="Mot de passe oublié"
       sousTitre="Saisissez la clé de récupération reçue à la création du compte, puis choisissez un nouveau mot de passe."
     >
-      <form onSubmit={soumettre} noValidate className="flex flex-col gap-4">
+      <form onSubmit={soumettre} noValidate className="flex flex-col gap-5">
         <Alerte>{erreurGenerale}</Alerte>
         <Champ label="Clé de récupération" erreur={erreurs.cle_de_recuperation} aide="Format : XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX" obligatoire>
           {(a) => (
@@ -88,8 +88,8 @@ export default function MotDePasseOublie() {
         <Champ label="Confirmer le nouveau mot de passe" erreur={erreurs.confirmation} obligatoire>
           {(a) => <MotDePasse {...a} autoComplete="new-password" value={confirmation} onChange={(e) => setConfirmation(e.target.value)} />}
         </Champ>
-        <Bouton type="submit" chargement={envoi} className="mt-2">Changer le mot de passe</Bouton>
-        <Link to="/connexion" className="text-center text-sm font-medium text-brand-700 hover:underline">
+        <Bouton type="submit" taille="lg" chargement={envoi} className="mt-2">Changer le mot de passe</Bouton>
+        <Link to="/connexion" className="self-center text-sm font-medium text-accent-texte underline-offset-4 hover:underline">
           Retour à la connexion
         </Link>
       </form>
