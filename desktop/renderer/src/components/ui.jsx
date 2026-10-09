@@ -172,9 +172,9 @@ export function SaisieListe({ valeur, onChange, placeholder, ...props }) {
 }
 
 /** Carte : surface posée sur le fond de l'écran. `as` permet d'en faire un lien ou un article. */
-export function Carte({ as: Element = 'section', className, children, ...props }) {
+export function Carte({ as: Element = 'section', sansMarge = false, className, children, ...props }) {
   return (
-    <Element {...props} className={cx('rounded-lg border border-trait bg-surface p-5 shadow-carte', className)}>
+    <Element {...props} className={cx('rounded-lg border border-trait bg-surface shadow-carte', !sansMarge && 'p-5', className)}>
       {children}
     </Element>
   );
