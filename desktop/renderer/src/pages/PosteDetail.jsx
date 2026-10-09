@@ -4,7 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api.js';
 import TopPoste from '../candidatures/TopPoste.jsx';
 import SuppressionPoste from '../components/SuppressionPoste.jsx';
-import { Alerte, BadgeStatut, Bouton, Carte, Chargement } from '../components/ui.jsx';
+import { Alerte, BadgeStatut, Bouton, Carte, Segments } from '../components/ui.jsx';
 import { STATUTS, TELETRAVAIL, TYPES_CONTRAT } from '../constantes.js';
 import { experience, formaterDate } from '../format.js';
 
@@ -36,10 +36,16 @@ export default function PosteDetail() {
     return erreur ? (
       <>
         <Alerte>{erreur}</Alerte>
-        <Link to="/postes" className="mt-4 inline-block text-sm font-medium text-brand-700 hover:underline">Retour aux postes</Link>
+        <Link to="/postes" className="mt-4 inline-block text-sm font-medium text-accent-texte hover:underline">Retour aux postes</Link>
       </>
     ) : (
-      <Chargement />
+      <div aria-busy="true" aria-label="Chargement du poste">
+        <div className="squelette mb-6 h-4 w-32" />
+        <div className="squelette mb-3 h-8 w-80" />
+        <div className="squelette mb-6 h-4 w-60" />
+        <div className="squelette mb-6 h-16 rounded-lg" />
+        <div className="squelette h-80 rounded-lg" />
+      </div>
     );
   }
 
@@ -56,68 +62,62 @@ export default function PosteDetail() {
 
   return (
     <>
-      <Link to="/postes" className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-muted hover:text-navy-900">
-        <ArrowLeft className="size-4" aria-hidden /> Tous les postes
+      <Link to="/postes" className="geste-hote mb-5 inline-flex items-center gap-1.5 text-sm font-medium text-doux transition-colors hover:text-fort">
+        <ArrowLeft className="size-4" aria-hidden data-geste="reculer" /> Tous les postes
       </Link>
 
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-navy-900">{poste.intitule}</h1>
+      <header className="mb-6 flex items-start justify-between gap-6">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="titre-ecran">{poste.intitule}</h1>
             <BadgeStatut statut={poste.statut} />
           </div>
-          <p className="mt-1 text-sm text-muted">
+          <p className="mt-2 text-base text-doux">
             {poste.niveau_formation} · {experience(poste.experience_min_annees)}
+            {poste.reference_interne && <span className="text-tenu tabular-nums"> · {poste.reference_interne}</span>}
           </p>
         </div>
-        <div className="flex gap-2">
-          <Bouton variante="secondaire" icone={Pencil} onClick={() => navigate(`/postes/${id}/modifier`)}>Modifier</Bouton>
-          <Bouton variante="secondaire" icone={Trash2} onClick={() => setSuppression(true)} className="hover:text-danger">Supprimer</Bouton>
+        <div className="flex shrink-0 gap-2">
+          <Bouton variante="secondaire" icone={Pencil} geste="incliner" onClick={() => navigate(`/postes/${id}/modifier`)}>Modifier</Bouton>
+          <Bouton variante="secondaire" icone={Trash2} geste="soulever" onClick={() => setSuppression(true)} className="hover:border-danger-trait hover:text-danger">
+            Supprimer
+          </Bouton>
         </div>
-      </div>
+      </header>
 
-      {erreur && <div className="mb-4"><Alerte>{erreur}</Alerte></div>}
+      {erreur && <Alerte className="mb-4">{erreur}</Alerte>}
 
-      <Carte className="mb-6 flex flex-wrap items-center justify-between gap-4 py-4">
-        <p className="text-sm text-muted">
+      <Carte className="mb-6 flex flex-wrap items-center justify-between gap-4 py-3.5">
+        <p className="flex items-center gap-2.5 text-base text-texte">
+          <span className={`size-2 shrink-0 rounded-full ${poste.statut === 'actif' ? 'bg-accent shadow-[0_0_8px_var(--halo)]' : poste.statut === 'brouillon' ? 'bg-info' : 'bg-tenu'}`} aria-hidden />
           {poste.statut === 'actif'
             ? 'Ce poste est actif : il servira au classement des candidatures.'
             : poste.statut === 'brouillon'
               ? "Ce poste est en brouillon : il n'est pas encore utilisé pour classer les candidatures."
               : "Ce poste est clôturé : il n'est plus utilisé pour classer les candidatures."}
         </p>
-        <div className="flex gap-1 rounded-lg border border-line p-1" role="group" aria-label="Statut du poste">
-          {Object.entries(STATUTS).map(([valeur, libelle]) => (
-            <button
-              key={valeur}
-              type="button"
-              disabled={changementStatut || poste.statut === valeur}
-              aria-pressed={poste.statut === valeur}
-              onClick={() => changerStatut(valeur)}
-              className={`rounded-md px-3 py-1 text-sm font-medium transition-colors ${
-                poste.statut === valeur ? 'bg-navy-900 text-white' : 'text-muted hover:bg-navy-50 hover:text-navy-900'
-              }`}
-            >
-              {libelle}
-            </button>
-          ))}
-        </div>
+        <Segments
+          libelle="Statut du poste"
+          valeur={poste.statut}
+          onChange={(valeur) => !changementStatut && valeur !== poste.statut && changerStatut(valeur)}
+          options={Object.entries(STATUTS).map(([valeur, libelle]) => ({ valeur, libelle }))}
+        />
       </Carte>
 
       <div className="mb-6">
         <TopPoste posteId={Number(id)} actif={poste.statut === 'actif'} />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="flex flex-col gap-6 lg:col-span-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="flex min-w-0 flex-col gap-6">
           <Carte>
             <Titre>Description et missions</Titre>
-            <p className="text-sm leading-relaxed whitespace-pre-line text-navy-800">{poste.description}</p>
+            <p className="max-w-prose text-base leading-relaxed whitespace-pre-line text-texte">{poste.description}</p>
           </Carte>
           {poste.processus_selection && (
             <Carte>
               <Titre>Processus de sélection</Titre>
-              <p className="text-sm leading-relaxed whitespace-pre-line text-navy-800">{poste.processus_selection}</p>
+              <p className="max-w-prose text-base leading-relaxed whitespace-pre-line text-texte">{poste.processus_selection}</p>
             </Carte>
           )}
         </div>
@@ -132,11 +132,11 @@ export default function PosteDetail() {
           {conditions.length > 0 && (
             <Carte>
               <Titre>Conditions</Titre>
-              <dl className="flex flex-col gap-3">
+              <dl className="flex flex-col gap-2.5">
                 {conditions.map(([libelle, valeur]) => (
-                  <div key={libelle} className="flex justify-between gap-4 text-sm">
-                    <dt className="text-muted">{libelle}</dt>
-                    <dd className="text-right font-medium text-navy-900">{valeur}</dd>
+                  <div key={libelle} className="flex justify-between gap-4 text-base">
+                    <dt className="text-doux">{libelle}</dt>
+                    <dd className="text-right font-medium text-fort">{valeur}</dd>
                   </div>
                 ))}
               </dl>
@@ -155,17 +155,22 @@ export default function PosteDetail() {
 }
 
 function Titre({ children }) {
-  return <h2 className="mb-3 text-xs font-semibold tracking-wide text-muted uppercase">{children}</h2>;
+  return <h2 className="titre-section mb-3">{children}</h2>;
 }
 
 function Etiquettes({ titre, valeurs, accent }) {
   if (!valeurs?.length) return null;
   return (
     <div>
-      <Titre>{titre}</Titre>
+      <h3 className="etiquette mb-2">{titre}</h3>
       <ul className="flex flex-wrap gap-1.5">
         {valeurs.map((v) => (
-          <li key={v} className={`rounded-full px-3 py-1 text-sm ${accent ? 'bg-brand-50 text-brand-700' : 'bg-navy-50 text-navy-800'}`}>{v}</li>
+          <li
+            key={v}
+            className={`rounded-sm border px-2 py-0.5 text-sm ${accent ? 'border-accent-trait bg-accent-doux text-accent-texte' : 'border-trait bg-survol text-texte'}`}
+          >
+            {v}
+          </li>
         ))}
       </ul>
     </div>

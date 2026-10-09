@@ -33,13 +33,13 @@ export default function SuppressionPoste({ poste, onSupprime, onAnnuler }) {
       }}
     >
       <p>
-        Le poste <strong className="text-navy-900">« {poste?.intitule} »</strong> sera supprimé définitivement. Cette
+        Le poste <strong className="text-fort">« {poste?.intitule} »</strong> sera supprimé définitivement. Cette
         action ne peut pas être annulée.
       </p>
       {poste?.statut === 'actif' && (
         <p className="mt-2">S'il s'agit seulement d'arrêter le recrutement, vous pouvez plutôt le clôturer.</p>
       )}
-      {erreur && <div className="mt-3"><Alerte>{erreur}</Alerte></div>}
+      {erreur && <Alerte className="mt-3">{erreur}</Alerte>}
     </Confirmation>
   );
 }

@@ -96,13 +96,13 @@ export default function PosteFormulaire() {
 
   return (
     <>
-      <Link to={retour} className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-muted hover:text-navy-900">
-        <ArrowLeft className="size-4" aria-hidden /> Retour
+      <Link to={retour} className="geste-hote mb-5 inline-flex items-center gap-1.5 text-sm font-medium text-doux transition-colors hover:text-fort">
+        <ArrowLeft className="size-4" aria-hidden data-geste="reculer" /> Retour
       </Link>
       <div ref={haut}>
         <EnTetePage
           titre={id ? 'Modifier le poste' : 'Nouveau poste'}
-          description="Les champs marqués d'un astérisque sont obligatoires."
+          description={id ? 'Les candidatures seront renotées après l’enregistrement.' : 'Décrivez le poste : INJARA s’en servira pour classer et noter les CV reçus.'}
         />
       </div>
 
@@ -173,7 +173,7 @@ export default function PosteFormulaire() {
         </Section>
 
         <Section titre="Pondération du score" facultatif>
-          <p className="-mt-2 text-sm text-muted">
+          <p className="-mt-2 text-base text-doux">
             Le score de chaque candidature (sur 100) combine ces quatre critères. Le total doit faire 100.
           </p>
           <div className="grid grid-cols-2 gap-5 md:grid-cols-4">
@@ -185,10 +185,23 @@ export default function PosteFormulaire() {
           </div>
           {(() => {
             const total = POIDS.reduce((somme, [champ]) => somme + (Number(formulaire[champ]) || 0), 0);
+            const juste = total === 100 && !erreurs.poids;
             return (
-              <p className={`text-sm font-medium ${total === 100 && !erreurs.poids ? 'text-brand-700' : 'text-danger'}`}>
-                Total : {total} / 100{erreurs.poids && total !== 100 ? ` — ${erreurs.poids}` : ''}
-              </p>
+              <div className="flex flex-col gap-2" aria-live="polite">
+                <div className="flex h-1.5 gap-0.5 overflow-hidden rounded-full bg-survol-fort" aria-hidden>
+                  {POIDS.map(([champ], i) => (
+                    <span
+                      key={champ}
+                      className="h-full transition-[flex-grow] duration-200"
+                      style={{ flexGrow: Math.max(0, Number(formulaire[champ]) || 0), flexBasis: 0, backgroundColor: ['var(--accent)', 'var(--info)', 'var(--alerte)', 'var(--vert-300)'][i] }}
+                    />
+                  ))}
+                  {total < 100 && <span className="h-full" style={{ flexGrow: 100 - total, flexBasis: 0 }} />}
+                </div>
+                <p className={`text-sm font-medium tabular-nums ${juste ? 'text-accent-texte' : 'text-danger'}`}>
+                  Total : {total} / 100{erreurs.poids && total !== 100 ? ` : ${erreurs.poids}` : ''}
+                </p>
+              </div>
             );
           })()}
         </Section>
@@ -202,7 +215,8 @@ export default function PosteFormulaire() {
           </Champ>
         </Section>
 
-        <div className="sticky bottom-0 -mx-8 flex justify-end gap-2 border-t border-line bg-mist px-8 py-4">
+        <div className="sticky bottom-0 z-10 -mx-10 -mb-16 flex items-center justify-end gap-2 border-t border-trait bg-fond/90 px-10 py-3.5 backdrop-blur">
+          <span className="mr-auto text-sm text-tenu">Les champs marqués d'un astérisque sont obligatoires.</span>
           <Bouton variante="secondaire" onClick={() => navigate(retour)}>Annuler</Bouton>
           <Bouton type="submit" chargement={envoi}>{id ? 'Enregistrer les modifications' : 'Créer le poste'}</Bouton>
         </div>
@@ -214,9 +228,9 @@ export default function PosteFormulaire() {
 function Section({ titre, facultatif, children }) {
   return (
     <Carte className="flex flex-col gap-5">
-      <h2 className="font-semibold text-navy-900">
+      <h2 className="titre-section">
         {titre}
-        {facultatif && <span className="ml-2 text-xs font-normal text-muted">facultatif</span>}
+        {facultatif && <span className="ml-2 text-sm font-normal text-tenu">facultatif</span>}
       </h2>
       {children}
     </Carte>

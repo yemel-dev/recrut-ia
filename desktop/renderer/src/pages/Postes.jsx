@@ -1,9 +1,13 @@
-import { Briefcase, CalendarClock, GraduationCap, MapPin, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Briefcase, CalendarClock, Eye, GraduationCap, MapPin, MoreHorizontal, Pencil, Plus, SearchX, Trash2 } from 'lucide-react';
+import { m } from 'motion/react';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
 import SuppressionPoste from '../components/SuppressionPoste.jsx';
-import { Alerte, BadgeStatut, Bouton, Chargement, EnTetePage } from '../components/ui.jsx';
+import EtatVide from '../components/EtatVide.jsx';
+import { MenuDeroulant, useMenuContextuel } from '../components/Menu.jsx';
+import { cascade } from '../components/mouvement.js';
+import { Alerte, BadgeStatut, Bouton, EnTetePage, Segments } from '../components/ui.jsx';
 import { STATUTS, TYPES_CONTRAT } from '../constantes.js';
 import { experience, formaterDate } from '../format.js';
 
@@ -35,50 +39,52 @@ export default function Postes() {
     charger();
   }, [charger]);
 
-  const boutonCreer = <Bouton icone={Plus} onClick={() => navigate('/postes/nouveau')}>Nouveau poste</Bouton>;
+  const boutonCreer = (
+    <Bouton icone={Plus} geste="pivoter" onClick={() => navigate('/postes/nouveau')} aria-keyshortcuts="Control+N">
+      Nouveau poste
+    </Bouton>
+  );
+  const { ouvrir: ouvrirMenu, menu } = useMenuContextuel('Actions sur le poste');
+  const actions = (poste) => [
+    { libelle: 'Voir le poste et son classement', icone: Eye, action: () => navigate(`/postes/${poste.id}`) },
+    { libelle: 'Modifier', icone: Pencil, action: () => navigate(`/postes/${poste.id}/modifier`) },
+    null,
+    { libelle: 'Supprimer…', icone: Trash2, action: () => setASupprimer(poste), danger: true },
+  ];
 
   if (erreur) return <Alerte>{erreur}</Alerte>;
-  if (!postes) return <Chargement />;
+  if (!postes) return <SqueletteListe />;
 
   return (
     <>
       <EnTetePage
         titre="Postes"
-        description="Les postes actifs serviront à classer les candidatures reçues."
+        description="Les postes actifs servent à classer les candidatures reçues."
         actions={total > 0 && boutonCreer}
       />
 
       {total === 0 ? (
-        <EtatVide action={boutonCreer} />
+        <EtatVidePostes action={boutonCreer} />
       ) : (
         <>
-          <div className="mb-4 flex gap-1 rounded-lg border border-line bg-white p-1" role="tablist" aria-label="Filtrer par statut">
-            {FILTRES.map(([valeur, libelle]) => (
-              <button
-                key={valeur}
-                type="button"
-                role="tab"
-                aria-selected={statut === valeur}
-                onClick={() => setParametres(valeur ? { statut: valeur } : {})}
-                className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                  statut === valeur ? 'bg-navy-900 text-white' : 'text-muted hover:bg-navy-50 hover:text-navy-900'
-                }`}
-              >
-                {libelle}
-              </button>
-            ))}
-          </div>
+          <Segments
+            libelle="Filtrer par statut"
+            className="mb-4"
+            valeur={statut}
+            onChange={(valeur) => setParametres(valeur ? { statut: valeur } : {})}
+            options={FILTRES.map(([valeur, libelle]) => ({ valeur, libelle }))}
+          />
 
           {postes.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-line bg-white px-6 py-12 text-center text-sm text-muted">
-              Aucun poste {STATUTS[statut]?.toLowerCase()} pour le moment.
-            </p>
+            <EtatVide icone={SearchX} titre={`Aucun poste ${STATUTS[statut]?.toLowerCase()} pour le moment`} compact>
+              Choisissez un autre filtre pour voir les autres postes.
+            </EtatVide>
           ) : (
-            <ul className="flex flex-col gap-3">
+            <m.ul key={statut} className="overflow-hidden rounded-lg border border-trait bg-surface shadow-carte" initial="initial" animate="animate" variants={cascade.parent}>
               {postes.map((poste) => (
-                <LignePoste key={poste.id} poste={poste} onSupprimer={() => setASupprimer(poste)} />
+                <LignePoste key={poste.id} poste={poste} actions={actions(poste)} onMenu={(e) => ouvrirMenu(e, actions(poste))} />
               ))}
-            </ul>
+            </m.ul>
           )}
         </>
       )}
@@ -91,12 +97,12 @@ export default function Postes() {
           charger();
         }}
       />
+      {menu}
     </>
   );
 }
 
-function LignePoste({ poste, onSupprimer }) {
-  const navigate = useNavigate();
+function LignePoste({ poste, actions, onMenu }) {
   const details = [
     poste.lieu && { icone: MapPin, texte: poste.lieu },
     poste.type_contrat && { icone: Briefcase, texte: TYPES_CONTRAT[poste.type_contrat] },
@@ -105,14 +111,17 @@ function LignePoste({ poste, onSupprimer }) {
   ].filter(Boolean);
 
   return (
-    <li className="group flex items-center gap-4 rounded-xl border border-line bg-white p-5 transition-colors hover:border-navy-200">
-      <Link to={`/postes/${poste.id}`} className="min-w-0 flex-1">
+    <m.li variants={cascade.enfant} onContextMenu={onMenu} className="group relative flex items-center gap-4 border-b border-trait px-5 py-4 transition-colors last:border-b-0 hover:bg-survol">
+      <span className={`grid size-9 shrink-0 place-items-center rounded-md border ${poste.statut === 'actif' ? 'border-accent-trait bg-accent-doux text-accent-texte' : 'border-trait bg-survol text-doux'}`}>
+        <Briefcase className="size-4" aria-hidden />
+      </span>
+      <Link to={`/postes/${poste.id}`} className="min-w-0 flex-1 after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:rounded-md focus-visible:after:ring-2 focus-visible:after:ring-accent">
         <div className="flex items-center gap-3">
-          <h2 className="truncate font-semibold text-navy-900 group-hover:text-brand-700">{poste.intitule}</h2>
+          <h2 className="truncate text-lg font-semibold text-fort">{poste.intitule}</h2>
           <BadgeStatut statut={poste.statut} />
-          {poste.reference_interne && <span className="text-xs text-muted">{poste.reference_interne}</span>}
+          {poste.reference_interne && <span className="text-sm text-tenu tabular-nums">{poste.reference_interne}</span>}
         </div>
-        <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
+        <p className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-doux">
           {details.map(({ icone: Icone, texte }) => (
             <span key={texte} className="inline-flex items-center gap-1.5">
               <Icone className="size-3.5" aria-hidden /> {texte}
@@ -120,39 +129,51 @@ function LignePoste({ poste, onSupprimer }) {
           ))}
         </p>
       </Link>
-      <div className="flex shrink-0 gap-1">
-        <Bouton variante="discret" icone={Pencil} onClick={() => navigate(`/postes/${poste.id}/modifier`)} aria-label={`Modifier ${poste.intitule}`} />
-        <Bouton variante="discret" icone={Trash2} onClick={onSupprimer} aria-label={`Supprimer ${poste.intitule}`} className="hover:text-danger" />
+      <div className="relative z-10 flex shrink-0 gap-1 opacity-70 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+        <MenuDeroulant
+          libelle={`Actions sur ${poste.intitule}`}
+          alignement="fin"
+          elements={actions}
+          declencheur={(props) => <Bouton variante="discret" icone={MoreHorizontal} aria-label={`Actions sur ${poste.intitule}`} {...props} />}
+        />
       </div>
-    </li>
+    </m.li>
   );
 }
 
-function EtatVide({ action }) {
+function EtatVidePostes({ action }) {
   return (
-    <div className="flex flex-col items-center rounded-2xl border border-dashed border-navy-100 bg-white px-8 py-16 text-center">
-      <div className="relative mb-6">
-        <span className="flex size-16 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
-          <Briefcase className="size-8" aria-hidden />
-        </span>
-        <span className="absolute -right-2 -bottom-2 flex size-7 items-center justify-center rounded-full border-4 border-white bg-brand-600 text-white">
-          <Plus className="size-3.5" aria-hidden />
-        </span>
-      </div>
-      <h2 className="text-lg font-semibold text-navy-900">Aucun poste pour le moment</h2>
-      <p className="mt-2 max-w-md text-sm text-muted">
+    <EtatVide icone={Briefcase} titre="Aucun poste pour le moment" action={action}>
+      <p>
         Décrivez les postes que vous cherchez à pourvoir : missions, compétences, expérience et formation attendues.
         INJARA s'appuiera sur les postes actifs pour classer les candidatures reçues.
       </p>
-      <ol className="mt-6 mb-8 flex flex-col gap-2 text-left text-sm text-navy-800 sm:flex-row sm:gap-6">
+      <ol className="mt-6 flex flex-col gap-3 text-left text-base text-texte sm:flex-row sm:gap-6">
         {['Créez le poste en brouillon', 'Complétez les exigences', 'Passez-le en actif'].map((etape, i) => (
           <li key={etape} className="flex items-center gap-2">
-            <span className="flex size-6 items-center justify-center rounded-full bg-navy-50 text-xs font-semibold text-navy-700">{i + 1}</span>
+            <span className="grid size-6 place-items-center rounded-full border border-accent-trait font-affichage text-xs text-accent-texte">{i + 1}</span>
             {etape}
           </li>
         ))}
       </ol>
-      {action}
+    </EtatVide>
+  );
+}
+
+function SqueletteListe() {
+  return (
+    <div aria-busy="true" aria-label="Chargement des postes">
+      <div className="squelette mb-3 h-8 w-40" />
+      <div className="squelette mb-7 h-4 w-96" />
+      <div className="squelette mb-4 h-8 w-80 rounded-md" />
+      <div className="overflow-hidden rounded-lg border border-trait">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="flex items-center gap-4 border-b border-trait px-5 py-4 last:border-b-0">
+            <div className="squelette size-9 rounded-md" />
+            <div className="flex-1"><div className="squelette mb-2 h-4 w-64" /><div className="squelette h-3 w-96" /></div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
