@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
 
-from .migrations import ajouter_colonnes_manquantes
+from .migrations import ajouter_colonnes_manquantes, convertir_anciens_entretiens
 from .models import Base
 
 
@@ -16,6 +16,7 @@ class Database:
         self.engine = create_engine(url, connect_args={"check_same_thread": False})
         event.listen(self.engine, "connect", _sqlite_pragmas)
         self._sessions = sessionmaker(self.engine, expire_on_commit=False)
+        convertir_anciens_entretiens(self.engine)
         Base.metadata.create_all(self.engine)
         ajouter_colonnes_manquantes(self.engine)
 

@@ -74,3 +74,49 @@ def test_seul_un_entretien_planifie_se_modifie(connecte, services, boite, tmp_pa
     connecte.put(f"/entretiens/{e['id']}/statut", json={"statut": "annule"})
     assert connecte.put(f"/entretiens/{e['id']}", json={**SUR_SITE, "date_entretien": _date(15)}).status_code == 409
     assert connecte.put(f"/entretiens/{e['id']}/confirmation", json={"confirme": True}).status_code == 409
+
+
+# --- Base créée par l'ancienne branche des mails --------------------------------------------------------------
+
+
+def test_conversion_de_l_ancienne_table_des_entretiens(tmp_path):
+    import sqlite3
+
+    from sqlalchemy import create_engine
+
+    from backend.database.db import Database
+    from backend.database.models import Base
+
+    chemin = tmp_path / "ancienne.db"
+    moteur = create_engine(f"sqlite:///{chemin.as_posix()}")
+    tables = Base.metadata.tables
+    Base.metadata.create_all(moteur, tables=[tables["entreprise"], tables["postes"], tables["candidatures"]])
+    with moteur.begin() as connexion:
+        connexion.execute(tables["postes"].insert().values(id=1, intitule="Dev", description="Dev", niveau_formation="Licence"))
+        connexion.execute(tables["candidatures"].insert().values(id=3, cle="m3", fichier_cv="a.pdf", nom_fichier_cv="a.pdf", sha256_cv="h"))
+    moteur.dispose()
+    with sqlite3.connect(chemin) as base:
+        base.execute(
+            "CREATE TABLE entretiens (id INTEGER NOT NULL, candidature_id INTEGER NOT NULL, poste_id INTEGER NOT NULL,"
+            " debut DATETIME NOT NULL, duree_minutes INTEGER NOT NULL, mode VARCHAR(20) NOT NULL, adresse TEXT,"
+            " message TEXT, statut VARCHAR(20) NOT NULL, cree_le DATETIME NOT NULL, modifie_le DATETIME NOT NULL,"
+            " PRIMARY KEY (id), UNIQUE (candidature_id, poste_id))"
+        )
+        base.execute("CREATE INDEX ix_entretiens_debut ON entretiens (debut)")
+        base.execute(
+            "INSERT INTO entretiens VALUES (1, 3, 1, '2026-10-22 08:00:00.000000', 90, 'sur_site', 'Bonapriso', NULL,"
+            " 'confirme', '2026-10-06 23:02:14.250012', '2026-10-06 23:28:44.972562')"
+        )
+    url = f"sqlite:///{chemin.as_posix()}"
+    db = Database(url)
+    with db.engine.connect() as connexion:
+        ligne = connexion.exec_driver_sql(
+            "SELECT candidature_id, poste_id, code_invitation, date_entretien, expire_le, statut, duree_minutes, mode,"
+            " adresse, confirme_le FROM entretiens"
+        ).one()
+    db.close()
+    assert ligne.candidature_id == 3 and ligne.poste_id == 1 and ligne.code_invitation
+    assert ligne.date_entretien.startswith("2026-10-22 08:00") and ligne.expire_le.startswith("2026-10-29 08:00")
+    assert (ligne.statut, ligne.duree_minutes, ligne.mode, ligne.adresse) == ("planifie", 90, "sur_site", "Bonapriso")
+    assert ligne.confirme_le  # « confirmé » de l'ancienne table
+    Database(url).close()  # deuxième démarrage : rien à convertir
