@@ -35,6 +35,8 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     // Polices toujours en fichiers (jamais en data:) : la CSP n'autorise que font-src 'self'.
+    // Application chargée depuis le disque : un seul paquet de ~190 Ko compressés reste rapide à démarrer.
+    chunkSizeWarningLimit: 800,
     assetsInlineLimit: (fichier) => (fichier.endsWith('.woff2') ? false : undefined),
   },
 });

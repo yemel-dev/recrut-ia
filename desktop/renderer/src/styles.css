@@ -92,7 +92,7 @@
   --radius-xl: 1rem; /* panneaux, modales */
   --radius-2xl: 1.25rem; /* zone de contenu, scène vidéo */
 
-  /* Salle d'entretien : teintes sur fond sombre (claires sous .ecran-clair, écran de fin d'entretien). */
+  /* Salle d'entretien : teintes sur fond sombre (elles suivent le thème sous .ecran-theme, écran de fin d'entretien). */
   --color-sal-fort: #ffffff;
   --color-sal-corps: rgb(240 245 251 / 0.78);
   --color-sal-doux: rgb(240 245 251 / 0.58);
@@ -104,26 +104,6 @@
   --color-sal-succes: #6be3a6;
   --color-sal-alerte: #f5b94a;
   --color-sal-danger: #ff9b9b;
-
-  /* Ancienne palette : en cours de remplacement écran par écran, retirée à la fin de la refonte. */
-  --color-brand-50: #e8faf0;
-  --color-brand-100: #ccf2df;
-  --color-brand-500: #00bf63;
-  --color-brand-600: #00a656;
-  --color-brand-700: #007a3f;
-  --color-navy-50: #eef2f7;
-  --color-navy-100: #c9d3e0;
-  --color-navy-200: #9fb0c6;
-  --color-navy-600: #34527a;
-  --color-navy-700: #1b3b66;
-  --color-navy-800: #0b2a52;
-  --color-navy-900: #031e40;
-  --color-mist: #f4f7fa;
-  --color-muted: #5b6b7f;
-  --color-line: #e2e8f0;
-  --color-danger-50: #fef3f2;
-  --color-meet: #1a73e8;
-  --color-meet-700: #1558b0;
 }
 
 /* Écran de fin d'entretien : les teintes de la salle suivent le thème de l'application. */
@@ -141,19 +121,6 @@
   --color-sal-danger: var(--danger);
 }
 
-.ecran-clair {
-  --color-sal-fort: var(--nuit-900);
-  --color-sal-corps: #23395a;
-  --color-sal-doux: #4d6587;
-  --color-sal-creux: #f5f8fc;
-  --color-sal-surface: #eef3fa;
-  --color-sal-surface-fort: #e1e9f4;
-  --color-sal-bord: rgb(3 30 64 / 0.1);
-  --color-sal-champ: #ffffff;
-  --color-sal-succes: var(--vert-800);
-  --color-sal-alerte: #8a5300;
-  --color-sal-danger: #c0292b;
-}
 
 /* ─── Styles typographiques nommés ──────────────────────────────────────── */
 

@@ -85,3 +85,138 @@ Conclusion de direction artistique : **« la constellation »**. Le symbole à h
 il sert de loader IA, de filigrane sur l'écran de connexion et d'état vide. Tout le reste est sobre (surfaces bleu
 nuit étagées, traits doux, une seule couleur d'accent). L'audace se concentre sur la typographie d'affichage
 (Unbounded, large, pour les titres et les scores) et sur l'IA, signalée par un liseré vert lumineux et une pulsation discrète.
+
+## 4. Typographie
+
+Ta charte n'impose pas de police. Paire retenue :
+
+- **Unbounded** (variable, graisses 200 à 900), pour les titres d'écran, les grands chiffres et le score. Large,
+  géométrique, aux terminaisons arrondies : elle prolonge le logotype « Injara », en minuscules arrondies, et
+  donne le côté futuriste sans tomber dans le « techno » générique. Elle sert peu, et c'est voulu : c'est le seul
+  élément audacieux de l'interface (skill `frontend-design` : une seule audace).
+- **Instrument Sans** (variable, graisses 400 à 700 et largeur 75 à 100 %), pour tout le reste : texte, tableaux,
+  formulaires. Fine et très lisible en petit corps, avec des chiffres tabulaires (`tnum`) pour les scores, dates
+  et compteurs.
+
+Toutes deux sont embarquées en woff2 (paquets `@fontsource-variable`), jamais chargées depuis un CDN, et la
+CSP l'impose (`font-src 'self'`). Vérification au chargement des fichiers : tous les caractères
+« é è ê ë à â ç ô û ù î ï œ É È À Ç « » ’ … » sont présents, et les deux polices ont la fonction `tnum`.
+
+Échelle de bureau (base 14 px), interlignes en px :
+
+| Rôle | Taille | Interligne | Police, graisse, approche |
+|---|---|---|---|
+| Légende, étiquette (`text-xs`, `.etiquette`) | 12 | 16 | Instrument 500 |
+| Petit texte, métadonnées (`text-sm`) | 13 | 18 | Instrument 400 |
+| Corps (`text-base`) | 14 | 20 | Instrument 400 |
+| Titre de section (`.titre-section`) | 16 | 22 | Instrument 600, −0,01 em |
+| Sous-titre (`text-xl`) | 20 | 26 | — |
+| Titre d'écran (`.titre-ecran`) | 24 | 30 | Unbounded 500, −0,035 em |
+| Chiffre de statistique (`.chiffre text-3xl`) | 32 | 36 | Unbounded 500, −0,04 em, tabulaire |
+| Grand chiffre (`text-4xl`) | 44 | 48 | Unbounded 500 |
+
+Pas de libellés en capitales espacées (l'ancienne interface en avait sur toutes les étiquettes) : étiquettes en
+casse normale, plus petites et plus douces.
+
+## 5. Palette dérivée et contrastes
+
+Échelles : celles du brief, complétées par `nuit-850 #062548`, `nuit-500 #3a6aad`, `nuit-400 #5d88c4`,
+`nuit-200 #b8cde8` et **`vert-800 #00733b`**. Ce dernier est un écart au brief : le vert 700 `#008a47` ne donne
+que 4,44:1 sur blanc, sous le seuil AA de 4,5. Le vert 800 sert donc au texte vert en thème clair.
+
+| Token | Sombre | Clair |
+|---|---|---|
+| Chrome (barres, en retrait) | `#010d1f` (nuit 950) | `#e9eff7` |
+| Fond de la zone de travail | `#031e40` (nuit 900) | `#f5f8fc` |
+| Surface (cartes, tableaux) | `#072648` | `#ffffff` |
+| Surface 2 (menus, modales) | `#0b3160` | `#ffffff` + ombre |
+| Texte fort | `#f0f5fb`, 13,9:1 sur surface | `#031e40`, 16,6:1 |
+| Texte | `#c9d8ec`, 10,5:1 | `#23395a`, 11,6:1 |
+| Texte doux | `#8fa9cc`, 6,3:1 | `#4d6587`, 5,9:1 |
+| Texte tenu (indications de champ vide, désactivé) | `#6c88ae`, 4,2:1 | `#61779a` |
+| Accent (boutons, actif, IA) | `#00bf63` | `#00bf63` |
+| Texte vert | `#2ed384`, 7,8:1 | `#00733b`, 5,5:1 |
+| Texte sur bouton vert | `#031e40`, 6,8:1 | `#031e40`, 6,8:1 |
+| Danger, alerte, info | `#ff7a7a`, `#f5b94a`, `#7fb0ff` | `#c0292b`, `#8a5300`, `#1b4f93` |
+
+Le blanc sur le vert ne passe pas (2,4:1) : les boutons verts ont un texte bleu nuit. Le vert reste un accent
+(boutons principaux, élément actif, IA, succès), jamais une grande surface.
+
+## 6. Mouvement
+
+Motion (`motion` 14, via `LazyMotion` + `m`), règles du skill `animate` :
+
+- courbes : `cubic-bezier(0.23, 1, 0.32, 1)` (entrées et sorties), `cubic-bezier(0.32, 0.72, 0, 1)` (tiroirs) ;
+- durées : 150, 220 et 300 ms. Seules l'apparition du symbole sur l'écran de connexion (1,1 s) et la jauge de
+  score (0,9 s) dépassent, car elles sont rares ;
+- aucune animation sur la palette `Ctrl+K`, les raccourcis ou le repli de la barre latérale (actions au clavier,
+  très fréquentes) ;
+- `transform` et `opacity` uniquement, sauf le dépliage du détail d'un score (hauteur, 200 ms) ;
+- survols animés seulement à la souris (`@media (hover: hover) and (pointer: fine)`) ;
+- mouvement réduit : plus de déplacement ni de boucle décorative, seuls les fondus restent.
+
+Moments animés :
+- apparition des écrans ;
+- modales (`@starting-style`, sans JavaScript) ;
+- menus et notifications ;
+- cascade des listes ;
+- jauges de score et barres de critères ;
+- « l'IA analyse » (pulsation et reflet verts) ;
+- confirmation « Décision enregistrée » ;
+- zone de dépôt des CV ;
+- icônes animées au survol (attribut `data-geste`).
+
+## 7. Identité
+
+- Logos utilisés tels quels, recadrés et réduits par `desktop/scripts/exporter-logos.py`. Aucun redessin : je
+  n'ai pas vectorisé le logo, faute de SVG fourni.
+- Icône d'application : symbole vert sur carré arrondi bleu nuit, de 16 à 1024 px, `icon.png` et `icon.ico`
+  (l'installeur Windows utilise maintenant le `.ico`).
+- Le symbole à huit branches sert de chargement (rotation lente), de filigrane de l'écran de connexion et d'état
+  vide.
+- Icônes : Lucide (déjà présent), aucun emoji.
+
+## 8. Ce qui a changé
+
+| Écran | Changements | Commit |
+|---|---|---|
+| Shell | Barre de titre sur mesure ; barre latérale repliable ; barre d'état (boîte mail, moteur d'analyse, hors ligne) ; palette `Ctrl+K` avec recherche de candidats et de postes ; raccourcis ; menu du compte avec le thème ; notifications animées ; lien d'évitement « Aller au contenu » | `ui: design system…` |
+| Accès | Écran scindé avec panneau de marque ; clé de récupération restylée | `ui: refonte des écrans d'accès` |
+| Tableau de bord | Flux des CV avec répartition, meilleures candidatures, postes actifs, entretiens prévus, actions rapides ; correction de « La boîte null est liée » | `ui: refonte du tableau de bord` |
+| Candidatures | Filtres segmentés, tableau dense avec initiales, menu contextuel (fiche, CV, copier l'email), navigation clavier, zone de dépôt, états vides | `ui: refonte des candidatures` |
+| Fiche | Jauge de score animée, blocs IA signalés, frise des expériences, confirmation de décision | `ui: refonte de la fiche candidature` |
+| Postes | Liste avec menu d'actions, détail avec statut segmenté, classement à détail dépliable, jauge des pondérations, barre d'actions collante | `ui: refonte des postes…` |
+| Boîte mail | Passage aux tokens (cartes de choix, tableaux, sections repliables) | `ui: refonte de la boîte mail…` |
+| Profil entreprise | Carte d'identité (monogramme, secteur, ville) | `ui: refonte du profil entreprise` |
+| Salle d'entretien | Bleu nuit au lieu d'anthracite, couleurs codées en dur remplacées ; l'écran de fin suit le thème | `ui: refonte de la salle d'entretien…` |
+| Page candidat | Couleurs, polices et logo d'INJARA ; 2 routes publiques en liste fermée | `ui: refonte de la page candidat` |
+
+Logique inchangée : les appels `api.*` et `window.injara.*`, les routes, les états et les formulaires sont ceux
+d'avant. Ajouts côté processus principal (fenêtre et thème) et côté backend (polices et logo de la page candidat)
+seulement.
+
+## 9. Vérification
+
+- `npm run build` passe à chaque commit ; `pytest` : 458 tests verts.
+- Chaque écran a été lancé dans l'application (données de démo : 3 postes, 13 candidatures, entretiens) et
+  capturé en 1280 × 720 et 1100 × 680, en thèmes sombre et clair. Console : aucune erreur ni avertissement.
+- Clavier : tabulation avec focus visible, `Ctrl+1` à `Ctrl+5`, `Ctrl+N`, `Ctrl+K` puis recherche et Entrée, `?`.
+- Mouvement réduit émulé : interface utilisable, sans déplacement.
+
+## 10. Points à valider
+
+1. **Barre de titre sous Windows** : je n'ai pu tester que Linux. Sous Windows, ce sont les boutons natifs
+   par-dessus la page qui s'affichent ; à vérifier sur un vrai poste, ainsi que l'aimantation des fenêtres de
+   Windows 11 au survol du bouton « agrandir ».
+2. **Linux / Wayland** : la surcouche native de boutons fait planter Electron sur ton poste. J'ai donc dessiné
+   les boutons dans l'interface sous Linux. Plus généralement, les fenêtres Electron avec cadre natif plantent
+   sur ce poste sous Wayland ; ça ne concerne plus INJARA, mais c'est bon à savoir.
+3. **Vert du logotype** `#37ba68` (fichiers 30 et 31), différent du vert officiel `#00bf63` : je ne l'ai pas
+   utilisé. À harmoniser dans la charte ?
+4. **Taille minimale** de fenêtre portée de 960 × 640 à 1100 × 680.
+5. **Salle d'entretien en bleu nuit**, ton choix ; elle reste sombre en thème clair, comme les outils de visio.
+6. **Page candidat** passée en sombre (elle était claire) pour l'identité de marque.
+7. **Taille du JavaScript** : 618 Ko (188 Ko compressés), contre 437 Ko avant (Motion et les nouveaux
+   composants). Sans effet notable pour une application chargée depuis le disque.
+8. **Polices** : Unbounded n'est utilisée qu'en titre ; si tu la trouves trop présente, il suffit de la réserver
+   aux chiffres.
