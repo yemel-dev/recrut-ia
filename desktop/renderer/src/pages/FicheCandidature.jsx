@@ -18,6 +18,7 @@ import {
 import { Alerte, Badge, Bouton, CHAMP_SAISIE, Carte, Champ, ZoneTexte } from '../components/ui.jsx';
 import { STATUTS } from '../constantes.js';
 import CarteEntretien from '../entretiens/CarteEntretien.jsx';
+import CarteMails from '../mails/CarteMails.jsx';
 import { formaterDateHeure } from '../format.js';
 
 export default function FicheCandidature() {
@@ -28,6 +29,7 @@ export default function FicheCandidature() {
   const [postes, setPostes] = useState([]);
   const [erreur, setErreur] = useState('');
   const [envoi, setEnvoi] = useState(false);
+  const [versionEntretien, setVersionEntretien] = useState(0); // la carte Mails relit son état quand l'entretien change
 
   const charger = useCallback(() => {
     api.get(`/candidatures/${id}`).then(setFiche, (err) => setErreur(err.message));
@@ -237,7 +239,8 @@ export default function FicheCandidature() {
               action(() => api.put(`/candidatures/${id}/decision`, { decision, note }), 'Décision enregistrée. Le score et le classement ne changent pas.')
             }
           />
-          <CarteEntretien candidatureId={fiche.id} decision={fiche.decision} />
+          <CarteEntretien candidatureId={fiche.id} decision={fiche.decision} onChange={() => setVersionEntretien((v) => v + 1)} />
+          <CarteMails candidatureId={fiche.id} decision={fiche.decision.etat} version={`${versionEntretien}-${fiche.decision.etat}-${fiche.poste_id}`} />
           <Carte className="flex flex-col gap-3 text-base">
             <h2 className="titre-section">Lu dans le CV</h2>
             {fiche.statut_lecture !== 'lue' ? (

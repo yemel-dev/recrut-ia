@@ -8,6 +8,7 @@ import { Alerte, Chargement } from './components/ui.jsx';
 import Connexion from './pages/Connexion.jsx';
 import CreationCompte from './pages/CreationCompte.jsx';
 import MotDePasseOublie from './pages/MotDePasseOublie.jsx';
+import ParametresMails from './pages/ParametresMails.jsx';
 import PosteDetail from './pages/PosteDetail.jsx';
 import PosteFormulaire from './pages/PosteFormulaire.jsx';
 import Postes from './pages/Postes.jsx';
@@ -58,6 +59,7 @@ function Routeur() {
         <Route element={<Disposition />}>
           <Route index element={<TableauDeBord />} />
           <Route path="/entreprise" element={<ProfilEntreprise />} />
+          <Route path="/parametres/mails" element={<ParametresMails />} />
           <Route path="/candidatures" element={<Candidatures />} />
           <Route path="/candidatures/:id" element={<FicheCandidature />} />
           <Route path="/entretiens/:id" element={<Entretien />} />

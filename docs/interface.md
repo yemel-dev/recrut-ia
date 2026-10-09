@@ -31,7 +31,7 @@ fait planter Electron sous Wayland). Taille minimale : 1100 × 680.
 | Action | Raccourci |
 |---|---|
 | Palette de commandes (recherche de candidats, postes, actions) | Ctrl+K (⌘K sur macOS) |
-| Tableau de bord, Candidatures, Postes, Boîte mail, Profil entreprise | Ctrl+1 à Ctrl+5 |
+| Tableau de bord, Candidatures, Postes, Boîte mail, Profil entreprise, Mails aux candidats | Ctrl+1 à Ctrl+6 |
 | Créer un poste | Ctrl+N |
 | Importer des CV | Ctrl+I |
 | Replier la barre latérale | Ctrl+B |

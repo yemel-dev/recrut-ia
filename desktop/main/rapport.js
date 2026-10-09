@@ -191,11 +191,38 @@ function entretien(d) {
   );
 }
 
+function entretienPrevu(d) {
+  const e = d.entretien_prevu;
+  if (!e) return ''; // aucun entretien planifié à venir : section absente
+  return section(
+    'Entretien prévu',
+    `<table>
+      ${ligne('Date', `${esc(e.date)} à ${esc(e.heure)}`)}
+      ${ligne('Durée', esc(e.duree))}
+      ${ligne('Lieu', esc(e.lieu))}
+      ${ligne('Confirmation', e.confirme ? 'Confirmé par le candidat' : 'Pas encore confirmé')}
+    </table>`,
+  );
+}
+
+const ETATS_MAIL = { envoye: 'envoyé', echec: 'échec', test: 'envoyé en mode test seulement', non_envoye: 'non envoyé' };
+
+function mails(d) {
+  const lignes = (d.mails || []).filter((m) => m.statut !== 'non_envoye');
+  if (!lignes.length) return section('Mails au candidat', '<p class="discret">Aucun mail envoyé au candidat.</p>');
+  return section(
+    'Mails au candidat',
+    `<table>${lignes
+      .map((m) => ligne(m.libelle, `${esc(ETATS_MAIL[m.statut])}${m.le ? ` le ${esc(date(m.le, true))}` : ''}${m.erreur ? ` (${esc(m.erreur)})` : ''}`))
+      .join('')}</table>`,
+  );
+}
+
 function mention(d) {
   return `<footer>${esc(d.mention)}</footer>`;
 }
 
-const SECTIONS = [entete, candidat, score, profil, potentiel, decision, entretien, mention];
+const SECTIONS = [entete, candidat, score, profil, potentiel, decision, entretienPrevu, entretien, mails, mention];
 
 // --- Gabarit ------------------------------------------------------------------------------------------------------
 

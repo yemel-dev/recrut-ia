@@ -7,13 +7,18 @@ la sélection n'envoie jamais rien : le recruteur prépare l'envoi, voit l'aper�
 
 ## Parcours
 
-1. **Fiche candidat** : décision « retenu », puis carte « Entretien » (date et heure, durée, sur site avec adresse ou
-   en ligne, message facultatif). Une date passée est refusée ; un chevauchement avec un autre entretien est signalé
-   sans bloquer. Le candidat confirme en répondant au mail ; le recruteur marque ensuite l'entretien « confirmé » ou
-   le replanifie. Si la date change après l'invitation, la fiche propose le mail de modification.
+1. **Fiche candidat** : décision « retenu », puis carte « Entretien » → « Planifier un entretien » : en ligne (la
+   visio d'INJARA, voir `docs/entretien-video.md`) ou sur site (adresse), date et heure, durée, message facultatif.
+   C'est l'entretien du module vidéo, complété de ce que l'invitation annonce (durée, mode, adresse, message,
+   confirmation) ; son cycle planifié → en cours → terminé ou annulé ne change pas. Une date passée est refusée ; un
+   chevauchement avec un autre entretien est signalé sans bloquer. Le candidat confirme en répondant au mail ; le
+   recruteur marque ensuite l'entretien « confirmé » ou le replanifie. Si la date change après l'invitation, la carte
+   « Mails au candidat » propose de prévenir le candidat (mail de modification).
 2. **Page du poste** :
-   - « Envoyer les invitations » : candidats retenus avec un entretien planifié et sans invitation envoyée ; un retenu
-     sans date est listé à part, avec la raison ;
+   - « Envoyer les invitations » : candidats retenus avec un entretien planifié et daté, sans invitation envoyée ; un
+     retenu sans entretien (ou sans date) est listé à part, avec la raison. Pour un entretien **en ligne**, `{lieu}`
+     contient le **lien de la visio** du candidat : il faut donc que l'accès à distance soit activé, sinon le candidat
+     est exclu de l'envoi avec cette raison ;
    - « Clôturer la sélection » : après confirmation, les candidatures encore « à examiner » passent à « écarté » ;
      « en attente » et « retenu » ne bougent pas ;
    - « Envoyer les réponses négatives » : candidats « écarté ».
@@ -93,5 +98,5 @@ Les mails partent de la boîte de recrutement liée à INJARA (page Boîte mail)
 | `services/expediteur_gmail.py` | API Gmail et autorisation d'envoi |
 | `services/expediteur_smtp.py` | SMTP pour les boîtes liées par IMAP |
 | `services/modeles_mail.py`, `services/reglages_mails.py` | Modèles, variables, mode test |
-| `services/entretiens.py` | Planification des entretiens |
-| `desktop/renderer/src/mails/` | Cartes de la fiche, actions du poste, écran de confirmation |
+| `services/entretiens.py` (module vidéo) | Planification étendue : `POST /candidatures/{id}/entretiens`, `PUT /entretiens/{id}`, `PUT /entretiens/{id}/confirmation` |
+| `desktop/renderer/src/mails/`, `entretiens/CarteEntretien.jsx` | Cartes de la fiche, actions du poste, écran de confirmation, planification |

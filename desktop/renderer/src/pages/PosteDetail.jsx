@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api.js';
 import TopPoste from '../candidatures/TopPoste.jsx';
+import ActionsPoste from '../mails/ActionsPoste.jsx';
 import SuppressionPoste from '../components/SuppressionPoste.jsx';
 import { Alerte, BadgeStatut, Bouton, Carte, Segments } from '../components/ui.jsx';
 import { STATUTS, TELETRAVAIL, TYPES_CONTRAT } from '../constantes.js';
@@ -15,6 +16,7 @@ export default function PosteDetail() {
   const [erreur, setErreur] = useState('');
   const [suppression, setSuppression] = useState(false);
   const [changementStatut, setChangementStatut] = useState(false);
+  const [versionClassement, setVersionClassement] = useState(0); // relu après un envoi ou une clôture
 
   useEffect(() => {
     api.get(`/postes/${id}`).then(setPoste, (err) => setErreur(err.message));
@@ -104,8 +106,10 @@ export default function PosteDetail() {
         />
       </Carte>
 
+      <ActionsPoste posteId={Number(id)} onChange={() => setVersionClassement((v) => v + 1)} />
+
       <div className="mb-6">
-        <TopPoste posteId={Number(id)} actif={poste.statut === 'actif'} />
+        <TopPoste key={versionClassement} posteId={Number(id)} actif={poste.statut === 'actif'} />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">

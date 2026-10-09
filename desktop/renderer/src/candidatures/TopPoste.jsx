@@ -5,6 +5,7 @@ import { AnimatePresence, m } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api.js';
+import { BadgesMails } from '../mails/elements.jsx';
 import { COURBE_SORTIE } from '../components/mouvement.js';
 import { Alerte, Carte, Segments, cx } from '../components/ui.jsx';
 import { BadgeDecision, BadgePotentiel, CRITERES, DECISIONS, DetailScore, MODES_ASSIGNATION, PastilleScore, formaterExperience } from './elements.jsx';
@@ -83,6 +84,7 @@ export default function TopPoste({ posteId, actif }) {
                       </Link>
                       <BadgeDecision decision={c.decision} />
                       <BadgePotentiel niveau={c.potentiel_niveau} />
+                      <BadgesMails mails={c.mails} />
                     </div>
                     <p className="mt-0.5 text-sm text-doux">
                       {c.diplome_niveau || 'Diplôme non trouvé'} · {formaterExperience(c.experience_mois)} d'expérience · {MODES_ASSIGNATION[c.mode_assignation] || ''}

@@ -62,6 +62,18 @@
   dans `<données>/secrets/`.
 - L'agent lit la boîte en lecture seule (`gmail.readonly` ou IMAP) ; la surveillance ne tourne que pendant une session.
 
+## Mails aux candidats
+
+- Aucun mail ne part sans confirmation explicite du recruteur, après aperçu (voir `docs/mails.md`).
+- L'envoi a sa propre autorisation Google (`gmail.send` et `gmail.metadata`), distincte de celle de la lecture, dans
+  `<données>/secrets/jeton_envoi_gmail.json`. Elle n'est acceptée que pour le compte qui reçoit les candidatures, et
+  peut être retirée depuis Paramètres › Mails aux candidats.
+- Le texte de chaque mail envoyé (historique) et le message joint à un entretien sont chiffrés avec la clé de données.
+  L'objet, le destinataire et la date d'envoi restent en clair pour l'affichage de l'état.
+- Mode test : tout part vers l'adresse de redirection, jamais au candidat.
+- Boîte liée par IMAP : l'envoi SMTP réutilise le mot de passe rangé par l'agent dans le coffre du système ; il
+  n'est ni copié ni écrit ailleurs. Connexions chiffrées (SSL sur le port 465, STARTTLS sur 587), certificat vérifié.
+
 ## Limites connues (à traiter plus tard)
 
 - Restent en clair dans SQLite : l'entreprise, les postes, et pour chaque candidature les nom, email, téléphone,

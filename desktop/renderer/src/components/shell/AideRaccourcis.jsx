@@ -10,6 +10,7 @@ const RACCOURCIS = [
   ['Postes', [MODIFICATEUR, '3']],
   ['Boîte mail', [MODIFICATEUR, '4']],
   ['Profil entreprise', [MODIFICATEUR, '5']],
+  ['Mails aux candidats', [MODIFICATEUR, '6']],
   ['Créer un poste', [MODIFICATEUR, 'N']],
   ['Importer des CV', [MODIFICATEUR, 'I']],
   ['Replier la barre latérale', [MODIFICATEUR, 'B']],

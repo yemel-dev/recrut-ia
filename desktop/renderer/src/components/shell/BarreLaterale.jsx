@@ -1,5 +1,5 @@
-// Barre latérale : navigation principale (Ctrl+1 à 5), compte et préférences. Repliable (Ctrl+B).
-import { Briefcase, Building2, ChevronsUpDown, FileText, Keyboard, LayoutDashboard, LogOut, Mail, Monitor, Moon, PanelLeftClose, PanelLeftOpen, Sun } from 'lucide-react';
+// Barre latérale : navigation principale (Ctrl+1 à 6), compte et préférences. Repliable (Ctrl+B).
+import { Briefcase, Building2, ChevronsUpDown, FileText, Keyboard, LayoutDashboard, LogOut, Mail, Monitor, Moon, PanelLeftClose, PanelLeftOpen, Send, Sun } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { MODIFICATEUR } from '../../commandes.js';
 import { choisirTheme } from '../../theme.js';
@@ -13,6 +13,7 @@ export const NAVIGATION = [
   { vers: '/postes', libelle: 'Postes', icone: Briefcase, geste: 'soulever' },
   { vers: '/boite-mail', libelle: 'Boîte mail', icone: Mail, geste: 'incliner' },
   { vers: '/entreprise', libelle: 'Profil entreprise', icone: Building2, geste: 'soulever' },
+  { vers: '/parametres/mails', libelle: 'Mails aux candidats', icone: Send, geste: 'avancer' },
 ];
 
 export default function BarreLaterale({ repliee, onReplier, totalCV, email, onDeconnecter, onRaccourcis, choixTheme }) {
