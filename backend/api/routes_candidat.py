@@ -20,7 +20,7 @@ EN_TETES = {
     "Referrer-Policy": "no-referrer",  # le code du lien est dans l'adresse de la page
     "X-Content-Type-Options": "nosniff",
     "Content-Security-Policy": (
-        "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self' blob:; "
+        "default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; media-src 'self' blob:; "
         "connect-src 'self' wss: ws:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
     ),
 }
@@ -56,6 +56,25 @@ def script():
 @router.get("/candidat.css")
 def style():
     return _fichier("candidat.css", "text/css; charset=utf-8")
+
+
+# Polices et logo de la page : liste fermée (aucun chemin fourni par la requête n'atteint le disque).
+POLICES = {"unbounded.woff2", "instrument-sans.woff2"}
+MARQUE = {"symbole.webp", "logotype.webp"}
+
+
+@router.get("/polices/{nom}")
+def police(nom: str):
+    if nom not in POLICES:
+        raise Introuvable("Fichier introuvable.")
+    return _fichier(f"polices/{nom}", "font/woff2")
+
+
+@router.get("/marque/{nom}")
+def marque(nom: str):
+    if nom not in MARQUE:
+        raise Introuvable("Fichier introuvable.")
+    return _fichier(f"marque/{nom}", "image/webp")
 
 
 @router.get("/api/{code}")

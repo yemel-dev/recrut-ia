@@ -83,6 +83,10 @@ def test_page_et_ressources_avec_en_tetes_de_securite(anonyme, entretien):
     assert "<script>" not in page.text  # la CSP interdit les scripts en ligne
     assert anonyme.get("/public/candidat.js").status_code == 200
     assert anonyme.get("/public/candidat.css").status_code == 200
+    assert anonyme.get("/public/polices/unbounded.woff2").status_code == 200
+    assert anonyme.get("/public/marque/symbole.webp").status_code == 200
+    assert anonyme.get("/public/polices/LICENSE-unbounded.txt").status_code == 404
+    assert anonyme.get("/public/marque/..%2F..%2Fapi%2Fapp.py").status_code == 404
 
 
 def test_consentement_du_candidat(anonyme, connecte, entretien):
