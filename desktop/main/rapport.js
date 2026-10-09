@@ -7,6 +7,8 @@
 // Pour ajouter une section, écrire une fonction (donnees) => HTML et l'ajouter à SECTIONS ;
 // une section qui renvoie une chaîne vide n'est pas affichée.
 
+const fs = require('node:fs');
+const path = require('node:path');
 const { BrowserWindow } = require('electron');
 
 const COULEURS = { navy: '#031e40', navy700: '#1b3b66', brand: '#00a656', brand50: '#e8faf0', muted: '#5b6b7f', line: '#e2e8f0', mist: '#f4f7fa' };
@@ -202,9 +204,9 @@ const SECTIONS = [entete, candidat, score, profil, potentiel, decision, entretie
 const STYLE = `
   @page { size: A4; margin: 14mm 14mm 16mm; }
   * { box-sizing: border-box; }
-  body { font-family: "Segoe UI", system-ui, "Noto Sans", sans-serif; color: ${COULEURS.navy}; font-size: 10pt; line-height: 1.4; margin: 0; }
+  body { font-family: "PT Sans", "Segoe UI", system-ui, sans-serif; color: ${COULEURS.navy}; font-size: 10pt; line-height: 1.4; margin: 0; }
   header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid ${COULEURS.brand}; padding-bottom: 8px; }
-  h1 { font-size: 20pt; margin: 2px 0; }
+  h1 { font-family: "Paytone One", "Segoe UI", sans-serif; font-weight: 400; font-synthesis: none; font-size: 20pt; margin: 2px 0; }
   h2 { font-size: 11.5pt; margin: 0 0 6px; padding-bottom: 3px; border-bottom: 1px solid ${COULEURS.line}; }
   h3 { font-size: 10pt; margin: 6px 0 3px; }
   .surtitre { text-transform: uppercase; letter-spacing: .06em; font-size: 8.5pt; color: ${COULEURS.muted}; margin: 0; }
@@ -242,10 +244,24 @@ function gabaritRapport(donnees) {
   const corps = SECTIONS.map((s) => s(donnees)).filter(Boolean).join('\n');
   return `<!doctype html>
 <html lang="fr"><head><meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; font-src data:">
 <title>Rapport ${esc(donnees.candidat.nom || '')}</title>
-<style>${STYLE}</style></head>
+<style>${polices()}\n${STYLE}</style></head>
 <body>${corps}</body></html>`;
+}
+
+// Polices de l'application (PT Sans, Paytone One), embarquées en data: : le rapport ne charge rien depuis le disque
+// ni le réseau. Lues une fois, au premier rapport.
+let policesCss = null;
+function polices() {
+  if (policesCss === null) {
+    const face = (famille, fichier, graisse) => {
+      const donnees = fs.readFileSync(path.join(__dirname, 'polices', fichier)).toString('base64');
+      return `@font-face { font-family: '${famille}'; src: url(data:font/woff2;base64,${donnees}) format('woff2'); font-weight: ${graisse}; font-display: block; }`;
+    };
+    policesCss = [face('PT Sans', 'pt-sans-400.woff2', 400), face('PT Sans', 'pt-sans-700.woff2', 700), face('Paytone One', 'paytone-one.woff2', 400)].join('\n');
+  }
+  return policesCss;
 }
 
 /** Imprime le gabarit en PDF (A4) dans une fenêtre cachée, sans JavaScript ni navigation. */

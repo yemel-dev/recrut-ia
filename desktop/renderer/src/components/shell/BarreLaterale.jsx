@@ -78,7 +78,7 @@ export default function BarreLaterale({ repliee, onReplier, totalCV, email, onDe
                 aria-label={repliee ? `Compte : ${email}` : undefined}
                 className="flex h-11 w-full items-center gap-2.5 rounded-md px-1.5 text-left transition-colors hover:bg-survol aria-expanded:bg-survol-fort"
               >
-                <span className="grid size-7 shrink-0 place-items-center rounded-full bg-accent-doux font-affichage text-xs font-semibold text-accent-texte ring-1 ring-accent-trait">
+                <span className="grid size-7 shrink-0 place-items-center rounded-full bg-accent-doux text-xs font-bold text-accent-texte ring-1 ring-accent-trait">
                   {(email || '?').charAt(0).toUpperCase()}
                 </span>
                 {!repliee && (

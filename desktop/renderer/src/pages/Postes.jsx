@@ -151,7 +151,7 @@ function EtatVidePostes({ action }) {
       <ol className="mt-6 flex flex-col gap-3 text-left text-base text-texte sm:flex-row sm:gap-6">
         {['Créez le poste en brouillon', 'Complétez les exigences', 'Passez-le en actif'].map((etape, i) => (
           <li key={etape} className="flex items-center gap-2">
-            <span className="grid size-6 place-items-center rounded-full border border-accent-trait font-affichage text-xs text-accent-texte">{i + 1}</span>
+            <span className="grid size-6 place-items-center rounded-full border border-accent-trait text-xs font-bold text-accent-texte">{i + 1}</span>
             {etape}
           </li>
         ))}

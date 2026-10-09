@@ -231,7 +231,7 @@ export function BadgeStatut({ statut }) {
   return <Badge ton={TON_STATUT[statut]} point>{STATUTS[statut] || statut}</Badge>;
 }
 
-/** En-tête d'écran : titre (Unbounded), description, actions toujours à droite. */
+/** En-tête d'écran : titre (Paytone One), description, actions toujours à droite. */
 export function EnTetePage({ titre, description, actions, avant }) {
   return (
     <header className="mb-7 flex items-end justify-between gap-x-8 gap-y-4">

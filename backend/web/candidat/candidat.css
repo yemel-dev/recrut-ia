@@ -1,15 +1,21 @@
 /* Page du candidat, aux couleurs d'INJARA (mêmes tokens que l'application du recruteur, thème sombre). */
+/* Polices servies par l'application elle-même (jamais par un service tiers) : Paytone One pour les titres, PT Sans pour le texte. */
 @font-face {
-  font-family: 'Unbounded';
-  src: url('/public/polices/unbounded.woff2') format('woff2');
-  font-weight: 200 900;
+  font-family: 'Paytone One';
+  src: url('/public/polices/paytone-one.woff2') format('woff2');
+  font-weight: 400;
   font-display: swap;
 }
 @font-face {
-  font-family: 'Instrument Sans';
-  src: url('/public/polices/instrument-sans.woff2') format('woff2');
-  font-weight: 400 700;
-  font-stretch: 75% 100%;
+  font-family: 'PT Sans';
+  src: url('/public/polices/pt-sans-400.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'PT Sans';
+  src: url('/public/polices/pt-sans-700.woff2') format('woff2');
+  font-weight: 700;
   font-display: swap;
 }
 
@@ -27,7 +33,7 @@
 [hidden] { display: none !important; }
 body {
   margin: 0; min-height: 100vh;
-  font-family: 'Instrument Sans', 'Segoe UI', system-ui, sans-serif; font-size: 15px; line-height: 1.55;
+  font-family: 'PT Sans', 'Segoe UI', system-ui, sans-serif; font-size: 15px; line-height: 1.55;
   background: radial-gradient(900px 600px at 85% -10%, rgb(0 191 99 / 0.10), transparent 60%), var(--fond);
   color: var(--texte); -webkit-font-smoothing: antialiased;
 }
@@ -35,8 +41,8 @@ body[data-ecran="entretien"] { background: var(--chrome); color: #fff; }
 ::selection { background: rgb(0 191 99 / 0.3); }
 .sprite { position: absolute; }
 .icone { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-h1 { margin: 0 0 8px; font-family: 'Unbounded', sans-serif; font-size: 1.75rem; line-height: 1.2; font-weight: 500; letter-spacing: -0.035em; color: var(--fort); text-wrap: balance; }
-h2 { margin: 28px 0 12px; font-size: 1rem; font-weight: 600; letter-spacing: -0.01em; color: var(--fort); }
+h1 { margin: 0 0 8px; font-family: 'Paytone One', 'Segoe UI', sans-serif; font-size: 1.75rem; line-height: 1.2; font-weight: 400; font-synthesis: none; letter-spacing: 0; color: var(--fort); text-wrap: balance; }
+h2 { margin: 28px 0 12px; font-family: 'Paytone One', 'Segoe UI', sans-serif; font-size: 1rem; font-weight: 400; font-synthesis: none; letter-spacing: 0; color: var(--fort); }
 p { text-wrap: pretty; }
 .discret { color: var(--doux); }
 .marque { display: flex; align-items: center; gap: 10px; margin: 0 0 28px; }

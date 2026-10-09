@@ -66,7 +66,7 @@ export default function TopPoste({ posteId, actif }) {
               <li key={c.id} className="border-t border-trait">
                 <div className={cx('flex items-center gap-4 px-5 py-3 transition-colors', deplie && 'bg-survol')}>
                   <span
-                    className={cx('w-6 text-center font-affichage text-sm font-medium tabular-nums', c.rang <= 3 ? 'text-accent-texte' : 'text-tenu')}
+                    className={cx('w-6 text-center text-sm font-bold tabular-nums', c.rang <= 3 ? 'text-accent-texte' : 'text-tenu')}
                     title="Rang dans le classement du poste"
                   >
                     {c.rang}

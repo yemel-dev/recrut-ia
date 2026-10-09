@@ -31,7 +31,7 @@ function Initiales({ nom }) {
   const teinte = TEINTES[[...(nom || '')].reduce((s, c) => s + c.charCodeAt(0), 0) % TEINTES.length];
   return (
     <span
-      className="grid size-8 shrink-0 place-items-center rounded-full font-affichage text-[11px] font-semibold"
+      className="grid size-8 shrink-0 place-items-center rounded-full text-[11px] font-bold"
       style={{ color: `color-mix(in oklab, ${teinte} 62%, var(--texte-fort))`, backgroundColor: `color-mix(in oklab, ${teinte} 14%, transparent)`, boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${teinte} 30%, transparent)` }}
       aria-hidden
     >

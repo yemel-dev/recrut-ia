@@ -20,10 +20,8 @@
     font-family: var(--police-texte);
     font-size: var(--text-base);
     line-height: var(--text-base--line-height);
-    font-optical-sizing: auto;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
-    font-feature-settings: 'ss01' 0;
     /* Application de bureau : l'interface ne se sélectionne pas, le contenu oui (voir .contenu-selectionnable). */
     user-select: none;
     -webkit-user-select: none;
@@ -56,6 +54,13 @@
   h2,
   h3 {
     text-wrap: balance;
+  }
+  /* Grands titres : Paytone One n'existe qu'en 400 ; pas de faux gras si une classe demande plus. */
+  h1,
+  h2 {
+    font-family: var(--police-titres);
+    font-weight: 400;
+    font-synthesis: none;
   }
   p {
     text-wrap: pretty;

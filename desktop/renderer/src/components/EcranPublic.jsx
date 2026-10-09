@@ -59,7 +59,7 @@ export default function EcranPublic({ titre, sousTitre, children, largeur = 'max
           className="relative h-7 w-auto self-start"
         />
         <div className="relative mt-20 max-w-sm">
-          <p className="font-affichage text-2xl leading-snug font-medium tracking-[-0.03em] text-fort">
+          <p className="font-titres text-2xl leading-snug text-fort">
             Le tri des candidatures est fait. La décision vous appartient.
           </p>
           <ul className="mt-8 flex flex-col gap-4">

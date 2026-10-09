@@ -92,11 +92,11 @@ export default function ProfilEntreprise() {
         {!edition && (
           <div className="relative flex items-center gap-5 border-b border-trait px-6 py-6">
             <div className="pointer-events-none absolute -top-20 -right-10 size-64 rounded-full bg-[radial-gradient(closest-side,var(--accent-doux),transparent)]" aria-hidden />
-            <span className="relative grid size-16 shrink-0 place-items-center rounded-xl border border-accent-trait bg-accent-doux font-affichage text-2xl font-medium tracking-tight text-accent-texte">
+            <span className="relative grid size-16 shrink-0 place-items-center rounded-xl border border-accent-trait bg-accent-doux font-titres text-2xl text-accent-texte">
               {initiales || <Building2 className="size-7" aria-hidden />}
             </span>
             <div className="relative min-w-0">
-              <p className="font-affichage text-2xl font-medium tracking-[-0.03em] text-fort">{profil.nom || 'Entreprise sans nom'}</p>
+              <p className="font-titres text-2xl text-fort">{profil.nom || 'Entreprise sans nom'}</p>
               <p className="mt-1 flex flex-wrap items-center gap-x-3 text-base text-doux">
                 {profil.secteur && <span>{profil.secteur}</span>}
                 {profil.ville && <span className="inline-flex items-center gap-1"><MapPin className="size-3.5" aria-hidden /> {profil.ville}</span>}

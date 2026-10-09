@@ -59,7 +59,7 @@ def style():
 
 
 # Polices et logo de la page : liste fermée (aucun chemin fourni par la requête n'atteint le disque).
-POLICES = {"unbounded.woff2", "instrument-sans.woff2"}
+POLICES = {"paytone-one.woff2", "pt-sans-400.woff2", "pt-sans-700.woff2"}
 MARQUE = {"symbole.webp", "logotype.webp"}
 
 

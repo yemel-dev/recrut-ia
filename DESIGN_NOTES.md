@@ -84,36 +84,35 @@ Aucun skill ne contient de script exécutable : ce sont uniquement des consignes
 Conclusion de direction artistique : **« la constellation »**. Le symbole à huit branches d'INJARA est le seul ornement :
 il sert de loader IA, de filigrane sur l'écran de connexion et d'état vide. Tout le reste est sobre (surfaces bleu
 nuit étagées, traits doux, une seule couleur d'accent). L'audace se concentre sur la typographie d'affichage
-(Unbounded, large, pour les titres et les scores) et sur l'IA, signalée par un liseré vert lumineux et une pulsation discrète.
+(Paytone One, ronde et dense, pour les titres) et sur l'IA, signalée par un liseré vert lumineux et une pulsation discrète.
 
 ## 4. Typographie
 
-Ta charte n'impose pas de police. Paire retenue :
+Trois polices, trois rôles (refonte de la connexion, octobre 2026) :
 
-- **Unbounded** (variable, graisses 200 à 900), pour les titres d'écran, les grands chiffres et le score. Large,
-  géométrique, aux terminaisons arrondies : elle prolonge le logotype « Injara », en minuscules arrondies, et
-  donne le côté futuriste sans tomber dans le « techno » générique. Elle sert peu, et c'est voulu : c'est le seul
-  élément audacieux de l'interface (skill `frontend-design` : une seule audace).
-- **Instrument Sans** (variable, graisses 400 à 700 et largeur 75 à 100 %), pour tout le reste : texte, tableaux,
-  formulaires. Fine et très lisible en petit corps, avec des chiffres tabulaires (`tnum`) pour les scores, dates
-  et compteurs.
+- **Paytone One** (400 seulement), pour les grands titres : h1, h2, `.titre-ecran`, `.titre-section`, nom de
+  l'entreprise. Ronde et dense, elle prolonge le logotype « Injara ». `font-synthesis: none` : jamais de faux gras.
+- **PT Sans** (400 et 700, avec italiques), police par défaut : texte, libellés, champs, boutons, tableaux,
+  menus et chiffres (`.chiffre` = PT Sans 700). Ses chiffres sont tabulaires d'origine (chasse fixe), d'où des
+  colonnes alignées sans `tnum`.
+- **Satisfy** (400), accents décoratifs uniquement : slogan, mot d'accueil. Jamais pour du texte courant.
 
-Toutes deux sont embarquées en woff2 (paquets `@fontsource-variable`), jamais chargées depuis un CDN, et la
-CSP l'impose (`font-src 'self'`). Vérification au chargement des fichiers : tous les caractères
-« é è ê ë à â ç ô û ù î ï œ É È À Ç « » ’ … » sont présents, et les deux polices ont la fonction `tnum`.
+Toutes sont embarquées en woff2 (paquets `@fontsource`, sous-ensembles latin et latin étendu), jamais chargées
+depuis un CDN, et la CSP l'impose (`font-src 'self'`). Vérification sur les fichiers : tous les caractères
+« é è ê ë à â ç ô û ù î ï œ É È À Ç Œ « » ’ … » sont présents dans les trois polices.
 
 Échelle de bureau (base 14 px), interlignes en px :
 
 | Rôle | Taille | Interligne | Police, graisse, approche |
 |---|---|---|---|
-| Légende, étiquette (`text-xs`, `.etiquette`) | 12 | 16 | Instrument 500 |
-| Petit texte, métadonnées (`text-sm`) | 13 | 18 | Instrument 400 |
-| Corps (`text-base`) | 14 | 20 | Instrument 400 |
-| Titre de section (`.titre-section`) | 16 | 22 | Instrument 600, −0,01 em |
+| Légende, étiquette (`text-xs`, `.etiquette`) | 12 | 16 | PT Sans 400 |
+| Petit texte, métadonnées (`text-sm`) | 13 | 18 | PT Sans 400 |
+| Corps (`text-base`) | 14 | 20 | PT Sans 400 |
+| Titre de section (`.titre-section`) | 16 | 22 | Paytone One 400 |
 | Sous-titre (`text-xl`) | 20 | 26 | — |
-| Titre d'écran (`.titre-ecran`) | 24 | 30 | Unbounded 500, −0,035 em |
-| Chiffre de statistique (`.chiffre text-3xl`) | 32 | 36 | Unbounded 500, −0,04 em, tabulaire |
-| Grand chiffre (`text-4xl`) | 44 | 48 | Unbounded 500 |
+| Titre d'écran (`.titre-ecran`) | 24 | 30 | Paytone One 400 |
+| Chiffre de statistique (`.chiffre text-3xl`) | 32 | 36 | PT Sans 700, tabulaire |
+| Grand chiffre (`text-4xl`) | 44 | 48 | PT Sans 700 |
 
 Pas de libellés en capitales espacées (l'ancienne interface en avait sur toutes les étiquettes) : étiquettes en
 casse normale, plus petites et plus douces.
@@ -218,5 +217,5 @@ seulement.
 6. **Page candidat** passée en sombre (elle était claire) pour l'identité de marque.
 7. **Taille du JavaScript** : 618 Ko (188 Ko compressés), contre 437 Ko avant (Motion et les nouveaux
    composants). Sans effet notable pour une application chargée depuis le disque.
-8. **Polices** : Unbounded n'est utilisée qu'en titre ; si tu la trouves trop présente, il suffit de la réserver
-   aux chiffres.
+8. **Polices** : Paytone One sert aussi aux titres de section (h2, 16 px) ; si elle paraît trop présente en petit
+   corps, il suffit de rendre `.titre-section` à PT Sans 700.

@@ -1,5 +1,15 @@
-import '@fontsource-variable/unbounded';
-import '@fontsource-variable/instrument-sans/wdth.css';
+// Polices embarquées (aucun chargement réseau) : sous-ensembles latin et latin étendu, graisses utiles seulement.
+import '@fontsource/paytone-one/latin-400.css';
+import '@fontsource/paytone-one/latin-ext-400.css';
+import '@fontsource/pt-sans/latin-400.css';
+import '@fontsource/pt-sans/latin-ext-400.css';
+import '@fontsource/pt-sans/latin-400-italic.css';
+import '@fontsource/pt-sans/latin-ext-400-italic.css';
+import '@fontsource/pt-sans/latin-700.css';
+import '@fontsource/pt-sans/latin-ext-700.css';
+import '@fontsource/pt-sans/latin-700-italic.css';
+import '@fontsource/pt-sans/latin-ext-700-italic.css';
+import '@fontsource/satisfy/latin-400.css';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { LazyMotion, MotionConfig, domMax } from 'motion/react';

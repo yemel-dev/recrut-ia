@@ -34,10 +34,13 @@
   --vert-100: #d9f8e8;
   --vert-halo: rgb(0 191 99 / 0.35);
 
-  /* Typographie */
-  --police-affichage: 'Unbounded Variable', 'Unbounded', ui-rounded, sans-serif;
-  --police-texte: 'Instrument Sans Variable', 'Instrument Sans', 'Segoe UI Variable Text', sans-serif;
-  --police-chiffres: var(--police-texte);
+  /* Typographie : trois polices, trois rôles.
+   *  - titres : Paytone One (h1, h2, titres d'écran et de section), une seule graisse (400) ;
+   *  - texte  : PT Sans 400 / 700 et italiques, police par défaut de toute l'interface ;
+   *  - accent : Satisfy, petits accents décoratifs seulement (slogan, mot d'accueil), jamais du texte courant. */
+  --police-titres: 'Paytone One', 'Segoe UI', system-ui, sans-serif;
+  --police-texte: 'PT Sans', 'Segoe UI', system-ui, sans-serif;
+  --police-accent: 'Satisfy', cursive;
 
   /* Mouvement : courbes fortes (skill « animate ») et durées de bureau, toutes sous 300 ms. */
   --courbe-sortie: cubic-bezier(0.23, 1, 0.32, 1);

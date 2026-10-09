@@ -9,8 +9,11 @@ Refonte visuelle de 2026 (branche `redesign-ui`). Le détail des choix (assets, 
   `#031e40` et `#00bf63`, puis tokens sémantiques (`--fond`, `--surface`, `--texte-doux`, `--accent`…) redéfinis
   par thème (`data-theme="sombre"` ou `"clair"` sur `<html>`). Les composants n'utilisent que les classes
   sémantiques générées dans `styles.css` (`bg-surface`, `text-doux`, `border-trait`, `text-accent-texte`…).
-- **Polices** : Unbounded (titres d'écran, grands chiffres) et Instrument Sans (texte, données), paquets
-  `@fontsource-variable`, embarquées dans l'application.
+- **Polices** : Paytone One (titres : h1, h2, `.titre-ecran`, `.titre-section`), PT Sans 400/700 et italiques
+  (police par défaut : texte, champs, boutons, tableaux, chiffres) et Satisfy (accents décoratifs seulement :
+  slogan, mot d'accueil). Variables `--police-titres`, `--police-texte`, `--police-accent` (classes `font-titres`,
+  `font-sans`, `font-accent`). Paquets `@fontsource`, embarquées : aucun chargement réseau. La page candidat
+  (`backend/web/candidat/polices`) et le rapport PDF (`desktop/main/polices`, en data:) en ont leur propre copie.
 - **Composants** : `components/ui.jsx` (boutons, champs, cartes, badges, onglets, segments, alertes, modale),
   `components/Menu.jsx` (menu déroulant et clic droit), `components/EtatVide.jsx`, `components/Infobulle.jsx`.
 - **Animations** : paquet `motion`, valeurs communes dans `components/mouvement.js` ; mouvement réduit respecté
