@@ -1,5 +1,5 @@
 // Écrans accessibles sans connexion (création du compte, connexion, récupération) : formulaire à gauche,
-// panneau de marque à droite. L'apparition du symbole est le seul moment orchestré de l'application.
+// panneau de marque à droite. Les deux soleils tournent en continu (CSS, .soleil-tournant).
 import { ScanText, ShieldCheck, Video } from 'lucide-react';
 import { m } from 'motion/react';
 import { useTheme } from '../theme.js';
@@ -27,7 +27,7 @@ export default function EcranPublic({ titre, sousTitre, children, largeur = 'max
               alt=""
               width="40"
               height="40"
-              className="mb-8 size-10"
+              className="soleil-tournant mb-8 size-10"
             />
             <h1 className="titre-ecran text-3xl! leading-tight!">{titre}</h1>
             {sousTitre && <p className="mt-3 text-base text-doux">{sousTitre}</p>}
@@ -42,15 +42,12 @@ export default function EcranPublic({ titre, sousTitre, children, largeur = 'max
       <aside className="relative hidden w-[46%] max-w-[640px] shrink-0 flex-col overflow-hidden px-12 py-12 lg:flex" aria-hidden>
         {/* Halo vert et symbole géant, en partie hors cadre */}
         <div className="pointer-events-none absolute -right-48 -bottom-56 size-[640px] rounded-full bg-[radial-gradient(closest-side,rgb(0_191_99/0.14),transparent)]" />
-        <m.img
+        <img
           src="./marque/symbole-vert-512.webp"
           alt=""
           width="560"
           height="560"
-          className="pointer-events-none absolute -right-40 -bottom-48 size-[540px]"
-          initial={{ opacity: 0, transform: 'rotate(-22.5deg) scale(0.92)' }}
-          animate={{ opacity: 0.32, transform: 'rotate(0deg) scale(1)' }}
-          transition={{ duration: 1.1, ease: COURBE_SORTIE, delay: 0.1 }}
+          className="soleil-tournant pointer-events-none absolute -right-40 -bottom-48 size-[540px] opacity-32"
         />
         <img
           src={theme === 'clair' ? './marque/logotype-nuit-128.webp' : './marque/logotype-blanc-128.webp'}

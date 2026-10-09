@@ -227,6 +227,13 @@
   }
 }
 
+/* Logo soleil d'INJARA : rotation continue, vitesse constante (un tour en 20 s), CSS seul. */
+.soleil-tournant {
+  animation: rotation var(--duree-tour-soleil) linear infinite;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
 /* Symbole INJARA qui tourne lentement : indicateur de chargement de marque. */
 .rotation-lente {
   animation: rotation 9s linear infinite;
@@ -277,6 +284,7 @@
   .squelette::after,
   .ia-pulsation,
   .ia-reflet,
+  .soleil-tournant,
   .rotation-lente,
   .glisser-entree,
   .apparition {

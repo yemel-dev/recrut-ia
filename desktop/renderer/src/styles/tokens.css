@@ -49,6 +49,7 @@
   --duree-rapide: 150ms;
   --duree: 220ms;
   --duree-lente: 300ms;
+  --duree-tour-soleil: 20s; /* rotation continue du logo soleil */
 
   /* Gabarit de l'application */
   --hauteur-titre: 40px;
