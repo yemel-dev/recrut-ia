@@ -48,12 +48,12 @@ sans mot de métier ni titre de section), sinon « Madame, Monsieur » ; le genr
 à `{message}` disparaît quand le message est vide. Le nom de l'entreprise (profil entreprise) est obligatoire : il
 signe les mails.
 
-## Mode test
+## Pas de mode test
 
-Tous les mails partent vers une adresse de redirection, avec le vrai destinataire au début de l'objet
-(« [TEST → candidat@…] … »), hors du fil. Un envoi de test ne compte pas comme envoyé au candidat. Actif par défaut en
-développement (`INJARA_ENVIRONNEMENT`, fourni par Electron), inactif dans l'application installée ; un bandeau le
-signale sur tous les écrans. Actif sans adresse : l'envoi est bloqué.
+Les mails partent toujours aux vrais candidats, après l'aperçu et la confirmation du recruteur. Il n'y a pas de mode
+test ni d'adresse de redirection (retirés à la demande du porteur du projet) : pour essayer, utiliser le mode démo
+(`GMAIL_MODE=fake`, rien ne part) ou des candidatures dont l'adresse est la sienne. Un ancien réglage « mode test »
+resté en base est ignoré, et les mails envoyés à l'époque en mode test ne comptent pas comme envoyés.
 
 ## Depuis quelle boîte partent les mails
 
@@ -125,6 +125,6 @@ revient plus une fois terminé, ni si l'entreprise et la boîte sont déjà rens
 | `services/boite.py`, `services/detection_boite.py` | Connexion de la boîte en une fois, assistant de démarrage |
 | `services/expediteur_gmail.py` | API Gmail (accord Google commun à la lecture et à l'envoi) |
 | `services/expediteur_smtp.py` | SMTP pour les boîtes liées par IMAP |
-| `services/modeles_mail.py`, `services/reglages_mails.py` | Modèles, variables, mode test |
+| `services/modeles_mail.py`, `services/reglages_mails.py` | Modèles, variables, serveur d'envoi |
 | `services/entretiens.py` (module vidéo) | Planification étendue : `POST /candidatures/{id}/entretiens`, `PUT /entretiens/{id}`, `PUT /entretiens/{id}/confirmation` |
 | `desktop/renderer/src/mails/`, `entretiens/CarteEntretien.jsx` | Cartes de la fiche, actions du poste, écran de confirmation, planification |

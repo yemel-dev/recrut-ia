@@ -1,8 +1,6 @@
-"""Réglages des mails aux candidats : modèles (objet et corps) et mode test.
+"""Réglages des mails aux candidats : modèles (objet et corps) et serveur d'envoi (boîtes liées par mot de passe).
 
-Mode test : tous les mails partent vers une adresse de redirection, avec le vrai destinataire rappelé au début de
-l'objet. Actif par défaut en développement (INJARA_ENVIRONNEMENT, fourni par Electron), inactif dans l'application
-installée, tant que l'entreprise ne l'a pas réglé elle-même.
+Les mails partent toujours aux vrais candidats, après aperçu et confirmation du recruteur (pas de mode test).
 """
 from __future__ import annotations
 
@@ -14,10 +12,8 @@ from typing import Any
 from ..database.repositories import ParametreRepository
 from . import modeles_mail as m
 from .erreurs import ErreurValidation
-from .validation import email_valide
 
 CLE_MODELE = "mails.modele.{}"
-CLE_MODE_TEST = "mails.mode_test"
 CLE_SMTP = "mails.serveur_smtp"
 _HOTE = re.compile(r"^(?=.{1,253}$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$")
 EXEMPLE = {
@@ -31,9 +27,8 @@ EXEMPLE = {
 
 
 class ReglagesMailsService:
-    def __init__(self, parametres: ParametreRepository, environnement: str = "developpement") -> None:
+    def __init__(self, parametres: ParametreRepository) -> None:
         self.parametres = parametres
-        self.environnement = environnement
 
     # --- Modèles -----------------------------------------------------------------------------------------------
 
@@ -69,23 +64,6 @@ class ReglagesMailsService:
         self.parametres.supprimer(CLE_MODELE.format(type_))
         return self.consulter()
 
-    # --- Mode test ---------------------------------------------------------------------------------------------
-
-    def mode_test(self) -> dict[str, Any]:
-        brut = self.parametres.get(CLE_MODE_TEST)
-        if brut:
-            return {**json.loads(brut), "par_defaut": False}
-        return {"actif": self.environnement != "production", "adresse": "", "par_defaut": True}
-
-    def definir_mode_test(self, actif: bool, adresse: str | None) -> dict[str, Any]:
-        adresse = (adresse or "").strip().lower()
-        if adresse and not email_valide(adresse):
-            raise ErreurValidation({"adresse": "Adresse email invalide."})
-        if actif and not adresse:
-            raise ErreurValidation({"adresse": "Indiquez l'adresse qui recevra les mails en mode test."})
-        self.parametres.set(CLE_MODE_TEST, json.dumps({"actif": bool(actif), "adresse": adresse}))
-        return self.consulter()
-
     # --- Serveur d'envoi (boîtes liées par IMAP) ----------------------------------------------------------------
 
     def serveur_smtp(self) -> dict | None:
@@ -114,8 +92,6 @@ class ReglagesMailsService:
         return {
             "modeles": {t: self.modele(t) for t in m.TYPES_MODELES},
             "variables": list(m.VARIABLES),
-            "mode_test": self.mode_test(),
-            "environnement": self.environnement,
         }
 
     def apercu(self, type_: str, objet: str, corps: str, entreprise: str | None = None) -> dict[str, str]:

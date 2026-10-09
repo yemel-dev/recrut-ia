@@ -36,26 +36,22 @@ export default function Disposition() {
   );
 }
 
-/** Mode test et état de l'envoi des mails : relus au démarrage et à chaque réglage (événement injara:reglages-mails). */
-function useReglagesMails() {
-  const [reglages, setReglages] = useState({ modeTest: null, envoi: null });
+/** État de l'envoi des mails : relu au démarrage et à chaque réglage (événement injara:reglages-mails). */
+function useEnvoiMails() {
+  const [envoi, setEnvoi] = useState(null);
   useEffect(() => {
-    const charger = () =>
-      Promise.all([api.get('/parametres/mails'), api.get('/mails/autorisation')]).then(
-        ([r, envoi]) => setReglages({ modeTest: r.mode_test, envoi }),
-        () => {},
-      );
+    const charger = () => api.get('/mails/autorisation').then(setEnvoi, () => {});
     charger();
     window.addEventListener('injara:reglages-mails', charger);
     return () => window.removeEventListener('injara:reglages-mails', charger);
   }, []);
-  return reglages;
+  return envoi;
 }
 
 function Cadre() {
   const { email, deconnecter } = useSession();
   const { statut, reconnexionConseillee, oublierErreursSync } = useAgent();
-  const { modeTest, envoi } = useReglagesMails();
+  const envoi = useEnvoiMails();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const salle = useMatch('/entretiens/:id'); // la salle d'entretien occupe toute la zone de contenu
@@ -167,25 +163,14 @@ function Cadre() {
               </Alerte>
             </div>
           )}
-          {!salle && (modeTest?.actif || envoi?.reconnexion) && (
+          {!salle && envoi?.reconnexion && (
             <div className="sticky top-0 z-20 flex flex-col gap-2 border-b border-trait bg-fond/95 px-8 py-2.5 backdrop-blur">
-              {modeTest?.actif && (
-                <Alerte
-                  ton="alerte"
-                  titre="Mode test des mails"
-                  action={<Link to="/parametres/mails" className="shrink-0 self-center text-sm font-semibold text-fort underline underline-offset-4">Réglages</Link>}
-                >
-                  Tous les mails partent vers {modeTest.adresse || "l'adresse de test (à renseigner)"}, jamais aux candidats.
-                </Alerte>
-              )}
-              {envoi?.reconnexion && (
-                <Alerte
-                  titre="L'envoi des mails aux candidats doit être reconnecté."
-                  action={<Link to="/parametres/mails" className="shrink-0 self-center text-sm font-semibold text-fort underline underline-offset-4">Reconnecter</Link>}
-                >
-                  {envoi.motif}
-                </Alerte>
-              )}
+              <Alerte
+                titre="L'envoi des mails aux candidats doit être reconnecté."
+                action={<Link to="/parametres/mails" className="shrink-0 self-center text-sm font-semibold text-fort underline underline-offset-4">Reconnecter</Link>}
+              >
+                {envoi.motif}
+              </Alerte>
             </div>
           )}
           {salle ? (

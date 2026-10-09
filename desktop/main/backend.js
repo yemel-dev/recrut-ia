@@ -56,7 +56,6 @@ class Backend {
           ...env,
           INJARA_TOKEN: this.token,
           INJARA_DATA_DIR: this.dataDir,
-          INJARA_ENVIRONNEMENT: app.isPackaged ? 'production' : 'developpement',
           PYTHONUNBUFFERED: '1',
           PYTHONUTF8: '1',
           PYTHONIOENCODING: 'utf-8',

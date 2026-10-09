@@ -73,7 +73,6 @@
   l'utilisateur valide. Les pages d'aide ouvertes dans le navigateur sont une liste fermée (`desktop/main/api.js`).
 - Le texte de chaque mail envoyé (historique) et le message joint à un entretien sont chiffrés avec la clé de données.
   L'objet, le destinataire et la date d'envoi restent en clair pour l'affichage de l'état.
-- Mode test : tout part vers l'adresse de redirection, jamais au candidat.
 - Boîte liée par IMAP : l'envoi SMTP réutilise le mot de passe rangé par l'agent dans le coffre du système ; il
   n'est ni copié ni écrit ailleurs. Connexions chiffrées (SSL sur le port 465, STARTTLS sur 587), certificat vérifié.
 

@@ -57,7 +57,7 @@ export default function CarteMails({ candidatureId, decision, version }) {
               {gerable && e.statut === 'envoye' && (
                 <Bouton variante="discret" taille="sm" icone={Send} onClick={() => setEnvoi({ type, forcer: true })}>Renvoyer</Bouton>
               )}
-              {gerable && (e.statut === 'non_envoye' || e.statut === 'test') && (
+              {gerable && e.statut === 'non_envoye' && (
                 <Bouton variante="secondaire" taille="sm" icone={Send} geste="avancer" onClick={() => setEnvoi({ type, forcer: false })}>Préparer</Bouton>
               )}
             </li>

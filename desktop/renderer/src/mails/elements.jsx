@@ -38,8 +38,6 @@ export function libelleEtat(etat) {
       return `Envoyé le ${formaterDateHeure(etat.le)}`;
     case 'echec':
       return `Échec : ${etat.erreur}`;
-    case 'test':
-      return `Envoyé en mode test seulement (${formaterDateHeure(etat.le)})`;
     default:
       return 'Non envoyé';
   }

@@ -10,9 +10,6 @@ from backend.services import coffre
 from .fixtures import fabrique
 from .test_traitement import POSTE_DEV, boite, candidature_de, creer_poste, cv_pdf, recevoir, services  # noqa: F401
 
-TEST = "rh.test@exemple.cm"
-
-
 def _demain(heure: int = 10) -> str:
     jour = datetime.now(timezone.utc) + timedelta(days=2)
     return jour.replace(hour=heure, minute=0, second=0, microsecond=0).isoformat()
@@ -25,9 +22,8 @@ def faux(services):  # noqa: F811
 
 @pytest.fixture
 def poste(connecte, services, boite, tmp_path):  # noqa: F811
-    """Un poste et trois candidatures lisibles (adresses c0, c1, c2), mode test désactivé."""
+    """Un poste et trois candidatures lisibles (adresses c0, c1, c2)."""
     connecte.put("/entreprise", json={"nom": "Cabinet Ndong"})
-    connecte.put("/parametres/mails/mode-test", json={"actif": False, "adresse": ""})
     dev = creer_poste(connecte, POSTE_DEV)
     for i, cv in enumerate(["dev_python", "jeune_diplome", "scrum_master"]):
         recevoir(boite, tmp_path, f"Candidature DEV-2026-04 ({i})", [(f"CV_{i}.pdf", cv_pdf(cv))], expediteur=f"Candidat {i} <c{i}@x.cm>")
@@ -224,35 +220,23 @@ def test_cv_illisible_et_non_classe_aucun_mail(connecte, services, poste, boite,
     assert faux.envoyes == []
 
 
-# --- Mode test, civilité, blocages ------------------------------------------------------------------------------
+# --- Vrais destinataires, civilité, blocages --------------------------------------------------------------------
 
 
-def test_mode_test_n_utilise_jamais_le_vrai_destinataire(connecte, services, poste, faux):  # noqa: F811
+def test_les_mails_partent_toujours_aux_vrais_candidats(connecte, services, poste, faux):  # noqa: F811
+    """Pas de mode test : même un ancien réglage « mode test » enregistré en base est sans effet."""
     a, b, _ = ids(services)
-    connecte.put("/parametres/mails/mode-test", json={"actif": True, "adresse": TEST})
+    services.reglages_mails.parametres.set("mails.mode_test", '{"actif": true, "adresse": "rh.test@exemple.cm"}')
     decider(connecte, a, "ecarte")
     decider(connecte, b, "ecarte")
     preparation = connecte.get(f"/postes/{poste}/envois/refus").json()
-    assert preparation["mode_test"]["actif"] is True
-    assert all(d["destinataire_effectif"] == TEST for d in preparation["destinataires"])
+    assert "mode_test" not in preparation and preparation["blocages"] == []
+    assert [d["destinataire"] for d in preparation["destinataires"]] == ["c0@x.cm", "c1@x.cm"]
     envoyer(connecte, poste, "refus", [a, b])
-    assert [m.destinataire for m in faux.envoyes] == [TEST, TEST]
-    assert faux.envoyes[0].objet.startswith("[TEST → c0@x.cm] ") and faux.envoyes[0].fil is None
-    # Un envoi de test ne compte pas comme envoyé : le vrai envoi reste possible ensuite
-    assert connecte.get(f"/candidatures/{a}/mails").json()["etats"]["refus"]["statut"] == "test"
-    connecte.put("/parametres/mails/mode-test", json={"actif": False, "adresse": TEST})
-    envoyer(connecte, poste, "refus", [a])
-    assert faux.envoyes[-1].destinataire == "c0@x.cm"
-
-
-def test_mode_test_sans_adresse_bloque(connecte, services, poste, faux):  # noqa: F811
-    a, _, _ = ids(services)
-    services.reglages_mails.parametres.supprimer("mails.mode_test")  # retour au défaut : actif en développement, sans adresse
-    decider(connecte, a, "ecarte")
-    preparation = connecte.get(f"/postes/{poste}/envois/refus").json()
-    assert any("sans adresse" in b for b in preparation["blocages"])
-    r = connecte.post(f"/postes/{poste}/envois/refus", json={"candidatures": [a]})
-    assert r.status_code == 409 and faux.envoyes == []
+    assert [m.destinataire for m in faux.envoyes] == ["c0@x.cm", "c1@x.cm"]
+    assert not faux.envoyes[0].objet.startswith("[TEST")
+    assert connecte.get(f"/candidatures/{a}/mails").json()["etats"]["refus"]["statut"] == "envoye"
+    assert connecte.put("/parametres/mails/mode-test", json={"actif": True, "adresse": "x@y.cm"}).status_code in (404, 405)
 
 
 def test_nom_non_fiable_madame_monsieur(connecte, services, poste, boite, tmp_path, faux):  # noqa: F811

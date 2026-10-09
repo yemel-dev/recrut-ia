@@ -205,7 +205,7 @@ function entretienPrevu(d) {
   );
 }
 
-const ETATS_MAIL = { envoye: 'envoyé', echec: 'échec', test: 'envoyé en mode test seulement', non_envoye: 'non envoyé' };
+const ETATS_MAIL = { envoye: 'envoyé', echec: 'échec', non_envoye: 'non envoyé' };
 
 function mails(d) {
   const lignes = (d.mails || []).filter((m) => m.statut !== 'non_envoye');

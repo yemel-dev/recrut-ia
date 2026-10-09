@@ -7,7 +7,7 @@ import { Alerte, Bouton, cx } from '../components/ui.jsx';
 import { ApercuMail } from './elements.jsx';
 
 /**
- * charger() -> préparation { destinataires, exclus, mode_test, autorisation, blocages }
+ * charger() -> préparation { destinataires, exclus, autorisation, blocages }
  * envoyer(ids, echecsSeulement) -> résultat { resultats, envoyes, echecs, ignores }
  */
 export default function FenetreEnvoi({ ouverte, titre, charger, envoyer, onFerme }) {
@@ -89,11 +89,6 @@ export default function FenetreEnvoi({ ouverte, titre, charger, envoyer, onFerme
         {!preparation && !erreur && <div className="squelette h-24 rounded-md" />}
         {preparation && (
           <div className="flex flex-col gap-3">
-            {preparation.mode_test.actif && (
-              <Alerte ton="alerte">
-                Mode test : les mails partiront vers {preparation.mode_test.adresse || "l'adresse de test (non renseignée)"}, pas aux candidats.
-              </Alerte>
-            )}
             {preparation.blocages.map((b) => (
               <Alerte key={b}>{b}</Alerte>
             ))}
@@ -135,7 +130,7 @@ export default function FenetreEnvoi({ ouverte, titre, charger, envoyer, onFerme
                         </button>
                         {deplie && (
                           <div className="pb-3">
-                            <ApercuMail objet={d.objet} corps={d.corps} destinataire={d.destinataire_effectif} />
+                            <ApercuMail objet={d.objet} corps={d.corps} destinataire={d.destinataire} />
                           </div>
                         )}
                       </li>
@@ -191,7 +186,6 @@ function Resultats({ resultat }) {
         {resultat.envoyes} envoyé{resultat.envoyes > 1 ? 's' : ''}
         {resultat.echecs > 0 && ` · ${resultat.echecs} échec${resultat.echecs > 1 ? 's' : ''}`}
         {resultat.ignores > 0 && ` · ${resultat.ignores} ignoré${resultat.ignores > 1 ? 's' : ''}`}
-        {resultat.mode_test && ' (mode test)'}
       </p>
       <ul className="flex flex-col gap-1.5">
         {resultat.resultats.map((r) => (

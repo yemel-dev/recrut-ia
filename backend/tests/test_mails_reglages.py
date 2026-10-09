@@ -5,10 +5,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from backend.api.app import create_app
-from backend.database.repositories import ParametreRepository
 from backend.services import modeles_mail as m
-from backend.services.reglages_mails import ReglagesMailsService
 
 
 def test_modeles_par_defaut_du_cahier():
@@ -86,26 +83,9 @@ def test_apercu_avec_valeurs_d_exemple(connecte):
     assert "Bonjour Awa Ndong," in apercu["corps"] and "Cabinet Ndong" in apercu["corps"] and "{" not in apercu["corps"]
 
 
-def test_mode_test_actif_par_defaut_en_developpement(connecte):
-    assert connecte.get("/parametres/mails").json()["mode_test"] == {"actif": True, "adresse": "", "par_defaut": True}
-    assert connecte.put("/parametres/mails/mode-test", json={"actif": True, "adresse": ""}).status_code == 422
-    assert connecte.put("/parametres/mails/mode-test", json={"actif": True, "adresse": "pas-une-adresse"}).status_code == 422
-    r = connecte.put("/parametres/mails/mode-test", json={"actif": True, "adresse": "RH.Test@Exemple.cm"})
-    assert r.json()["mode_test"] == {"actif": True, "adresse": "rh.test@exemple.cm", "par_defaut": False}
-    assert connecte.put("/parametres/mails/mode-test", json={"actif": False, "adresse": ""}).json()["mode_test"]["actif"] is False
-
-
-def test_mode_test_inactif_par_defaut_en_production(settings):
-    import dataclasses
-
-    app = create_app(dataclasses.replace(settings, environnement="production"))
-    try:
-        service = ReglagesMailsService(ParametreRepository(app.state.db), "production")
-        assert service.mode_test()["actif"] is False
-        assert app.state.services.reglages_mails.mode_test()["actif"] is False
-    finally:
-        app.state.services.traitement.arreter()
-        app.state.db.close()
+def test_pas_de_mode_test(connecte):
+    reglages = connecte.get("/parametres/mails").json()
+    assert set(reglages) == {"modeles", "variables"}
 
 
 def test_reglages_exigent_la_session(client):

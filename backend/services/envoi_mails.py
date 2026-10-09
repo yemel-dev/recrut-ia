@@ -8,8 +8,6 @@ Règles :
 - toujours exclus : CV illisibles, candidatures non classées, sans adresse, et ceux qui ont déjà reçu ce mail
   (sauf « renvoyer », action explicite) ;
 - un mail à la fois : chaque résultat est enregistré tout de suite, un échec n'arrête pas les autres ;
-- mode test : tout part vers l'adresse de test, le vrai destinataire rappelé au début de l'objet, hors du fil ;
-  un envoi de test ne compte pas comme un envoi au candidat ;
 - réponse dans le fil du mail de candidature quand c'est possible : l'objet devient alors « Re: <objet d'origine> »,
   sans quoi Gmail ne range pas le message dans le fil.
 Les mails ne contiennent jamais de score, de classement ni d'analyse : seules les variables des modèles existent.
@@ -57,22 +55,19 @@ def destinataire_de(candidature: dict[str, Any]) -> str | None:
 def resumer(historique: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     """État de chaque type de mail à partir de l'historique (le plus récent d'abord).
 
-    envoye : au moins un vrai envoi ; echec : le dernier vrai essai a échoué ; test : seulement des envois de test ;
-    non_envoye : rien.
+    envoye : au moins un envoi réussi ; echec : le dernier essai a échoué ; non_envoye : rien.
+    Les lignes d'un ancien mode test (adresse de redirection) sont ignorées : le candidat n'a rien reçu.
     """
     etats = {}
     for type_ in (m.INVITATION, m.MODIFICATION, m.REFUS):
-        lignes = [l for l in historique if l["type"] == type_]
-        vrais = [l for l in lignes if not l["mode_test"]]
-        envoye = next((l for l in vrais if l["statut"] == "envoye"), None)
+        lignes = [l for l in historique if l["type"] == type_ and not l["mode_test"]]
+        envoye = next((l for l in lignes if l["statut"] == "envoye"), None)
         if envoye:
             etat = {"statut": "envoye", "le": envoye["cree_le"], "destinataire": envoye["destinataire"]}
-            if vrais[0]["statut"] == "echec" and vrais[0]["id"] != envoye["id"]:
-                etat["dernier_echec"] = vrais[0]["erreur"]  # un renvoi explicite a échoué
-        elif vrais:
-            etat = {"statut": "echec", "le": vrais[0]["cree_le"], "erreur": vrais[0]["erreur"], "destinataire": vrais[0]["destinataire"]}
+            if lignes[0]["statut"] == "echec" and lignes[0]["id"] != envoye["id"]:
+                etat["dernier_echec"] = lignes[0]["erreur"]  # un renvoi explicite a échoué
         elif lignes:
-            etat = {"statut": "test", "le": lignes[0]["cree_le"], "destinataire": lignes[0]["destinataire"]}
+            etat = {"statut": "echec", "le": lignes[0]["cree_le"], "erreur": lignes[0]["erreur"], "destinataire": lignes[0]["destinataire"]}
         else:
             etat = {"statut": "non_envoye"}
         etats[type_] = etat
@@ -154,7 +149,6 @@ class EnvoiMailsService:
             "envoyes": envoyes,
             "echecs": sum(r["statut"] == "echec" for r in resultats),
             "ignores": sum(r["statut"] == "ignore" for r in resultats),
-            "mode_test": contexte["mode_test"]["actif"],
         }
 
     # --- Un candidat (fiche) ------------------------------------------------------------------------------------
@@ -169,8 +163,9 @@ class EnvoiMailsService:
             "etats": resumer(du_poste),
             "modification_proposee": bool(poste_id) and self._modification_a_envoyer(candidature_id, poste_id, du_poste),
             "historique": [
-                {k: l[k] for k in ("id", "type", "statut", "mode_test", "destinataire", "destinataire_effectif", "objet", "dans_le_fil", "erreur", "cree_le")}
+                {k: l[k] for k in ("id", "type", "statut", "destinataire", "objet", "dans_le_fil", "erreur", "cree_le")}
                 for l in historique
+                if not l["mode_test"]
             ],
         }
 
@@ -227,18 +222,17 @@ class EnvoiMailsService:
                 return "La date de l'entretien est passée : replanifiez-le.", None
             if entretien["mode"] == "en_ligne" and not self.lien_entretien(entretien):
                 return "Entretien en ligne : activez l'accès à distance pour que le lien de la visio figure dans le mail.", None
-        test = contexte["mode_test"]["actif"]
         if type_ == m.MODIFICATION:
-            if etats[m.INVITATION]["statut"] not in (("envoye", "test") if test else ("envoye",)):
+            if etats[m.INVITATION]["statut"] != "envoye":
                 return "L'invitation n'a pas encore été envoyée : envoyez l'invitation.", None
             if not forcer and not self._modification_a_envoyer(candidature["id"], poste["id"], historique):
                 return "La date n'a pas changé depuis le dernier mail.", None
-        elif not forcer and not test and etats[type_]["statut"] == "envoye":
+        elif not forcer and etats[type_]["statut"] == "envoye":
             return f"{NOMS_TYPES[type_]} déjà envoyée le {etats[type_]['le']:%d/%m/%Y}.", None
         return None, self._composer(candidature, poste, type_, destinataire, entretien, contexte)
 
     def _modification_a_envoyer(self, candidature_id: int, poste_id: int, historique: list[dict]) -> bool:
-        """Vrai si la date de l'entretien diffère de la dernière date annoncée au candidat (vrai envoi)."""
+        """Vrai si la date de l'entretien diffère de la dernière date annoncée au candidat."""
         entretien = self.entretiens.actif(candidature_id, poste_id)
         annonces = [l for l in historique if l["type"] in (m.INVITATION, m.MODIFICATION) and l["statut"] == "envoye" and not l["mode_test"]]
         if entretien is None or not annonces:
@@ -266,18 +260,14 @@ class EnvoiMailsService:
         if type_ == m.MODIFICATION:
             corps = corps.replace("\n\n", f"\n\n{m.ANNONCE_MODIFICATION}\n\n", 1)
 
-        test = contexte["mode_test"]
         objet_sans_fil = objet  # nouveau mail : l'objet du modèle
-        dans_le_fil = bool(not test["actif"] and candidature["source"] == "email" and candidature["objet"])
+        dans_le_fil = bool(candidature["source"] == "email" and candidature["objet"])
         if dans_le_fil:
             origine = candidature["objet"].strip()
             objet = origine if origine.lower().startswith("re:") else f"Re: {origine}"
-        effectif = test["adresse"] if test["actif"] else destinataire
-        if test["actif"]:
-            objet = objet_sans_fil = f"[TEST → {destinataire}] {objet}"
         return {
             "destinataire": destinataire,
-            "destinataire_effectif": effectif,
+            "destinataire_effectif": destinataire,
             "objet": objet,
             "objet_sans_fil": objet_sans_fil,
             "corps": corps,
@@ -307,7 +297,7 @@ class EnvoiMailsService:
             poste_id=poste["id"],
             type=type_,
             statut=statut,
-            mode_test=contexte["mode_test"]["actif"],
+            mode_test=False,
             destinataire=mail["destinataire"],
             destinataire_effectif=mail["destinataire_effectif"],
             objet=objet,
@@ -327,7 +317,6 @@ class EnvoiMailsService:
         return {
             "expediteur": expediteur,
             "autorisation": expediteur.etat(),
-            "mode_test": self.reglages.mode_test(),
             "entreprise": ((self.entreprise.get() or {}).get("nom") or "").strip(),
         }
 
@@ -336,15 +325,12 @@ class EnvoiMailsService:
         blocages = []
         if not contexte["entreprise"]:
             blocages.append("Renseignez le nom de l'entreprise dans le profil entreprise : il signe les mails.")
-        if contexte["mode_test"]["actif"] and not contexte["mode_test"]["adresse"]:
-            blocages.append("Le mode test est actif sans adresse de redirection : renseignez-la dans Mails aux candidats.")
         if not contexte["autorisation"]["autorise"]:
             blocages.append(contexte["autorisation"]["motif"] or "L'envoi de mails n'est pas autorisé.")
         return blocages
 
     def _cadre(self, contexte) -> dict[str, Any]:
         return {
-            "mode_test": {k: v for k, v in contexte["mode_test"].items() if k != "par_defaut"},
             "autorisation": contexte["autorisation"],
             "blocages": self._blocages(contexte),
         }

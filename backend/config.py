@@ -31,7 +31,6 @@ class Settings:
     kdf: KdfParams = KdfParams()
     mode_agent: str = "real"
     dossier_modeles: Path | None = None  # None : INJARA_MODELES_DIR, sinon ./modeles
-    environnement: str = "developpement"  # « production » dans l'application installée (fourni par Electron)
 
     @property
     def database_url(self) -> str:
@@ -50,5 +49,4 @@ def load_settings() -> Settings:
         pass
     data_dir = Path(os.getenv("INJARA_DATA_DIR") or ROOT_DIR / "data")
     mode_agent = os.getenv("GMAIL_MODE", "real").strip().lower()
-    environnement = os.getenv("INJARA_ENVIRONNEMENT", "developpement").strip().lower()
-    return Settings(data_dir=data_dir, token=os.getenv("INJARA_TOKEN", ""), mode_agent=mode_agent, environnement=environnement)
+    return Settings(data_dir=data_dir, token=os.getenv("INJARA_TOKEN", ""), mode_agent=mode_agent)

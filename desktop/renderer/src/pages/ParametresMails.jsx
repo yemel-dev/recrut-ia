@@ -1,5 +1,5 @@
-// Mails aux candidats : envoi (Gmail ou SMTP), mode test et modèles (invitation, réponse négative).
-import { Eye, FlaskConical, RotateCcw, Save } from 'lucide-react';
+// Mails aux candidats : envoi (Gmail ou SMTP) et modèles (invitation, réponse négative).
+import { Eye, RotateCcw, Save } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { useAgent } from '../agent/ContexteAgent.jsx';
@@ -9,7 +9,7 @@ import { ApercuMail } from '../mails/elements.jsx';
 
 const TITRES = { invitation: 'Invitation à un entretien', refus: 'Réponse négative' };
 
-/** Prévient la mise en page (bandeau du mode test, état de l'envoi) qu'un réglage a changé. */
+/** Prévient la mise en page (état de l'envoi) qu'un réglage a changé. */
 export const signalerReglagesMails = () => window.dispatchEvent(new Event('injara:reglages-mails'));
 
 export default function ParametresMails() {
@@ -35,56 +35,11 @@ export default function ParametresMails() {
       />
       <div className="flex flex-col gap-6">
         <AutorisationEnvoi onChange={signalerReglagesMails} />
-        <ModeTest modeTest={reglages.mode_test} environnement={reglages.environnement} onEnregistre={mettreAJour} />
         {Object.keys(TITRES).map((type) => (
           <EditeurModele key={type} type={type} modele={reglages.modeles[type]} variables={reglages.variables} onEnregistre={mettreAJour} />
         ))}
       </div>
     </>
-  );
-}
-
-function ModeTest({ modeTest, environnement, onEnregistre }) {
-  const { notifier } = useAgent();
-  const [actif, setActif] = useState(modeTest.actif);
-  const [adresse, setAdresse] = useState(modeTest.adresse || '');
-  const [erreurs, setErreurs] = useState({});
-  const [envoi, setEnvoi] = useState(false);
-
-  const enregistrer = async () => {
-    setEnvoi(true);
-    setErreurs({});
-    try {
-      onEnregistre(await api.put('/parametres/mails/mode-test', { actif, adresse }));
-      notifier(actif ? `Mode test actif : les mails partiront vers ${adresse}.` : 'Mode test désactivé : les mails partiront aux candidats.', 'succes');
-    } catch (err) {
-      setErreurs(err.champs || { adresse: err.message });
-    } finally {
-      setEnvoi(false);
-    }
-  };
-
-  return (
-    <Carte className="flex flex-col gap-4">
-      <div className="flex items-start gap-3">
-        <FlaskConical className="mt-0.5 size-5 shrink-0 text-alerte" aria-hidden />
-        <div className="text-base">
-          <h2 className="titre-section">Mode test</h2>
-          <p className="mt-1 text-doux">
-            Tous les mails partent vers l'adresse ci-dessous, avec le vrai destinataire rappelé au début de l'objet. Les envois de test
-            ne comptent pas comme des envois aux candidats.
-            {modeTest.par_defaut && environnement !== 'production' && ' Actif par défaut en développement.'}
-          </p>
-        </div>
-      </div>
-      <Interrupteur actif={actif} onChange={setActif} libelle="Activer le mode test" />
-      <Champ label="Adresse de redirection" erreur={erreurs.adresse} aide="Une adresse à vous, pour recevoir les mails de test.">
-        {(a) => <Saisie {...a} type="email" value={adresse} onChange={(e) => setAdresse(e.target.value)} placeholder="vous@exemple.cm" />}
-      </Champ>
-      <div>
-        <Bouton icone={Save} chargement={envoi} onClick={enregistrer}>Enregistrer le mode test</Bouton>
-      </div>
-    </Carte>
   );
 }
 

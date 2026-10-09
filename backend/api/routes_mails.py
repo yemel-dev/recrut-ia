@@ -20,11 +20,6 @@ class Modele(BaseModel):
     corps: str = ""
 
 
-class ModeTest(BaseModel):
-    actif: bool
-    adresse: str | None = None
-
-
 class Envoi(BaseModel):
     candidatures: list[int]
     echecs_seulement: bool = False
@@ -135,8 +130,3 @@ def retablir_modele(type_: str, request: Request):
 def apercu_modele(type_: str, corps: Modele, request: Request):
     entreprise = _services(request).entreprise.consulter().get("nom")
     return _services(request).reglages_mails.apercu(type_, corps.objet, corps.corps, entreprise)
-
-
-@router.put("/parametres/mails/mode-test")
-def mode_test(corps: ModeTest, request: Request):
-    return _services(request).reglages_mails.definir_mode_test(corps.actif, corps.adresse)

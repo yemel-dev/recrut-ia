@@ -89,7 +89,7 @@ def construire_services(db: Database, settings: Settings, modele: ModeleSemantiq
     regard = RegardService(entretiens.entretiens, AnalyseurVisage(modeles / NOM_MODELE_VISAGE))
     reseau = ReseauService(ParametreRepository(db), auth.cle_session)
     tunnel = TunnelService()
-    reglages_mails = ReglagesMailsService(ParametreRepository(db), settings.environnement)
+    reglages_mails = ReglagesMailsService(ParametreRepository(db))
     envoi_mails, gmail_expediteur = _envoi_mails(db, settings, agent_mail, reglages_mails, tunnel, auth)
     boite = BoiteService(
         agent_mail, DetectionBoite(lambda: agent_mail.reglages.credentials_path.exists()), gmail_expediteur,

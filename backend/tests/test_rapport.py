@@ -109,7 +109,6 @@ def test_rapport_avec_entretien_prevu_et_mails(connecte, services, boite, tmp_pa
     from datetime import datetime, timedelta, timezone
 
     connecte.put("/entreprise", json={"nom": "Cabinet Ndong"})
-    connecte.put("/parametres/mails/mode-test", json={"actif": False, "adresse": ""})
     creer_poste(connecte, POSTE_DEV)
     cid = _une_candidature(connecte, services, boite, tmp_path)
     connecte.put(f"/candidatures/{cid}/decision", json={"decision": "retenu"})
