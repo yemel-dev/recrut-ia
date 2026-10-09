@@ -24,6 +24,9 @@ const EXTENSIONS_IMPORT = new Set(['.pdf', '.docx', '.zip']);
 const EXTENSIONS_CV = new Set(['.pdf', '.docx']);
 const TAILLE_MAX_IMPORT = 200 * 1024 * 1024; // comme l'agent : 200 Mo par archive
 const TAILLE_MAX_IDENTIFIANTS = 64 * 1024;
+// Pages d'aide des messageries ouvertes dans le navigateur (création d'un mot de passe d'application).
+// Mêmes adresses que backend/services/detection_boite.py ; aucune autre n'est ouverte.
+const LIENS_EXTERNES = new Set(['https://myaccount.google.com/apppasswords', 'https://login.yahoo.com/account/security']);
 const TAILLE_MAX_MORCEAU = 16 * 1024 * 1024; // comme le backend
 const TAILLE_MAX_SIGNAL = 64 * 1024;
 const TAILLE_MAX_IMAGE = 512 * 1024; // comme le backend
@@ -316,6 +319,13 @@ function installerPontApi({ backend, origineAutorisee, fenetre }) {
         .on('error', () => echec("Le moteur INJARA ne répond plus. Redémarrez l'application."));
     });
   }
+
+  ipcMain.handle('injara:ouvrir-lien', async (event, url) => {
+    verifierOrigine(event);
+    if (!LIENS_EXTERNES.has(url)) return false;
+    await shell.openExternal(url);
+    return true;
+  });
 
   // --- Identifiants Google (credentials.json) --------------------------------------------------
 

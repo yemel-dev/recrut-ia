@@ -1,5 +1,5 @@
-// Envoi des mails : API Gmail (boîte liée avec Google, autorisation séparée de la lecture) ou SMTP (boîte liée par
-// IMAP, mêmes identifiants que la lecture). Le mode démo simule l'envoi.
+// Envoi des mails : API Gmail (boîte liée avec Google, même accord que la lecture) ou SMTP (boîte liée par mot de
+// passe, mêmes identifiants que la lecture). Le mode démo simule l'envoi.
 import { CheckCircle2, KeyRound, LogOut, PlugZap, RefreshCw, Server, ShieldAlert } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
@@ -77,9 +77,7 @@ export function AutorisationEnvoi({ onChange }) {
         )}
         {!etat.simule && !etat.autorise && (
           <p className="mt-1.5 text-sm text-tenu">
-            INJARA lit les candidatures avec une autorisation en lecture seule. Pour répondre aux candidats, Google demande une
-            autorisation de plus : envoyer des mails, et lire les en-têtes du mail de candidature pour répondre dans le même fil.
-            Votre navigateur va s'ouvrir sur la page Google ; choisissez le compte qui reçoit les candidatures.
+            Votre navigateur va s'ouvrir sur la page Google : choisissez le compte qui reçoit les candidatures et acceptez.
           </p>
         )}
       </EnTete>
@@ -88,7 +86,7 @@ export function AutorisationEnvoi({ onChange }) {
         <div className="flex flex-wrap items-center gap-2">
           {!etat.autorise && (
             <Bouton icone={etat.reconnexion ? RefreshCw : KeyRound} chargement={envoi} onClick={autoriser}>
-              {etat.reconnexion ? 'Reconnecter le compte' : "Autoriser l'envoi"}
+              Reconnecter la boîte
             </Bouton>
           )}
           {envoi && <span className="text-sm text-doux">Terminez l'autorisation dans votre navigateur…</span>}

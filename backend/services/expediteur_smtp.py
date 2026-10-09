@@ -43,6 +43,11 @@ SERVEURS_CONNUS: dict[str, tuple[str, int]] = {
     "hotmail.fr": ("smtp.office365.com", PORT_STARTTLS),
     "live.fr": ("smtp.office365.com", PORT_STARTTLS),
 }
+# Serveur d'envoi d'après le serveur de lecture, quand il ne s'en déduit pas (domaine propre chez un hébergeur connu)
+SERVEURS_PAR_IMAP: dict[str, tuple[str, int]] = {
+    "outlook.office365.com": ("smtp.office365.com", PORT_STARTTLS),
+    "ssl0.ovh.net": ("ssl0.ovh.net", PORT_SSL),
+}
 _DOMAINES_GMAIL = ("gmail.com", "googlemail.com")
 _MICROSOFT = re.compile(r"5\.7\.139|SmtpClientAuthentication|basic authentication is disabled|5\.7\.3", re.IGNORECASE)
 
@@ -63,6 +68,9 @@ def deviner_serveur(email: str, hote_imap: str) -> tuple[str, list[int]]:
         hote, port = SERVEURS_CONNUS[domaine]
         return hote, [port]
     hote = hote_imap.lower()
+    if hote in SERVEURS_PAR_IMAP:
+        hote, port = SERVEURS_PAR_IMAP[hote]
+        return hote, [port]
     if hote.startswith("imap."):
         hote = "smtp." + hote[len("imap."):]
     return hote, [PORT_SSL, PORT_STARTTLS]

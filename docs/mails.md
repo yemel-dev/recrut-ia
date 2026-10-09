@@ -57,13 +57,35 @@ signale sur tous les écrans. Actif sans adresse : l'envoi est bloqué.
 
 ## Depuis quelle boîte partent les mails
 
-Les mails partent de la boîte de recrutement liée à INJARA (page Boîte mail), quelle que soit l'adresse du candidat
-(Gmail ou autre). Deux transports, choisis automatiquement selon la façon dont la boîte est liée :
+Les mails partent de la boîte de recrutement liée à INJARA, quelle que soit l'adresse du candidat (Gmail ou autre).
+La boîte est connectée **une seule fois** (assistant de démarrage ou page Boîte mail, voir « Connexion de la boîte »
+ci-dessous) : la même connexion sert à recevoir les candidatures et à envoyer les mails. Le transport suit :
 
-| Boîte liée… | Transport | Ce que l'entreprise fait |
+| Boîte connectée… | Transport | Ce que l'entreprise fait |
 |---|---|---|
-| avec Google (Gmail, Google Workspace) | API Gmail | « Autoriser l'envoi » une fois (voir ci-dessous) |
-| par IMAP (adresse pro chez un hébergeur, Yahoo…) | SMTP | rien : mêmes adresse et mot de passe que pour la lecture |
+| avec Google (Gmail, Google Workspace) | API Gmail | rien de plus : la fenêtre Google accorde lecture et envoi |
+| par mot de passe (adresse pro chez un hébergeur, Yahoo…) | SMTP | rien : mêmes adresse et mot de passe que pour la lecture |
+
+## Connexion de la boîte (une fois)
+
+L'utilisateur donne seulement son adresse ; `services/detection_boite.py` trouve le reste, sans terme technique à
+l'écran :
+
+| Adresse | Ce qui est proposé |
+|---|---|
+| `@gmail.com`, ou domaine hébergé chez Google (serveurs MX Google) | « Se connecter avec Google » si la connexion Google est configurée sur le poste ; sinon mot de passe d'application, avec les étapes et un bouton vers la page Google |
+| `@yahoo.*` | mot de passe d'application, étapes guidées et bouton vers la page Yahoo |
+| `@outlook.*`, `@hotmail.*`, `@live.*` | explication : Microsoft n'accepte plus la connexion depuis d'autres applications |
+| domaine de l'entreprise | hébergeur reconnu à ses serveurs MX (Microsoft 365, OVHcloud, Zoho, Hostinger, Gandi, Namecheap) ; sinon `imap.domaine` puis `mail.domaine` sont essayés ; en dernier recours, le serveur est demandé |
+
+Après la connexion, l'envoi est essayé tout de suite et le résultat est affiché en clair (« Réception des
+candidatures : prête », « Mails aux candidats : prêts » ou la raison). Routes : `GET /boite/detection`,
+`POST /boite/google`, `POST /boite/mot-de-passe`, `GET /boite` ; code : `services/boite.py`.
+
+Assistant de démarrage (`pages/Accueil.jsx`), ouvert après la première connexion tant qu'il n'est ni fait ni passé :
+l'entreprise, la boîte, les candidatures déjà reçues, puis un récapitulatif. Chaque étape a « Plus tard ». Il ne
+revient plus une fois terminé, ni si l'entreprise et la boîte sont déjà renseignées (`GET /accueil`,
+`PUT /accueil/termine`).
 
 ### Envoi par SMTP (boîte liée par IMAP)
 
@@ -79,14 +101,19 @@ Les mails partent de la boîte de recrutement liée à INJARA (page Boîte mail)
 
 ## Autorisation Gmail
 
-- La lecture des candidatures garde son autorisation `gmail.readonly` ; le module agent mail n'a pas changé.
-- L'envoi demande une autorisation **séparée**, accordée par l'entreprise (« Autoriser l'envoi ») :
-  `gmail.send` et `gmail.metadata` (identifiant du fil, en-têtes du mail de candidature, adresse du compte). Jeton :
-  `<données>/secrets/jeton_envoi_gmail.json`. Le compte autorisé doit être celui qui reçoit les candidatures.
-- Autorisation retirée, expirée, ou compte différent : bandeau « Reconnecter » et envoi bloqué.
-- Projet Google Cloud : ajouter `gmail.send` et `gmail.metadata` à l'écran de consentement. En mode « test »
-  (utilisateurs déclarés), rien d'autre à faire ; une diffusion large demandera la validation de l'application par
-  Google.
+- Une seule fenêtre Google accorde `gmail.readonly` (lecture, agent mail) et `gmail.send` (envoi). L'accord est
+  rangé deux fois : dans le jeton de l'agent (qui l'utilise en lecture seule, sans changement de son côté) et dans
+  `<données>/secrets/jeton_envoi_gmail.json` pour l'envoi. `gmail.readonly` suffit aussi pour l'identifiant du fil,
+  les en-têtes du mail de candidature et l'adresse du compte ; `gmail.metadata` n'est pas demandé (il interdit la
+  recherche dans la boîte dont l'agent a besoin).
+- Le compte autorisé doit être celui qui reçoit les candidatures. Autorisation retirée, expirée, ou compte
+  différent : bandeau « Reconnecter la boîte » et envoi bloqué.
+- Une boîte connectée avant ce fonctionnement (lecture seule) se reconnecte une fois (Paramètres › Mails aux
+  candidats › « Reconnecter la boîte »).
+- Projet Google Cloud : déclarer `gmail.readonly` et `gmail.send` sur l'écran de consentement. En mode « test »
+  (100 utilisateurs déclarés au plus), rien d'autre à faire ; une diffusion large demande la validation de
+  l'application par Google (audit de sécurité pour `gmail.readonly`). Sans connexion Google configurée sur le poste,
+  les adresses Gmail passent par un mot de passe d'application guidé.
 - Mode démo (`GMAIL_MODE=fake`) : faux expéditeur, rien ne part.
 
 ## Code
@@ -95,7 +122,8 @@ Les mails partent de la boîte de recrutement liée à INJARA (page Boîte mail)
 |---|---|
 | `services/envoi_mails.py` | Règles : éligibilité, aperçu, envoi un par un, historique, modification |
 | `services/expediteur.py` | Interface de transport, message MIME, faux expéditeur |
-| `services/expediteur_gmail.py` | API Gmail et autorisation d'envoi |
+| `services/boite.py`, `services/detection_boite.py` | Connexion de la boîte en une fois, assistant de démarrage |
+| `services/expediteur_gmail.py` | API Gmail (accord Google commun à la lecture et à l'envoi) |
 | `services/expediteur_smtp.py` | SMTP pour les boîtes liées par IMAP |
 | `services/modeles_mail.py`, `services/reglages_mails.py` | Modèles, variables, mode test |
 | `services/entretiens.py` (module vidéo) | Planification étendue : `POST /candidatures/{id}/entretiens`, `PUT /entretiens/{id}`, `PUT /entretiens/{id}/confirmation` |

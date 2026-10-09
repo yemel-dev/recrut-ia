@@ -1,11 +1,12 @@
-"""Envoi des mails aux candidats par l'API Gmail, avec une autorisation séparée de celle de la lecture.
+"""Envoi des mails aux candidats par l'API Gmail.
 
-- La lecture des candidatures (agent mail) garde son autorisation en lecture seule (gmail.readonly), sans changement.
-- L'envoi demande une autorisation à part, accordée par l'entreprise depuis Paramètres › Mails aux candidats :
-  gmail.send (envoyer) et gmail.metadata (lire l'identifiant du fil et les en-têtes du mail de candidature, et
-  l'adresse du compte). Le jeton est rangé dans <données>/secrets/jeton_envoi_gmail.json.
-- Le compte autorisé doit être celui qui lit les candidatures : sinon le jeton est refusé et supprimé.
-- Une boîte liée par IMAP ne permet pas l'envoi (il faudrait SMTP) : l'état l'explique.
+- Une seule fenêtre Google donne la lecture (gmail.readonly, pour l'agent mail) et l'envoi (gmail.send) : c'est la
+  connexion de la boîte (assistant de démarrage, page Boîte mail). Le même accord est rangé dans deux jetons : celui
+  de l'agent (lecture, inchangé pour lui) et <données>/secrets/jeton_envoi_gmail.json pour l'envoi.
+- gmail.readonly suffit aussi pour lire l'identifiant du fil et les en-têtes du mail de candidature, et l'adresse du
+  compte. (gmail.metadata n'est pas demandé : il interdirait la recherche de l'agent dans la boîte.)
+- Le compte autorisé doit être celui qui lit les candidatures.
+- Une boîte liée par IMAP passe par SMTP (services/expediteur_smtp.py).
 """
 from __future__ import annotations
 
@@ -21,7 +22,7 @@ from .expediteur import EchecEnvoi, FilOrigine, MailSortant, construire_mime
 
 log = logging.getLogger("injara.mails.gmail")
 
-SCOPES_ENVOI = ["https://www.googleapis.com/auth/gmail.send", "https://www.googleapis.com/auth/gmail.metadata"]
+SCOPES_ENVOI = ["https://www.googleapis.com/auth/gmail.send", "https://www.googleapis.com/auth/gmail.readonly"]
 NOM_JETON = "jeton_envoi_gmail.json"
 
 
@@ -37,10 +38,13 @@ class GmailExpediteur:
         compte_lecture: Callable[[], tuple[str | None, str | None]],
         fabrique_service: Callable[[Any], Any] | None = None,
         flux_autorisation: Callable[[Path, list[str]], Any] | None = None,
+        jeton_lecture: Path | None = None,
     ) -> None:
-        """compte_lecture() -> (fournisseur, adresse) du compte qui lit les candidatures (agent mail)."""
+        """compte_lecture() -> (fournisseur, adresse) du compte qui lit les candidatures (agent mail) ;
+        jeton_lecture : jeton de l'agent mail, écrit avec le même accord Google."""
         self.credentials_path = credentials_path
         self.token_path = token_path
+        self.jeton_lecture = jeton_lecture
         self.compte_lecture = compte_lecture
         self._fabrique_service = fabrique_service or _service_gmail
         self._flux = flux_autorisation or _flux_navigateur
@@ -59,7 +63,7 @@ class GmailExpediteur:
                 "motif": "L'envoi passe par un compte Gmail connecté avec Google. Votre boîte est liée par IMAP : l'envoi n'est pas disponible.",
             }
         if not self.token_path.exists():
-            return {"autorise": False, "compte": None, "motif": "L'envoi de mails n'est pas encore autorisé : cliquez sur « Autoriser l'envoi ».", "reconnexion": False}
+            return {"autorise": False, "compte": None, "motif": "Google n'a pas encore autorisé l'envoi depuis cette boîte : reconnectez-la une fois.", "reconnexion": False}
         try:
             creds, compte = self._identifiants()
         except EchecEnvoi as exc:
@@ -69,28 +73,31 @@ class GmailExpediteur:
         return {"autorise": True, "compte": compte, "motif": None, "reconnexion": False}
 
     def autoriser(self) -> dict:
-        """Ouvre le navigateur sur la page d'autorisation Google (bloque jusqu'à la fin), puis vérifie le compte."""
+        """Reconnexion depuis Paramètres › Mails aux candidats : même fenêtre Google que la connexion de la boîte."""
         fournisseur, adresse = self.compte_lecture()
         if fournisseur != "gmail_oauth":
             raise Conflit("Liez d'abord la boîte Gmail de recrutement avec Google (page Boîte mail).")
+        self.connecter(adresse_attendue=adresse)
+        return self.etat()
+
+    def connecter(self, adresse_attendue: str | None = None) -> str:
+        """Ouvre le navigateur sur la page Google (bloque jusqu'à la fin) : lecture et envoi d'un seul accord.
+        Range l'accord pour l'envoi et pour l'agent mail, puis renvoie l'adresse du compte."""
         if not self.credentials_path.exists():
-            raise Conflit("Fichier d'identifiants Google (credentials.json) introuvable : importez-le depuis la page Boîte mail.")
+            raise Conflit("La connexion avec Google n'est pas configurée sur cet ordinateur : utilisez le mot de passe de la boîte.")
         creds = self._flux(self.credentials_path, SCOPES_ENVOI)
         if not set(SCOPES_ENVOI) <= set(creds.scopes or []):
-            raise Conflit("Google n'a pas accordé toutes les autorisations demandées : cochez l'envoi de mails sur la page Google.")
+            raise Conflit("Google n'a pas tout autorisé : recommencez et laissez cochées toutes les cases proposées par Google.")
         compte = self._fabrique_service(creds).users().getProfile(userId="me").execute().get("emailAddress", "")
-        if adresse and compte.lower() != adresse.lower():
-            raise Conflit(f"Vous avez autorisé {compte}, mais les candidatures arrivent sur {adresse}. Recommencez avec ce compte.")
+        if adresse_attendue and compte.lower() != adresse_attendue.lower():
+            raise Conflit(f"Vous vous êtes connecté avec {compte}, mais les candidatures arrivent sur {adresse_attendue}. Recommencez avec ce compte.")
         with self._lock:
-            self.token_path.parent.mkdir(parents=True, exist_ok=True)
-            self.token_path.write_text(json.dumps({"jeton": json.loads(creds.to_json()), "compte": compte}), encoding="utf-8")
-            try:
-                self.token_path.chmod(0o600)
-            except OSError:
-                pass
+            _ecrire_secret(self.token_path, json.dumps({"jeton": json.loads(creds.to_json()), "compte": compte}))
+            if self.jeton_lecture is not None:
+                _ecrire_secret(self.jeton_lecture, creds.to_json())  # format attendu par l'agent mail
             self._service = None
-        log.info("Envoi de mails autorisé pour %s", compte)
-        return self.etat()
+        log.info("Boîte Google connectée (lecture et envoi) : %s", compte)
+        return compte
 
     def revoquer(self) -> dict:
         with self._lock:
@@ -164,6 +171,15 @@ class GmailExpediteur:
                 creds, _ = self._identifiants()
                 self._service = self._fabrique_service(creds)
             return self._service
+
+
+def _ecrire_secret(chemin: Path, contenu: str) -> None:
+    chemin.parent.mkdir(parents=True, exist_ok=True)
+    chemin.write_text(contenu, encoding="utf-8")
+    try:
+        chemin.chmod(0o600)
+    except OSError:  # sans effet sous Windows
+        pass
 
 
 def raison_lisible(exc: Exception) -> str:

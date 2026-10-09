@@ -104,7 +104,7 @@ export default function FenetreEnvoi({ ouverte, titre, charger, envoyer, onFerme
                     ? "Vérifier le serveur d'envoi"
                     : autorisation.reconnexion
                       ? 'Reconnecter le compte'
-                      : "Autoriser l'envoi"}
+                      : 'Reconnecter la boîte'}
                 </Link>{' '}
                 <span className="text-doux">dans Mails aux candidats.</span>
               </p>

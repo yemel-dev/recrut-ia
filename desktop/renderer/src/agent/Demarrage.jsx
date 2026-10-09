@@ -10,7 +10,8 @@ import { FOURNISSEURS, ISSUES_APERCU, resumeSynchro } from './libelles.js';
 
 const aujourdhui = () => new Date().toISOString().slice(0, 10);
 
-export default function Demarrage() {
+/** onTermine() : appelé après l'import (assistant de démarrage) ; sinon, on ouvre la liste des candidatures. */
+export default function Demarrage({ onTermine }) {
   const navigate = useNavigate();
   const { statut, rafraichir, notifier, signalerNouveauxCV } = useAgent();
   const [profils, setProfils] = useState(null);
@@ -58,7 +59,8 @@ export default function Demarrage() {
       notifier(`Import terminé : ${resumeSynchro(resultat)}.`, 'succes');
       signalerNouveauxCV();
       await rafraichir();
-      navigate('/candidatures');
+      if (onTermine) onTermine();
+      else navigate('/candidatures');
     } catch (err) {
       setErreur(err.message);
       setEtape('apercu');

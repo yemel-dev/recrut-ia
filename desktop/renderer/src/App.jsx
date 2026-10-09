@@ -1,5 +1,8 @@
+import { useEffect, useState } from 'react';
 import { HashRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom';
+import { api } from './api.js';
 import Disposition from './components/Disposition.jsx';
+import Accueil from './pages/Accueil.jsx';
 import BoiteMail from './pages/BoiteMail.jsx';
 import Candidatures from './pages/Candidatures.jsx';
 import Entretien from './pages/Entretien.jsx';
@@ -23,6 +26,27 @@ function AccesPublic({ creation = false }) {
   if (connecte) return <Navigate to="/" replace />;
   if (creation && compteExiste) return <Navigate to="/connexion" replace />;
   if (!creation && !compteExiste) return <Navigate to="/creation" replace />;
+  return <Outlet />;
+}
+
+/** Premier passage dans l'application : l'assistant de démarrage, tant qu'il n'est ni fait ni passé.
+ * Vérifié une fois par lancement (l'assistant marque sa fin avant de revenir ici). */
+let accueilVerifie = false;
+
+function GardeAccueil() {
+  const [aFaire, setAFaire] = useState(accueilVerifie ? false : null);
+  useEffect(() => {
+    if (accueilVerifie) return;
+    api.get('/accueil').then(
+      (a) => {
+        accueilVerifie = true;
+        setAFaire(a.a_faire);
+      },
+      () => setAFaire(false), // moteur indisponible : on n'empêche pas d'entrer
+    );
+  }, []);
+  if (aFaire === null) return <Chargement texte="Démarrage d'INJARA…" plein />;
+  if (aFaire) return <Navigate to="/bienvenue" replace />;
   return <Outlet />;
 }
 
@@ -56,6 +80,8 @@ function Routeur() {
         <Route path="/mot-de-passe-oublie" element={<MotDePasseOublie />} />
       </Route>
       <Route element={<AccesProtege />}>
+        <Route path="/bienvenue" element={<Accueil />} />
+        <Route element={<GardeAccueil />}>
         <Route element={<Disposition />}>
           <Route index element={<TableauDeBord />} />
           <Route path="/entreprise" element={<ProfilEntreprise />} />
@@ -68,6 +94,7 @@ function Routeur() {
           <Route path="/postes/nouveau" element={<PosteFormulaire />} />
           <Route path="/postes/:id" element={<PosteDetail />} />
           <Route path="/postes/:id/modifier" element={<PosteFormulaire />} />
+        </Route>
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

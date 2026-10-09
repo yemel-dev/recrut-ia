@@ -1,4 +1,4 @@
-"""Expéditeur Gmail : autorisation séparée, compte vérifié, message dans le fil — sans jamais appeler Google."""
+"""Expéditeur Gmail : un seul accord Google (lecture et envoi), compte vérifié, message dans le fil — sans jamais appeler Google."""
 from __future__ import annotations
 
 import base64
@@ -59,20 +59,21 @@ class FauxGmail:
         return _Execute({"id": f"envoye-{len(self.envoyes)}"}, self.erreur_envoi)
 
 
-def expediteur(tmp_path, compte_lecture=("gmail_oauth", "recrutement@cabinet.cm"), service=None, flux=None):
+def expediteur(tmp_path, compte_lecture=("gmail_oauth", "recrutement@cabinet.cm"), service=None, flux=None, jeton_lecture=None):
     credentials = tmp_path / "credentials.json"
     credentials.write_text("{}", encoding="utf-8")
     service = service or FauxGmail()
     return GmailExpediteur(
         credentials, tmp_path / "secrets" / "jeton_envoi_gmail.json", lambda: compte_lecture,
         fabrique_service=lambda creds: service, flux_autorisation=flux or (lambda chemin, scopes: identifiants()),
+        jeton_lecture=jeton_lecture,
     ), service
 
 
 def test_pas_encore_autorise_puis_autorise(tmp_path):
     exp, _ = expediteur(tmp_path)
     etat = exp.etat()
-    assert etat["autorise"] is False and "Autoriser l'envoi" in etat["motif"] and etat["reconnexion"] is False
+    assert etat["autorise"] is False and "reconnectez-la" in etat["motif"] and etat["reconnexion"] is False
     etat = exp.autoriser()
     assert etat == {"autorise": True, "compte": "recrutement@cabinet.cm", "motif": None, "reconnexion": False}
     stocke = json.loads((tmp_path / "secrets" / "jeton_envoi_gmail.json").read_text(encoding="utf-8"))
@@ -88,7 +89,7 @@ def test_autre_compte_refuse(tmp_path):
 
 def test_autorisations_incompletes_refusees(tmp_path):
     exp, _ = expediteur(tmp_path, flux=lambda chemin, scopes: identifiants(scopes=[SCOPES_ENVOI[1]]))
-    with pytest.raises(Conflit, match="toutes les autorisations"):
+    with pytest.raises(Conflit, match="pas tout autorisé"):
         exp.autoriser()
 
 
@@ -162,3 +163,23 @@ def test_revoquer(tmp_path):
 def test_mode_demo_pas_d_autorisation_a_donner(connecte):
     assert connecte.get("/mails/autorisation").json()["simule"] is True
     assert connecte.post("/mails/autorisation").status_code == 409
+
+
+def test_un_seul_accord_pour_la_lecture_et_l_envoi(tmp_path):
+    """Connexion de la boîte avec Google : lecture et envoi demandés ensemble, rangés pour l'agent et pour l'envoi."""
+    demandes = []
+
+    def flux(chemin, scopes):
+        demandes.append(scopes)
+        return identifiants()
+
+    lecture = tmp_path / "secrets" / "jeton_gmail.json"
+    exp, _ = expediteur(tmp_path, compte_lecture=(None, None), flux=flux, jeton_lecture=lecture)
+    assert exp.connecter() == "recrutement@cabinet.cm"
+    assert set(demandes[0]) == {"https://www.googleapis.com/auth/gmail.readonly", "https://www.googleapis.com/auth/gmail.send"}
+    assert "gmail.metadata" not in " ".join(demandes[0])  # interdirait la recherche de l'agent dans la boîte
+    assert json.loads(lecture.read_text(encoding="utf-8"))["refresh_token"] == "rafraichir"
+    exp.compte_lecture = lambda: ("gmail_oauth", "recrutement@cabinet.cm")
+    assert exp.etat()["autorise"] is True
+    with pytest.raises(Conflit, match="arrivent sur rh@cabinet.cm"):
+        exp.connecter(adresse_attendue="rh@cabinet.cm")

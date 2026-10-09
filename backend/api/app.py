@@ -24,9 +24,11 @@ from ..ia.regard import NOM_MODELE_VISAGE, AnalyseurVisage
 from ..ia.semantique import NOM_MODELE, ModeleSemantique, dossier_modeles
 from ..services.agent_mail import AgentMailService
 from ..services.auth import AuthService
+from ..services.boite import BoiteService
 from ..services.candidatures import CandidaturesService
 from ..services.entreprise import EntrepriseService
 from ..services.entretiens import EntretiensService
+from ..services.detection_boite import DetectionBoite
 from ..services.envoi_mails import EnvoiMailsService
 from ..services.expediteur import FauxExpediteur
 from ..services.expediteur_gmail import NOM_JETON, GmailExpediteur
@@ -41,7 +43,7 @@ from ..services.rapport import RapportService
 from ..services.tableau_de_bord import TableauDeBordService
 from ..services.traitement import TraitementService
 from ..services.erreurs import Conflit, ErreurService, ErreurValidation, Indisponible, Introuvable, NonAutorise, SessionRequise
-from . import routes_agent, routes_auth, routes_candidat, routes_candidatures, routes_entretiens, routes_mails, routes_metier
+from . import routes_agent, routes_auth, routes_boite, routes_candidat, routes_candidatures, routes_entretiens, routes_mails, routes_metier
 from .securite import JetonDeLancementMiddleware
 
 
@@ -62,6 +64,7 @@ class Services:
     tunnel: TunnelService
     reglages_mails: ReglagesMailsService
     envoi_mails: EnvoiMailsService
+    boite: BoiteService
 
 
 def construire_services(db: Database, settings: Settings, modele: ModeleSemantique | None = None) -> Services:
@@ -87,7 +90,11 @@ def construire_services(db: Database, settings: Settings, modele: ModeleSemantiq
     reseau = ReseauService(ParametreRepository(db), auth.cle_session)
     tunnel = TunnelService()
     reglages_mails = ReglagesMailsService(ParametreRepository(db), settings.environnement)
-    envoi_mails = _envoi_mails(db, settings, agent_mail, reglages_mails, tunnel, auth)
+    envoi_mails, gmail_expediteur = _envoi_mails(db, settings, agent_mail, reglages_mails, tunnel, auth)
+    boite = BoiteService(
+        agent_mail, DetectionBoite(lambda: agent_mail.reglages.credentials_path.exists()), gmail_expediteur,
+        envoi_mails.expediteur, ParametreRepository(db), EntrepriseRepository(db),
+    )
 
     auth.a_la_connexion += [agent_mail.session_ouverte, traitement.demarrer]
     auth.a_la_deconnexion += [agent_mail.session_fermee, traitement.arreter, tunnel.arreter]
@@ -107,6 +114,7 @@ def construire_services(db: Database, settings: Settings, modele: ModeleSemantiq
         tunnel=tunnel,
         reglages_mails=reglages_mails,
         envoi_mails=envoi_mails,
+        boite=boite,
         rapport=RapportService(
             CandidatureRepository(db), ScoreRepository(db), PosteRepository(db), EntrepriseRepository(db), cle=auth.cle_session,
             entretiens=EntretienRepository(db), mails=MailCandidatRepository(db),
@@ -114,7 +122,7 @@ def construire_services(db: Database, settings: Settings, modele: ModeleSemantiq
     )
 
 
-def _envoi_mails(db, settings, agent_mail, reglages_mails, tunnel, auth) -> EnvoiMailsService:
+def _envoi_mails(db, settings, agent_mail, reglages_mails, tunnel, auth) -> tuple[EnvoiMailsService, GmailExpediteur]:
     """Mails aux candidats : le transport dépend de la façon dont la boîte de recrutement est liée."""
     faux_expediteur = FauxExpediteur()
 
@@ -132,12 +140,15 @@ def _envoi_mails(db, settings, agent_mail, reglages_mails, tunnel, auth) -> Envo
         config, mot_de_passe = charge
         return CompteImap(config.email, mot_de_passe, config.host, config.port, config.folder)
 
-    gmail_expediteur = GmailExpediteur(agent_mail.reglages.credentials_path, settings.data_dir / "secrets" / NOM_JETON, compte_lecture)
+    gmail_expediteur = GmailExpediteur(
+        agent_mail.reglages.credentials_path, settings.data_dir / "secrets" / NOM_JETON, compte_lecture,
+        jeton_lecture=agent_mail.reglages.token_path,
+    )
     smtp_expediteur = SmtpExpediteur(compte_imap, reglages_mails.serveur_smtp)
 
     def expediteur():
         # Mode démo : rien ne part réellement. Boîte liée par IMAP : SMTP avec les mêmes identifiants.
-        # Boîte Gmail liée avec Google : API Gmail, avec l'autorisation d'envoi séparée.
+        # Boîte Gmail liée avec Google : API Gmail (même accord Google que la lecture).
         if settings.mode_agent == "fake":
             return faux_expediteur
         return smtp_expediteur if compte_lecture()[0] == "imap" else gmail_expediteur
@@ -146,10 +157,11 @@ def _envoi_mails(db, settings, agent_mail, reglages_mails, tunnel, auth) -> Envo
         """Lien public de la visio du candidat (comme GET /entretiens/{id}/lien), ou None sans accès à distance."""
         return f"{tunnel.url}/public/entretien/{entretien['code_invitation']}" if tunnel.url else None
 
-    return EnvoiMailsService(
+    envoi = EnvoiMailsService(
         CandidatureRepository(db), PosteRepository(db), EntretienRepository(db), MailCandidatRepository(db),
         EntrepriseRepository(db), reglages_mails, expediteur, cle=auth.cle_session, lien_entretien=lien_entretien,
     )
+    return envoi, gmail_expediteur
 
 
 def create_app(settings: Settings, modele: ModeleSemantique | None = None) -> FastAPI:
@@ -169,6 +181,7 @@ def create_app(settings: Settings, modele: ModeleSemantique | None = None) -> Fa
     app.include_router(routes_candidatures.router)
     app.include_router(routes_entretiens.router)
     app.include_router(routes_mails.router)
+    app.include_router(routes_boite.router)
     app.include_router(routes_candidat.router)
     routes_agent.monter(app)
     return app

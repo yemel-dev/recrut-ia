@@ -26,6 +26,13 @@ Barre de titre dessinée par l'interface (`titleBarStyle: 'hidden'`). Boutons de
 (Window Controls Overlay), pastilles natives sous macOS, dessinés par l'interface sous Linux (la surcouche native
 fait planter Electron sous Wayland). Taille minimale : 1100 × 680.
 
+## Premier lancement
+
+Après la création du compte et la première connexion, l'assistant de démarrage (`pages/Accueil.jsx`, même cadre que
+les écrans de connexion) demande l'entreprise, puis l'adresse de la boîte de recrutement (une seule connexion pour
+recevoir les candidatures et répondre aux candidats), puis les candidatures déjà reçues. Chaque étape peut être
+faite plus tard. Détails : `docs/mails.md`, « Connexion de la boîte ».
+
 ## Raccourcis clavier
 
 | Action | Raccourci |

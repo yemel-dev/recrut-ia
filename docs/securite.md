@@ -65,9 +65,12 @@
 ## Mails aux candidats
 
 - Aucun mail ne part sans confirmation explicite du recruteur, après aperçu (voir `docs/mails.md`).
-- L'envoi a sa propre autorisation Google (`gmail.send` et `gmail.metadata`), distincte de celle de la lecture, dans
-  `<données>/secrets/jeton_envoi_gmail.json`. Elle n'est acceptée que pour le compte qui reçoit les candidatures, et
-  peut être retirée depuis Paramètres › Mails aux candidats.
+- Boîte Google : une seule fenêtre Google accorde la lecture (`gmail.readonly`) et l'envoi (`gmail.send`) ; l'accord
+  est rangé dans le jeton de l'agent et dans `<données>/secrets/jeton_envoi_gmail.json`. Il n'est accepté que pour le
+  compte qui reçoit les candidatures, et peut être retiré depuis Paramètres › Mails aux candidats.
+- Connexion de la boîte : la détection de l'hébergeur lit les enregistrements MX du domaine (DNS) et essaie au plus
+  deux serveurs (`imap.domaine`, `mail.domaine`) sur le port 993 ; aucun identifiant n'est envoyé avant que
+  l'utilisateur valide. Les pages d'aide ouvertes dans le navigateur sont une liste fermée (`desktop/main/api.js`).
 - Le texte de chaque mail envoyé (historique) et le message joint à un entretien sont chiffrés avec la clé de données.
   L'objet, le destinataire et la date d'envoi restent en clair pour l'affichage de l'état.
 - Mode test : tout part vers l'adresse de redirection, jamais au candidat.

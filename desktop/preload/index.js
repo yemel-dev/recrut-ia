@@ -41,6 +41,10 @@ contextBridge.exposeInMainWorld('injara', {
     /** Boîte « Enregistrer sous » puis écriture du fichier déchiffré. Renvoie { ok, chemin }, { annule } ou { ok: false, message }. */
     exporterEnregistrement: (entretienId) => ipcRenderer.invoke('injara:exporter-enregistrement', entretienId),
   },
+  /** Ouvre dans le navigateur une page d'aide d'une messagerie (liste fermée côté processus principal). */
+  liens: {
+    ouvrir: (url) => ipcRenderer.invoke('injara:ouvrir-lien', url),
+  },
   fichiers: {
     /** Ouvre la boîte de dialogue « Importer des CV » ; renvoie les chemins choisis. */
     choisirCV: () => ipcRenderer.invoke('injara:choisir-cv'),
