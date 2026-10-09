@@ -234,11 +234,11 @@ export function BadgeStatut({ statut }) {
 /** En-tête d'écran : titre (Unbounded), description, actions toujours à droite. */
 export function EnTetePage({ titre, description, actions, avant }) {
   return (
-    <header className="mb-7 flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
-      <div className="min-w-0 max-w-3xl">
+    <header className="mb-7 flex items-end justify-between gap-x-8 gap-y-4">
+      <div className="min-w-0 flex-1">
         {avant}
         <h1 className="titre-ecran">{titre}</h1>
-        {description && <p className="mt-2 text-base text-doux">{description}</p>}
+        {description && <p className="mt-2 max-w-2xl text-base text-doux">{description}</p>}
       </div>
       {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
     </header>

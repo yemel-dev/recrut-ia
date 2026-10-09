@@ -1,16 +1,20 @@
-import { Info, Mail, RefreshCw, RotateCcw, Upload, X } from 'lucide-react';
+import { ChevronDown, FileUp, Inbox, Mail, MailX, RefreshCw, RotateCcw, Upload, X } from 'lucide-react';
+import { AnimatePresence, m } from 'motion/react';
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { api } from '../api.js';
 import { useAgent } from '../agent/ContexteAgent.jsx';
 import ListeCandidatures from '../candidatures/ListeCandidatures.jsx';
 import { FOURNISSEURS, REGLES_IGNORE, resumeSynchro } from '../agent/libelles.js';
-import { Alerte, Bouton, Carte, Chargement, EnTetePage, Interrupteur, Onglets } from '../components/ui.jsx';
+import EtatVide from '../components/EtatVide.jsx';
+import { Alerte, Badge, Bouton, Carte, Chargement, EnTetePage, Interrupteur, Onglets } from '../components/ui.jsx';
+import { COURBE_SORTIE } from '../components/mouvement.js';
 import { formaterDateHeure } from '../format.js';
 import { useCommande } from '../commandes.js';
 
 export default function Candidatures() {
   const { statut, etat, rafraichir, notifier, version, signalerNouveauxCV } = useAgent();
+  const filtreInitial = useLocation().state?.filtre; // venu du tableau de bord
   const [onglet, setOnglet] = useState('candidatures');
   const [compteurs, setCompteurs] = useState(null);
   const [traitement, setTraitement] = useState(null);
@@ -112,22 +116,39 @@ export default function Candidatures() {
       onDrop={auDepot}
       className="relative min-h-[60vh]"
     >
-      {surDepot && (
-        <div className="pointer-events-none absolute -inset-4 z-10 flex items-center justify-center rounded-2xl border-2 border-dashed border-brand-500 bg-brand-50/90">
-          <p className="flex items-center gap-2 text-lg font-semibold text-brand-700">
-            <Upload className="size-5" aria-hidden /> Déposez vos CV ici (PDF, DOCX ou ZIP)
-          </p>
-        </div>
-      )}
+      <AnimatePresence>
+        {surDepot && (
+          <m.div
+            className="pointer-events-none absolute -inset-4 z-30 flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-accent bg-fond/90 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            <m.span
+              className="grid size-14 place-items-center rounded-xl border border-accent-trait bg-accent-doux text-accent-texte shadow-halo"
+              initial={{ transform: 'translateY(6px)' }}
+              animate={{ transform: 'translateY(0px)' }}
+              transition={{ duration: 0.25, ease: COURBE_SORTIE }}
+            >
+              <Upload className="size-6" aria-hidden />
+            </m.span>
+            <p className="titre-section">Déposez vos CV ici</p>
+            <p className="text-sm text-doux">PDF, DOCX ou ZIP : ils seront lus, notés et classés.</p>
+          </m.div>
+        )}
+      </AnimatePresence>
 
       <EnTetePage
         titre="Candidatures"
         description="Chaque CV reçu est lu, noté et rattaché au poste le plus proche. Le score aide à décider : rien n'est écarté automatiquement."
         actions={
           <>
-            <Bouton variante="secondaire" icone={Upload} onClick={choisirFichiers} chargement={importEnCours}>Importer des CV</Bouton>
+            <Bouton variante="secondaire" icone={FileUp} geste="soulever" onClick={choisirFichiers} chargement={importEnCours} aria-keyshortcuts="Control+I">
+              Importer des CV
+            </Bouton>
             {connecte && !statut.needs_setup && (
-              <Bouton icone={RefreshCw} onClick={verifier} chargement={verification}>Vérifier maintenant</Bouton>
+              <Bouton icone={RefreshCw} geste="tourner" onClick={verifier} chargement={verification}>Vérifier maintenant</Bouton>
             )}
           </>
         }
@@ -135,23 +156,22 @@ export default function Candidatures() {
 
       <BarreEtat statut={statut} etat={etat} onSurveillance={basculerSurveillance} />
 
-      {erreur && <div className="mb-4"><Alerte>{erreur}</Alerte></div>}
-      {resultat && <Resultat resultat={resultat} onFermer={() => setResultat(null)} />}
+      {erreur && <Alerte className="mb-4">{erreur}</Alerte>}
+      <AnimatePresence>{resultat && <Resultat key={resultat.titre + resultat.resume} resultat={resultat} onFermer={() => setResultat(null)} />}</AnimatePresence>
       {traitement && !traitement.adequation.disponible && (
-        <p className="mb-4 flex items-start gap-2 rounded-lg border border-line bg-white px-4 py-3 text-sm text-muted">
-          <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
+        <Alerte ton="info" className="mb-5" titre={traitement.adequation.en_chargement ? "Le moteur d'analyse se charge" : 'Analyse sans le moteur sémantique'}>
           {traitement.adequation.en_chargement ? (
-            <span>
-              Le moteur d'analyse se charge (jusqu'à deux minutes). En attendant, les scores reposent sur les compétences,
-              l'expérience et la formation ; ils seront complétés automatiquement.
-            </span>
+            <>
+              Cela prend jusqu'à deux minutes. En attendant, les scores reposent sur les compétences, l'expérience et la
+              formation ; ils seront complétés automatiquement.
+            </>
           ) : (
-            <span>
+            <>
               Le critère « adéquation globale » est désactivé : les scores reposent sur les compétences, l'expérience et
-              la formation. <span className="text-xs">({(traitement.adequation.motif || '').split(' : [')[0]})</span>
-            </span>
+              la formation. <span className="text-xs text-doux">({(traitement.adequation.motif || '').split(' : [')[0]})</span>
+            </>
           )}
-        </p>
+        </Alerte>
       )}
 
       <Onglets
@@ -163,7 +183,7 @@ export default function Candidatures() {
         ]}
       />
       {onglet === 'candidatures' ? (
-        <ListeCandidatures version={version} onImporter={choisirFichiers} onCompteurs={setCompteurs} />
+        <ListeCandidatures version={version} onImporter={choisirFichiers} onCompteurs={setCompteurs} filtreInitial={filtreInitial} />
       ) : (
         <ListeIgnores connecte={connecte} onRecupere={() => { signalerNouveauxCV(); rafraichir(); }} />
       )}
@@ -174,35 +194,42 @@ export default function Candidatures() {
 function BarreEtat({ statut, etat, onSurveillance }) {
   if (!statut.connected) {
     return (
-      <Carte className="mb-6 flex flex-wrap items-center justify-between gap-4 py-4">
+      <Carte className="mb-5 flex flex-wrap items-center justify-between gap-4 py-3.5">
         <div className="flex items-center gap-3">
-          <Mail className="size-5 text-muted" aria-hidden />
-          <p className="text-sm text-navy-800">
+          <span className="grid size-8 shrink-0 place-items-center rounded-md bg-survol-fort text-doux"><MailX className="size-4" aria-hidden /></span>
+          <p className="text-base text-texte">
             Aucune boîte mail n'est liée. Liez la boîte de recrutement pour récupérer les CV automatiquement ; l'import
             manuel fonctionne déjà.
           </p>
         </div>
-        <Link to="/boite-mail" className="text-sm font-semibold text-brand-700 hover:underline">Lier une boîte mail</Link>
+        <Link to="/boite-mail" className="shrink-0 text-sm font-semibold text-accent-texte hover:underline">Lier une boîte mail</Link>
       </Carte>
     );
   }
   if (statut.needs_setup) {
     return (
-      <Carte className="mb-6 flex flex-wrap items-center justify-between gap-4 border-brand-100 bg-brand-50 py-4">
-        <p className="text-sm text-navy-800">
-          La boîte <strong>{statut.account_email}</strong> est liée. Choisissez maintenant les candidatures à reprendre.
-        </p>
-        <Link to="/boite-mail" className="text-sm font-semibold text-brand-700 hover:underline">Terminer la configuration</Link>
-      </Carte>
+      <Alerte
+        ton="succes"
+        className="mb-5"
+        action={<Link to="/boite-mail" className="shrink-0 self-center text-sm font-semibold text-fort hover:underline">Terminer la configuration</Link>}
+      >
+        La boîte <strong className="text-fort">{statut.account_email || FOURNISSEURS[statut.provider]}</strong> est liée. Choisissez maintenant les candidatures à reprendre.
+      </Alerte>
     );
   }
   return (
-    <Carte className="mb-6 flex flex-wrap items-center justify-between gap-x-8 gap-y-3 py-4">
-      <div className="text-sm">
-        <p className="font-semibold text-navy-900">{statut.account_email || FOURNISSEURS[statut.provider]}</p>
-        <p className="text-muted">
-          {statut.account_email && `${FOURNISSEURS[statut.provider]} · `}Dernière vérification : {formaterDateHeure(statut.last_sync_at)}
-        </p>
+    <Carte className="mb-5 flex flex-wrap items-center justify-between gap-x-8 gap-y-3 py-3.5">
+      <div className="flex min-w-0 items-center gap-3">
+        <span className="relative grid size-8 shrink-0 place-items-center rounded-md bg-accent-doux text-accent-texte">
+          <Mail className="size-4" aria-hidden />
+          {statut.watching && <span className="ia-pulsation absolute -top-0.5 -right-0.5 size-2 rounded-full bg-accent ring-2 ring-[var(--surface)]" aria-hidden />}
+        </span>
+        <div className="min-w-0 text-base">
+          <p className="truncate font-semibold text-fort">{statut.account_email || FOURNISSEURS[statut.provider]}</p>
+          <p className="text-sm text-doux">
+            {statut.account_email && `${FOURNISSEURS[statut.provider]} · `}Dernière vérification : {formaterDateHeure(statut.last_sync_at)}
+          </p>
+        </div>
       </div>
       <div className="flex flex-col items-end gap-1">
         <Interrupteur
@@ -210,9 +237,7 @@ function BarreEtat({ statut, etat, onSurveillance }) {
           onChange={onSurveillance}
           libelle={`Surveillance automatique${statut.watching ? ` (toutes les ${statut.poll_minutes} min)` : ''}`}
         />
-        {etat?.surveillance_souhaitee && !statut.watching && (
-          <p className="text-xs text-muted">Reprise en cours…</p>
-        )}
+        {etat?.surveillance_souhaitee && !statut.watching && <p className="text-xs text-doux">Reprise en cours…</p>}
       </div>
     </Carte>
   );
@@ -221,33 +246,40 @@ function BarreEtat({ statut, etat, onSurveillance }) {
 function Resultat({ resultat, onFermer }) {
   const { titre, resume, details = [], erreurs = [], tronque } = resultat;
   return (
-    <Carte className="mb-6 py-4">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-semibold tracking-wide text-muted uppercase">{titre}</p>
-          <p className="mt-1 font-semibold text-navy-900">{resume}</p>
+    <m.div
+      initial={{ opacity: 0, transform: 'translateY(-4px)' }}
+      animate={{ opacity: 1, transform: 'translateY(0px)' }}
+      exit={{ opacity: 0, transition: { duration: 0.12 } }}
+      transition={{ duration: 0.22, ease: COURBE_SORTIE }}
+      className="mb-5"
+    >
+      <Carte className="border-accent-trait py-4" role="status">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="etiquette">{titre}</p>
+            <p className="mt-1 text-lg font-semibold text-fort">{resume}</p>
+          </div>
+          <Bouton variante="discret" taille="sm" icone={X} onClick={onFermer} aria-label="Fermer le résultat" />
         </div>
-        <button type="button" onClick={onFermer} className="text-muted hover:text-navy-900" aria-label="Fermer le résultat">
-          <X className="size-4" />
-        </button>
-      </div>
-      {tronque && (
-        <p className="mt-2 text-sm text-amber-800">Il reste des emails à traiter. Cliquez de nouveau sur « Vérifier maintenant ».</p>
-      )}
-      {erreurs.length > 0 && (
-        <div className="mt-3"><Alerte>{erreurs.map((e) => <p key={e}>{e}</p>)}</Alerte></div>
-      )}
-      {details.length > 0 && (
-        <details className="mt-3 text-sm">
-          <summary className="cursor-pointer font-medium text-navy-700">Fichiers écartés ({details.length})</summary>
-          <ul className="mt-2 flex flex-col gap-1">
-            {details.map((d, i) => (
-              <li key={i} className="text-muted"><span className="font-medium text-navy-800">{d.fichier}</span> : {d.raison}</li>
-            ))}
-          </ul>
-        </details>
-      )}
-    </Carte>
+        {tronque && <p className="mt-2 text-base text-alerte">Il reste des emails à traiter. Cliquez de nouveau sur « Vérifier maintenant ».</p>}
+        {erreurs.length > 0 && (
+          <Alerte className="mt-3">{erreurs.map((e) => <p key={e}>{e}</p>)}</Alerte>
+        )}
+        {details.length > 0 && (
+          <details className="group mt-3 text-base">
+            <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 font-medium text-texte hover:text-fort">
+              <ChevronDown className="size-4 transition-transform group-open:rotate-180" aria-hidden />
+              Fichiers écartés ({details.length})
+            </summary>
+            <ul className="mt-2 flex flex-col gap-1 border-l border-trait pl-4">
+              {details.map((d, i) => (
+                <li key={i} className="text-sm text-doux"><span className="font-medium text-texte">{d.fichier}</span> : {d.raison}</li>
+              ))}
+            </ul>
+          </details>
+        )}
+      </Carte>
+    </m.div>
   );
 }
 
@@ -289,33 +321,37 @@ function ListeIgnores({ connecte, onRecupere }) {
 
   if (!elements) return erreur ? <Alerte>{erreur}</Alerte> : <Chargement />;
   if (elements.length === 0) {
-    return <p className="rounded-xl border border-dashed border-line bg-white px-6 py-12 text-center text-sm text-muted">Aucun email n'a été ignoré.</p>;
+    return (
+      <EtatVide icone={Inbox} titre="Aucun email ignoré" compact>
+        Les pièces jointes écartées par vos règles (emails automatiques, expéditeurs ignorés, fichiers trop lourds)
+        apparaîtront ici. Vous pourrez les récupérer une par une.
+      </EtatVide>
+    );
   }
   return (
     <>
-      <p className="mb-3 text-sm text-muted">
+      <p className="mb-4 text-base text-doux">
         Ces pièces jointes ont été écartées par vos règles. Rien n'est ignoré en silence : vous pouvez les récupérer
-        une par une. <Link to="/boite-mail" className="font-medium text-brand-700 hover:underline">Modifier les règles</Link>
+        une par une. <Link to="/boite-mail" className="font-medium text-accent-texte hover:underline">Modifier les règles</Link>
       </p>
-      <ul className="flex flex-col gap-2">
+      <ul className="overflow-hidden rounded-lg border border-trait bg-surface">
         {elements.map((x) => (
-          <li key={x.id} className="flex flex-wrap items-center gap-4 rounded-xl border border-line bg-white p-4">
+          <li key={x.id} className="flex flex-wrap items-center gap-4 border-b border-trait p-4 last:border-b-0">
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="truncate font-medium text-navy-900">{x.filename}</p>
-                <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800 ring-1 ring-amber-200">
-                  {REGLES_IGNORE[x.rule] || x.rule}
-                </span>
+                <p className="truncate font-medium text-fort">{x.filename}</p>
+                <Badge ton="alerte">{REGLES_IGNORE[x.rule] || x.rule}</Badge>
               </div>
-              <p className="mt-1 truncate text-sm text-muted">
+              <p className="mt-1 truncate text-sm text-doux">
                 {x.sender_name ? `${x.sender_name} · ` : ''}{x.sender_email} · {x.subject || 'Sans objet'} · {formaterDateHeure(x.received_at)}
               </p>
-              <p className="mt-1 text-sm text-navy-700">{x.reason}</p>
-              {messages[x.id] && <p className="mt-1 text-sm font-medium text-navy-900">{messages[x.id]}</p>}
+              <p className="mt-1 text-sm text-texte">{x.reason}</p>
+              {messages[x.id] && <p className="mt-1 text-sm font-medium text-alerte">{messages[x.id]}</p>}
             </div>
             <Bouton
               variante="secondaire"
               icone={RotateCcw}
+              geste="reculer"
               onClick={() => recuperer(x)}
               chargement={enCours === x.id}
               disabled={!connecte}
