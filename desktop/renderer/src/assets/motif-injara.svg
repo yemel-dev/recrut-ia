@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Motif original INJARA (création pour le projet, aucune ressource tierce), répétable en 128 × 128.
+       Inspirations : losanges emboîtés et croix du Ndop, zigzags du Bogolan, bandes du Kente.
+       Couleurs de la charte ; l'opacité est réglée par la page (ici à pleine intensité). -->
+  <g stroke="#031e40" stroke-width="1.6">
+    <!-- Bandes en zigzag (haut et bas) : elles se rejoignent d'une tuile à l'autre. -->
+    <path d="M0 10 8 4 16 10 24 4 32 10 40 4 48 10 56 4 64 10 72 4 80 10 88 4 96 10 104 4 112 10 120 4 128 10"/>
+    <path d="M0 118 8 124 16 118 24 124 32 118 40 124 48 118 56 124 64 118 72 124 80 118 88 124 96 118 104 124 112 118 120 124 128 118"/>
+    <!-- Losanges emboîtés au centre. -->
+    <path d="M64 30 98 64 64 98 30 64Z"/>
+    <path d="M64 44 84 64 64 84 44 64Z"/>
+  </g>
+  <g stroke="#37bb68" stroke-width="1.6">
+    <!-- Croix du Ndop au cœur et sur les bords latéraux (complétées par la tuile voisine). -->
+    <path d="M64 56v16M56 64h16"/>
+    <path d="M0 56v16M-8 64h16M128 56v16M120 64h16"/>
+    <!-- Traits du Kente entre les bandes. -->
+    <path d="M16 22h20M92 22h20M16 106h20M92 106h20"/>
+  </g>
+  <g fill="#37bb68">
+    <!-- Points du Bogolan aux coins du losange. -->
+    <circle cx="64" cy="22" r="2"/>
+    <circle cx="64" cy="106" r="2"/>
+    <circle cx="22" cy="64" r="2"/>
+    <circle cx="106" cy="64" r="2"/>
+  </g>
+  <g fill="#031e40">
+    <circle cx="16" cy="40" r="1.6"/>
+    <circle cx="112" cy="40" r="1.6"/>
+    <circle cx="16" cy="88" r="1.6"/>
+    <circle cx="112" cy="88" r="1.6"/>
+  </g>
+</svg>

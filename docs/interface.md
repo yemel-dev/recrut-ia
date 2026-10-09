@@ -14,6 +14,10 @@ Refonte visuelle de 2026 (branche `redesign-ui`). Le détail des choix (assets, 
   slogan, mot d'accueil). Variables `--police-titres`, `--police-texte`, `--police-accent` (classes `font-titres`,
   `font-sans`, `font-accent`). Paquets `@fontsource`, embarquées : aucun chargement réseau. La page candidat
   (`backend/web/candidat/polices`) et le rapport PDF (`desktop/main/polices`, en data:) en ont leur propre copie.
+- **Écrans publics** (connexion, création du compte, récupération) : `components/EcranPublic.jsx` et
+  `styles/ecran-public.css` (carte en verre sur photo floutée, panneau blanc cassé à motifs, soleils en rotation
+  continue CSS). Images dans `renderer/public/connexion/`, motif dans `renderer/src/assets/`. Sources et licences :
+  `ATTRIBUTIONS.md` à la racine.
 - **Composants** : `components/ui.jsx` (boutons, champs, cartes, badges, onglets, segments, alertes, modale),
   `components/Menu.jsx` (menu déroulant et clic droit), `components/EtatVide.jsx`, `components/Infobulle.jsx`.
 - **Animations** : paquet `motion`, valeurs communes dans `components/mouvement.js` ; mouvement réduit respecté

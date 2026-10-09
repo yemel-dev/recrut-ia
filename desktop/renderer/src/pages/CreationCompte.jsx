@@ -1,3 +1,4 @@
+import { LockKeyhole, Mail } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
@@ -63,13 +64,13 @@ export default function CreationCompte() {
     >
       <form onSubmit={soumettre} noValidate className="flex flex-col gap-5">
         <Alerte>{erreurGenerale}</Alerte>
-        <Champ label="Email" erreur={erreurs.email} obligatoire>
+        <Champ label="Email" icone={Mail} erreur={erreurs.email} obligatoire>
           {(a) => <Saisie {...a} type="email" autoComplete="username" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} />}
         </Champ>
-        <Champ label="Mot de passe" erreur={erreurs.mot_de_passe} aide={aideMotDePasse(motDePasse)} obligatoire>
+        <Champ label="Mot de passe" icone={LockKeyhole} erreur={erreurs.mot_de_passe} aide={aideMotDePasse(motDePasse)} obligatoire>
           {(a) => <MotDePasse {...a} autoComplete="new-password" value={motDePasse} onChange={(e) => setMotDePasse(e.target.value)} />}
         </Champ>
-        <Champ label="Confirmer le mot de passe" erreur={erreurs.confirmation} obligatoire>
+        <Champ label="Confirmer le mot de passe" icone={LockKeyhole} erreur={erreurs.confirmation} obligatoire>
           {(a) => <MotDePasse {...a} autoComplete="new-password" value={confirmation} onChange={(e) => setConfirmation(e.target.value)} />}
         </Champ>
         <Bouton type="submit" taille="lg" chargement={envoi} className="mt-2">Créer le compte</Bouton>

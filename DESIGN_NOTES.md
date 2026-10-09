@@ -172,11 +172,34 @@ Moments animés :
   n'ai pas vectorisé le logo, faute de SVG fourni.
 - Icône d'application : symbole vert sur carré arrondi bleu nuit, de 16 à 1024 px, `icon.png` et `icon.ico`
   (l'installeur Windows utilise maintenant le `.ico`).
-- Le symbole à huit branches sert de chargement (rotation lente), de filigrane de l'écran de connexion et d'état
-  vide.
+- Le symbole à huit branches sert de chargement (rotation lente), de logo des écrans publics et d'état vide.
+  Sur les écrans publics, les deux soleils tournent en continu (`.soleil-tournant`, un tour en 20 s, linéaire,
+  CSS seul) et restent fixes en mouvement réduit.
 - Icônes : Lucide uniquement (`lucide-react` dans l'application, mêmes tracés en sprite SVG sur la page candidat),
   trait unique de 1,75 fixé par `LucideProvider` (`main.jsx`), aucun emoji, aucune étincelle ni symbole « magique » :
   l'analyse automatique est signalée par une jauge (`Gauge`), le classement par une liste ordonnée (`ListOrdered`).
+
+### Écrans publics (connexion, création du compte, récupération) — octobre 2026
+
+Composant `components/EcranPublic.jsx`, styles `styles/ecran-public.css`. Les écrans gardent leurs propres
+couleurs, quel que soit le thème.
+
+- **Gauche** : soleil (56 px) et logotype blanc (40 px de haut, contre 40 et 28 px avant) en haut à gauche ; carte
+  en verre au centre, sur la photo `public/connexion/arriere-plan.webp` floutée (6 px) sous un voile bleu nuit.
+  Verre teinté **bleu nuit** à 70 % (le vert, plus lumineux, faisait chuter le contraste du texte blanc), flou
+  d'arrière-plan 20 px, bordure blanche à 18 %, coins de 24 px. Repli sans `backdrop-filter` : bleu nuit à 92 %.
+  Dans la carte, `.zone-verre` redéfinit les tokens sémantiques : `Champ`, `Saisie`, `MotDePasse`, `Alerte`,
+  `Bouton` prennent l'aspect verre sans changer de code. Champs de 44 px, anneau de focus vert à 60 %.
+- **Droite** : blanc cassé `--blanc-casse` (#f7f5ef), motif original `assets/motif-injara.svg` (losanges et croix
+  du Ndop, zigzags du Bogolan, traits du Kente) à 8,5 % d'opacité, estompé au centre derrière les textes.
+  Illustration **au centre**, entre l'accroche et les atouts : son bas plat repose sur la base d'une arche claire,
+  et c'est le seul emplacement qui la laisse lire comme le cœur du panneau sans repousser l'accroche sous la ligne
+  de flottaison. Grand soleil en filigrane (12 %) en bas à droite.
+- **Contrastes mesurés sur rendu** (capture Electron, fond de carte le plus clair relevé : rgb(32 60 91)) : blanc
+  11,3:1, texte secondaire (blanc 80 %) 7,9:1, indications de champ (blanc 70 %) 6,4:1, vert clair (liens, mot
+  d'accueil) 6,9:1, erreur 6,6:1. Panneau droit : texte 9:1 et titre 12,9:1 dans le pire cas (sur un trait du
+  motif). Bouton : bleu nuit sur vert 6,7:1.
+- Sous 1024 px de large, le panneau droit disparaît : une seule colonne (la fenêtre minimale fait 1100 px).
 
 ## 8. Ce qui a changé
 

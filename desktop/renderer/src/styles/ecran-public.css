@@ -1,0 +1,156 @@
+/* Écrans publics (connexion, création du compte, récupération) : photo floutée et carte en verre à gauche,
+ * panneau de marque blanc cassé à motifs à droite. Les deux côtés ont leurs propres couleurs, quel que soit le
+ * thème de l'application. Contrastes (WCAG 2.1, pire cas mesuré : zone la plus claire de la photo) dans
+ * DESIGN_NOTES.md, section « Écrans publics ». */
+
+/* ─── Côté gauche : photo, voile, verre ─────────────────────────────────── */
+
+.public-photo {
+  /* Flou léger sur la photo elle-même ; le flou fort est celui de la carte (backdrop-filter). Agrandie pour que
+   * le flou ne laisse pas de bord clair. */
+  filter: blur(6px) saturate(1.05);
+  transform: scale(1.06);
+  object-position: 62% 50%;
+}
+
+.public-voile {
+  /* Voile bleu nuit, plus dense en bas (tablette et papiers très clairs dans la photo). */
+  background:
+    linear-gradient(180deg, rgb(3 30 64 / 0.5) 0%, rgb(3 30 64 / 0.38) 45%, rgb(3 30 64 / 0.72) 100%),
+    radial-gradient(120% 80% at 0% 0%, rgb(1 13 31 / 0.45), transparent 60%);
+}
+
+.carte-verre {
+  background: rgb(3 30 64 / 0.7); /* 0,58 laissait le vert clair à 3,9:1 sur la zone la plus claire de la photo */
+  border: 1px solid rgb(255 255 255 / 0.18);
+  border-radius: 1.5rem;
+  box-shadow:
+    0 1px 0 0 rgb(255 255 255 / 0.12) inset,
+    0 24px 48px -16px rgb(1 8 20 / 0.55),
+    0 4px 12px rgb(1 8 20 / 0.25);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  backdrop-filter: blur(20px) saturate(1.2);
+}
+
+/* Pastille en verre (mention de confidentialité en bas de page). */
+.pastille-verre {
+  background: rgb(3 30 64 / 0.55);
+  border: 1px solid rgb(255 255 255 / 0.14);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+/* Défilement (petite fenêtre, formulaire long) : barre claire et fine, qui ne dessine pas de séparation sombre. */
+.public-defilement {
+  scrollbar-gutter: auto;
+}
+.public-defilement::-webkit-scrollbar-thumb {
+  background: rgb(255 255 255 / 0.22);
+  background-clip: padding-box;
+}
+.public-defilement::-webkit-scrollbar-thumb:hover {
+  background: rgb(255 255 255 / 0.36);
+  background-clip: padding-box;
+}
+
+/* Repli sans backdrop-filter : verre opaque, le contraste reste celui du bleu nuit. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .carte-verre {
+    background: rgb(3 30 64 / 0.92);
+  }
+  .pastille-verre {
+    background: rgb(3 30 64 / 0.85);
+  }
+}
+
+/* Tokens sémantiques redéfinis dans la carte : les composants communs (Champ, Saisie, MotDePasse, Alerte,
+ * Bouton…) prennent l'aspect « verre » sans changer de code. */
+.zone-verre {
+  color-scheme: dark;
+
+  --surface: rgb(255 255 255 / 0.1);
+  --surface-2: rgb(255 255 255 / 0.12);
+  --survol: rgb(255 255 255 / 0.08);
+  --survol-fort: rgb(255 255 255 / 0.14);
+  --enfonce: rgb(255 255 255 / 0.08); /* fond des champs : blanc très translucide */
+
+  --trait: rgb(255 255 255 / 0.24);
+  --trait-fort: rgb(255 255 255 / 0.4);
+
+  --texte-fort: #ffffff; /* contrastes mesurés sur rendu, pire cas : voir DESIGN_NOTES.md */
+  --texte: rgb(255 255 255 / 0.92);
+  --texte-doux: rgb(255 255 255 / 0.8);
+  --texte-tenu: rgb(255 255 255 / 0.7); /* indications de champ vide seulement */
+
+  --accent: var(--vert-500);
+  --accent-survol: var(--vert-400);
+  --accent-texte: var(--vert-300); /* liens, mot d'accueil */
+  --sur-accent: var(--nuit-900);
+  --accent-doux: rgb(55 187 104 / 0.18);
+  --accent-trait: rgb(137 220 168 / 0.5);
+  --halo: rgb(55 187 104 / 0.45);
+
+  --danger: #ffb3b3;
+  --danger-plein: #c9302c;
+  --danger-doux: rgb(255 120 120 / 0.16);
+  --danger-trait: rgb(255 160 160 / 0.45);
+  --alerte: #ffd38a;
+  --alerte-doux: rgb(245 185 74 / 0.16);
+  --alerte-trait: rgb(245 185 74 / 0.45);
+  --info: #b5d2ff;
+  --info-doux: rgb(127 176 255 / 0.16);
+  --info-trait: rgb(127 176 255 / 0.4);
+}
+
+/* Champs en verre : plus hauts qu'ailleurs, anneau de focus vert franc. Hors couche Tailwind : ces règles
+ * l'emportent sur les utilitaires de CHAMP_SAISIE (ui.jsx), uniquement dans la carte. */
+.zone-verre :is(input:not([type='checkbox']):not([type='radio']), select) {
+  height: 2.75rem;
+  font-size: 1rem;
+}
+.zone-verre :is(input, select, textarea):focus {
+  border-color: var(--vert-500);
+  background-color: rgb(255 255 255 / 0.12);
+  box-shadow: 0 0 0 3px rgb(55 187 104 / 0.6);
+}
+/* Remplissage automatique de Chromium : pas de fond jaune ou bleu clair sous un texte blanc. */
+.zone-verre input:-webkit-autofill {
+  -webkit-text-fill-color: #ffffff;
+  caret-color: #ffffff;
+  box-shadow: 0 0 0 1000px rgb(17 44 80) inset;
+  transition: background-color 600000s 0s;
+}
+.zone-verre input:-webkit-autofill:focus {
+  box-shadow:
+    0 0 0 1000px rgb(17 44 80) inset,
+    0 0 0 3px rgb(55 187 104 / 0.6);
+}
+
+/* ─── Côté droit : blanc cassé et motifs ─────────────────────────────────── */
+
+.panneau-marque {
+  background-color: var(--blanc-casse);
+  color: #23395a; /* 10,9:1 sur le blanc cassé */
+}
+
+/* Motif répété (assets/motif-injara.svg, création originale), très discret et estompé derrière les textes. */
+.panneau-marque::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url('../assets/motif-injara.svg');
+  background-size: 128px 128px;
+  opacity: 0.085;
+  -webkit-mask-image: radial-gradient(75% 60% at 50% 48%, rgb(0 0 0 / 0.35), #000 100%);
+  mask-image: radial-gradient(75% 60% at 50% 48%, rgb(0 0 0 / 0.35), #000 100%);
+}
+
+/* Arche qui accueille l'illustration : son bas plat repose sur la base de l'arche. */
+.arche {
+  border-radius: 999px 999px 1.25rem 1.25rem;
+  background: linear-gradient(180deg, #ffffff 0%, var(--vert-100) 100%);
+  box-shadow:
+    0 0 0 1px rgb(3 30 64 / 0.06),
+    0 18px 40px -20px rgb(3 30 64 / 0.25);
+}

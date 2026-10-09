@@ -1,3 +1,4 @@
+import { KeyRound, LockKeyhole } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
@@ -69,7 +70,7 @@ export default function MotDePasseOublie() {
     >
       <form onSubmit={soumettre} noValidate className="flex flex-col gap-5">
         <Alerte>{erreurGenerale}</Alerte>
-        <Champ label="Clé de récupération" erreur={erreurs.cle_de_recuperation} aide="Format : XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX" obligatoire>
+        <Champ label="Clé de récupération" icone={KeyRound} erreur={erreurs.cle_de_recuperation} aide="Format : XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX" obligatoire>
           {(a) => (
             <Saisie
               {...a}
@@ -82,10 +83,10 @@ export default function MotDePasseOublie() {
             />
           )}
         </Champ>
-        <Champ label="Nouveau mot de passe" erreur={erreurs.nouveau_mot_de_passe} aide={aideMotDePasse(motDePasse)} obligatoire>
+        <Champ label="Nouveau mot de passe" icone={LockKeyhole} erreur={erreurs.nouveau_mot_de_passe} aide={aideMotDePasse(motDePasse)} obligatoire>
           {(a) => <MotDePasse {...a} autoComplete="new-password" value={motDePasse} onChange={(e) => setMotDePasse(e.target.value)} />}
         </Champ>
-        <Champ label="Confirmer le nouveau mot de passe" erreur={erreurs.confirmation} obligatoire>
+        <Champ label="Confirmer le nouveau mot de passe" icone={LockKeyhole} erreur={erreurs.confirmation} obligatoire>
           {(a) => <MotDePasse {...a} autoComplete="new-password" value={confirmation} onChange={(e) => setConfirmation(e.target.value)} />}
         </Champ>
         <Bouton type="submit" taille="lg" chargement={envoi} className="mt-2">Changer le mot de passe</Bouton>

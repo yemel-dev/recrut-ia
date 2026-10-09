@@ -52,11 +52,13 @@ export function Bouton({ variante = 'primaire', taille = 'md', chargement = fals
   );
 }
 
-export function Champ({ label, erreur, aide, obligatoire, children, className }) {
+/** Champ de formulaire libellé. `icone` : pictogramme Lucide facultatif devant le libellé (courrier, cadenas…). */
+export function Champ({ label, icone: Icone, erreur, aide, obligatoire, children, className }) {
   const id = useId();
   return (
     <div className={cx('flex flex-col gap-1.5', className)}>
-      <label htmlFor={id} className="text-sm font-medium text-texte">
+      <label htmlFor={id} className={cx('text-sm font-medium text-texte', Icone && 'flex items-center gap-1.5')}>
+        {Icone && <Icone className="size-4 shrink-0 text-doux" aria-hidden />}
         {label}
         {obligatoire && <span className="text-danger" aria-hidden> *</span>}
       </label>
