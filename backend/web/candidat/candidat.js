@@ -4,8 +4,16 @@
   const code = decodeURIComponent(location.pathname.split('/').filter(Boolean).pop() || '');
   const $ = (id) => document.getElementById(id);
   const ecrans = ['message', 'accueil', 'entretien'];
-  const montrer = (nom) => ecrans.forEach((e) => ($(`ecran-${e}`).hidden = e !== nom));
-  const message = (titre, texte) => {
+  const montrer = (nom) => {
+    ecrans.forEach((e) => ($(`ecran-${e}`).hidden = e !== nom));
+    document.body.dataset.ecran = nom;
+  };
+  // ton : 'alerte' (lien invalide), 'ok' (entretien terminé), 'neutre' (le candidat est parti de lui-même)
+  const ICONES_MESSAGE = { alerte: ['i-alert', 'pastille alerte'], ok: ['i-check', 'pastille'], neutre: ['i-user', 'pastille neutre'] };
+  const message = (titre, texte, ton = 'alerte') => {
+    const [icone, classes] = ICONES_MESSAGE[ton];
+    $('message-icone-use').setAttribute('href', `#${icone}`);
+    $('message-icone').className = classes;
     $('message-titre').textContent = titre;
     $('message-texte').textContent = texte;
     montrer('message');
@@ -80,13 +88,18 @@
     const piste = flux?.getAudioTracks()[0];
     if (!piste) return;
     piste.enabled = !piste.enabled;
-    $('micro').textContent = piste.enabled ? 'Couper le micro' : 'Réactiver le micro';
+    const libelle = piste.enabled ? 'Couper le micro' : 'Réactiver le micro';
+    $('micro').setAttribute('aria-pressed', String(!piste.enabled));
+    $('micro').setAttribute('aria-label', libelle);
+    $('micro').title = libelle;
+    $('micro').querySelector('.icone-actif').hidden = !piste.enabled;
+    $('micro').querySelector('.icone-coupe').hidden = piste.enabled;
   });
 
   $('quitter').addEventListener('click', () => {
     if (!confirm("Quitter l'entretien ? Vous pourrez le rejoindre de nouveau avec le même lien tant qu'il n'est pas terminé.")) return;
     arreter();
-    message('Vous avez quitté l\'entretien', 'Vous pouvez fermer cette page ou rouvrir votre lien pour revenir.');
+    message('Vous avez quitté l\'entretien', 'Vous pouvez fermer cette page ou rouvrir votre lien pour revenir.', 'neutre');
   });
 
   function etat(texte) { $('etat').textContent = texte; }
@@ -98,7 +111,7 @@
     ws.onmessage = (e) => { file = file.then(() => traiter(JSON.parse(e.data))).catch(() => etat('Un problème est survenu avec la connexion vidéo.')); };
     ws.onclose = (e) => {
       if (termine) return;
-      if (e.code === 4001) { arreter(); message('Entretien terminé', 'Merci pour votre temps. Vous pouvez fermer cette page.'); return; }
+      if (e.code === 4001) { arreter(); message('Entretien terminé', 'Merci pour votre temps. Vous pouvez fermer cette page.', 'ok'); return; }
       if (e.code === 4404) { arreter(); message('Lien invalide', "Ce lien d'entretien est invalide ou a expiré."); return; }
       etat('Connexion perdue, nouvelle tentative…');
       fermerPair();

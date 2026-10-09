@@ -8,50 +8,89 @@
     <link rel="stylesheet" href="/public/candidat.css" />
   </head>
   <body>
+    <!-- Icônes (traits fins) : réutilisées par <use>. -->
+    <svg width="0" height="0" class="sprite" aria-hidden="true" focusable="false">
+      <symbol id="i-video" viewBox="0 0 24 24"><path d="M15 10.5 20.5 7v10L15 13.5M5 6.5h8a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z"/></symbol>
+      <symbol id="i-video-off" viewBox="0 0 24 24"><path d="M3 3l18 18M15 10.5 20.5 7v10l-3-1.9M15 15.5v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2"/></symbol>
+      <symbol id="i-mic" viewBox="0 0 24 24"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm6-3a6 6 0 0 1-12 0m6 6v3"/></symbol>
+      <symbol id="i-mic-off" viewBox="0 0 24 24"><path d="M3 3l18 18M9 9v3a3 3 0 0 0 4.5 2.6M15 11V6a3 3 0 0 0-5.7-1.3M18 12a6 6 0 0 1-.6 2.6M6 12a6 6 0 0 0 9 5.2M12 18v3"/></symbol>
+      <symbol id="i-phone-off" viewBox="0 0 24 24"><path d="M3 3l18 18M10.7 13.3a14 14 0 0 1-2.4-3.2l1.6-1.4a1 1 0 0 0 .3-1l-.7-3a1 1 0 0 0-1-.7H5.5A1.5 1.5 0 0 0 4 5.5C4 13.5 10.5 20 18.5 20a1.5 1.5 0 0 0 1.5-1.5v-2.4a1 1 0 0 0-.7-1l-3-.7a1 1 0 0 0-1 .3l-1.4 1.6"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5m0 3h.01"/></symbol>
+      <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></symbol>
+      <symbol id="i-lamp" viewBox="0 0 24 24"><path d="M9 18h6m-5 3h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3Z"/></symbol>
+      <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8m-4-4v4"/></symbol>
+      <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.8"/></symbol>
+      <symbol id="i-expand" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+    </svg>
+
     <main>
-      <section id="ecran-message" class="carte" hidden>
-        <h1 id="message-titre"></h1>
-        <p id="message-texte"></p>
+      <section id="ecran-message" class="page" hidden>
+        <div class="carte carte-centree">
+          <span id="message-icone" class="pastille"><svg class="icone"><use id="message-icone-use" href="#i-alert" /></svg></span>
+          <h1 id="message-titre"></h1>
+          <p id="message-texte" class="discret"></p>
+        </div>
       </section>
 
-      <section id="ecran-accueil" class="carte" hidden>
-        <h1>Entretien vidéo</h1>
-        <p id="accueil-contexte"></p>
-        <ul class="consignes">
-          <li>Installez-vous dans un endroit calme et bien éclairé, face à la caméra.</li>
-          <li>Utilisez de préférence un ordinateur, avec Chrome, Edge ou Firefox à jour.</li>
-          <li>Le recruteur voit et entend ce que votre caméra et votre micro captent.</li>
-        </ul>
-        <h2 class="sous-titre">Avant de commencer</h2>
-        <ul class="consignes">
-          <li>Fermez tous les autres onglets et fenêtres de navigateur, ainsi que les applications de messagerie, de notes, d'assistant ou de traduction.</li>
-          <li>Éteignez ou éloignez téléphone, tablette et second écran, et n'utilisez aucune aide pendant l'entretien.</li>
-          <li>L'entretien s'ouvre en plein écran. Si vous quittez cette page ou le plein écran, le recruteur en est informé.</li>
-        </ul>
-        <label class="consentement">
-          <input type="checkbox" id="engagement" />
-          <span>Je m'engage à respecter ces consignes. <strong>(obligatoire)</strong></span>
-        </label>
-        <label class="consentement">
-          <input type="checkbox" id="consentement" />
-          <span>J'autorise le recruteur à enregistrer cet entretien (image et son) à analyser mon regard et mes mouvements de tête, et à être informé si je quitte la page de l'entretien. Rien n'est envoyé ailleurs : tout reste sur son ordinateur.</span>
-        </label>
-        <p class="aide">Cette case est facultative : sans elle, l'entretien a lieu mais n'est ni enregistré, ni analysé, et vos changements de page ne sont pas relevés.</p>
-        <button id="rejoindre" type="button" class="bouton" disabled>Autoriser la caméra et le micro, puis rejoindre</button>
-        <p id="erreur-acces" class="erreur" role="alert" hidden></p>
+      <section id="ecran-accueil" class="page" hidden>
+        <div class="carte">
+          <p class="marque">INJARA</p>
+          <h1>Entretien vidéo</h1>
+          <p id="accueil-contexte" class="contexte"></p>
+
+          <h2>Pour que tout se passe bien</h2>
+          <ul class="liste-icones">
+            <li><svg class="icone"><use href="#i-lamp" /></svg><span>Installez-vous dans un endroit calme et bien éclairé, face à la caméra.</span></li>
+            <li><svg class="icone"><use href="#i-monitor" /></svg><span>Utilisez de préférence un ordinateur, avec Chrome, Edge ou Firefox à jour.</span></li>
+            <li><svg class="icone"><use href="#i-video" /></svg><span>Le recruteur voit et entend ce que votre caméra et votre micro captent.</span></li>
+          </ul>
+
+          <h2>Avant de commencer</h2>
+          <ul class="liste-icones">
+            <li><svg class="icone"><use href="#i-expand" /></svg><span>Fermez tous les autres onglets et fenêtres de navigateur, ainsi que les applications de messagerie, de notes, d'assistant ou de traduction.</span></li>
+            <li><svg class="icone"><use href="#i-eye" /></svg><span>Éteignez ou éloignez téléphone, tablette et second écran, et n'utilisez aucune aide pendant l'entretien.</span></li>
+            <li><svg class="icone"><use href="#i-lock" /></svg><span>L'entretien s'ouvre en plein écran. Si vous quittez cette page ou le plein écran, le recruteur en est informé.</span></li>
+          </ul>
+
+          <div class="choix">
+            <label class="consentement">
+              <input type="checkbox" id="engagement" />
+              <span>Je m'engage à respecter ces consignes. <strong>(obligatoire)</strong></span>
+            </label>
+            <label class="consentement">
+              <input type="checkbox" id="consentement" />
+              <span>J'autorise le recruteur à enregistrer cet entretien (image et son) à analyser mon regard et mes mouvements de tête, et à être informé si je quitte la page de l'entretien. Rien n'est envoyé ailleurs : tout reste sur son ordinateur.</span>
+            </label>
+            <p class="aide">Cette case est facultative : sans elle, l'entretien a lieu mais n'est ni enregistré, ni analysé, et vos changements de page ne sont pas relevés.</p>
+          </div>
+
+          <button id="rejoindre" type="button" class="bouton principal" disabled>Autoriser la caméra et le micro, puis rejoindre</button>
+          <p id="erreur-acces" class="erreur" role="alert" hidden></p>
+        </div>
       </section>
 
-      <section id="ecran-entretien" hidden>
+      <section id="ecran-entretien" class="salle" hidden>
+        <header class="entete">
+          <span class="marque">INJARA</span>
+          <span id="etat" class="etat" role="status"></span>
+        </header>
         <div class="scene">
           <video id="video-recruteur" autoplay playsinline></video>
-          <p id="attente" class="attente">En attente du recruteur…</p>
+          <div id="attente" class="attente">
+            <span class="pastille sombre"><svg class="icone"><use href="#i-user" /></svg></span>
+            <p>En attente du recruteur…</p>
+          </div>
           <video id="video-local" autoplay playsinline muted></video>
-          <p id="rappel-plein-ecran" class="rappel" hidden>Revenez en plein écran. <button id="plein-ecran" type="button" class="bouton secondaire">Plein écran</button></p>
+          <p id="rappel-plein-ecran" class="rappel" hidden>Revenez en plein écran. <button id="plein-ecran" type="button" class="bouton discret">Plein écran</button></p>
         </div>
-        <div class="barre">
-          <span id="etat" class="etat" role="status"></span>
-          <button id="micro" type="button" class="bouton secondaire">Couper le micro</button>
-          <button id="quitter" type="button" class="bouton danger">Quitter l'entretien</button>
+        <div class="barre" role="toolbar" aria-label="Commandes">
+          <button id="micro" type="button" class="rond" aria-pressed="false" aria-label="Couper le micro" title="Couper le micro">
+            <svg class="icone icone-actif"><use href="#i-mic" /></svg>
+            <svg class="icone icone-coupe" hidden><use href="#i-mic-off" /></svg>
+          </button>
+          <button id="quitter" type="button" class="bouton danger"><svg class="icone"><use href="#i-phone-off" /></svg>Quitter l'entretien</button>
         </div>
       </section>
     </main>

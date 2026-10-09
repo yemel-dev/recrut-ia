@@ -131,7 +131,7 @@ export function BarreCommandes({ entretien, salle, occupe, onOuvrirSalle, onDema
               onClick={onDemarrer}
               disabled={occupe || !salleOuverte || !salle.candidatConnecte}
               title={!salleOuverte ? "Ouvrez la salle d'abord" : !salle.candidatConnecte ? 'Disponible dès que le candidat est connecté' : undefined}
-              className="inline-flex h-12 items-center gap-2 rounded-full bg-brand-500 px-5 text-sm font-semibold text-nuit-950 transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-brand-500/30 disabled:text-white/50"
+              className="inline-flex h-12 items-center gap-2 rounded-full bg-brand-500 px-5 text-sm font-semibold text-white-950 transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-brand-500/30 disabled:text-white/50"
             >
               <Play className="size-4 fill-current" aria-hidden /> Démarrer l'entretien
             </button>
