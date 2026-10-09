@@ -1,5 +1,5 @@
 // Barre d'état (bas de fenêtre) : boîte mail, moteur d'analyse, connexion. Lecture seule, toujours visible.
-import { CircleAlert, Cpu, Mail, WifiOff } from 'lucide-react';
+import { CircleAlert, Mail, ScanText, WifiOff } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../api.js';
@@ -79,7 +79,7 @@ export default function BarreEtat({ statut, reconnexionConseillee }) {
           {moteur.ia ? (
             <span className="ia-pulsation size-2 rounded-full bg-accent shadow-[0_0_8px_var(--halo)]" aria-hidden />
           ) : (
-            <Cpu className="size-3.5" aria-hidden />
+            <ScanText className="size-3.5" aria-hidden />
           )}
           <span className={moteur.ia ? 'ia-reflet font-medium' : ''}>{moteur.texte}</span>
         </Element>

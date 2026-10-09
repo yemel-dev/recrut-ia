@@ -12,6 +12,7 @@ import '@fontsource/pt-sans/latin-ext-700-italic.css';
 import '@fontsource/satisfy/latin-400.css';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { LucideProvider } from 'lucide-react';
 import { LazyMotion, MotionConfig, domMax } from 'motion/react';
 import App from './App.jsx';
 import { appliquerTheme } from './theme.js';
@@ -23,7 +24,10 @@ createRoot(document.getElementById('racine')).render(
   <StrictMode>
     <LazyMotion features={domMax} strict>
       <MotionConfig reducedMotion="user">
-        <App />
+        {/* Icônes : une seule bibliothèque (lucide-react) et un seul trait dans toute l'application. */}
+        <LucideProvider strokeWidth={1.75}>
+          <App />
+        </LucideProvider>
       </MotionConfig>
     </LazyMotion>
   </StrictMode>,

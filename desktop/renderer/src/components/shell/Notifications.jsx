@@ -1,12 +1,12 @@
 // Notifications (toasts) : en bas à droite, au-dessus de la barre d'état. Même API qu'avant : notifier(message, type).
 // Entrée par le bas et sortie par le même chemin ; Motion les rend interruptibles quand elles s'empilent.
-import { CheckCircle2, CircleAlert, Info, X } from 'lucide-react';
+import { CircleAlert, CircleCheck, Info, X } from 'lucide-react';
 import { AnimatePresence, m } from 'motion/react';
 import { useAgent } from '../../agent/ContexteAgent.jsx';
 import { cx } from '../ui.jsx';
 
 const TYPES = {
-  succes: { icone: CheckCircle2, couleur: 'text-accent-texte', lisere: 'before:bg-accent' },
+  succes: { icone: CircleCheck, couleur: 'text-accent-texte', lisere: 'before:bg-accent' },
   erreur: { icone: CircleAlert, couleur: 'text-danger', lisere: 'before:bg-danger' },
   info: { icone: Info, couleur: 'text-info', lisere: 'before:bg-info' },
 };

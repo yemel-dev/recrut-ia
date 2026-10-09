@@ -1,10 +1,10 @@
 // Zone vidéo de la salle : vidéo du candidat en grand, aperçu du recruteur en vignette, écrans d'état par-dessus.
 // Les deux éléments <video> restent toujours montés : l'analyse du regard et l'enregistrement s'y accrochent.
-import { Check, CircleDashed, DoorClosed, Loader2, MicOff, TriangleAlert, UserRound, UserPlus, Video, VideoOff } from 'lucide-react';
+import { Check, CircleDashed, DoorClosed, LoaderCircle, MicOff, TriangleAlert, UserPlus, UserRound, Video, VideoOff } from 'lucide-react';
 import { BoutonSalle, cx } from './elements.jsx';
 
 function Etape({ fait, encours, children }) {
-  const Icone = fait ? Check : encours ? Loader2 : CircleDashed;
+  const Icone = fait ? Check : encours ? LoaderCircle : CircleDashed;
   return (
     <li className={cx('flex items-center gap-3', fait ? 'text-white' : 'text-white/55')}>
       <span className={cx('grid size-6 shrink-0 place-items-center rounded-full', fait ? 'bg-accent text-nuit-950' : 'bg-white/10')}>
@@ -21,7 +21,7 @@ function Ecran({ icone: Icone, titre, children, actions, ton = 'neutre' }) {
     <div className="apparition absolute inset-0 grid place-items-center overflow-y-auto bg-gradient-to-b from-nuit-800 to-nuit-950 p-6 pb-32 sm:pb-28">
       <div className="flex w-full max-w-md flex-col items-center gap-5 py-10 text-center">
         <span className={cx('grid size-20 place-items-center rounded-full ring-1', ton === 'alerte' ? 'bg-danger/10 text-sal-danger ring-danger/30' : 'bg-accent/10 text-vert-400 ring-accent/30 shadow-halo')}>
-          <Icone className={cx('size-9', Icone === Loader2 && 'animate-spin')} aria-hidden />
+          <Icone className={cx('size-9', Icone === LoaderCircle && 'animate-spin')} aria-hidden />
         </span>
         <h2 className="text-xl font-semibold tracking-tight text-white">{titre}</h2>
         <div className="flex w-full flex-col items-center gap-4 text-sm leading-relaxed text-white/70">{children}</div>
@@ -56,7 +56,7 @@ export default function Scene({ phase, nom, entretien, salle, refDistant, refLoc
       )}
 
       {phase === 'ouverture' && (
-        <Ecran icone={Loader2} titre="Ouverture de la salle…">
+        <Ecran icone={LoaderCircle} titre="Ouverture de la salle…">
           <p>Accès à votre caméra et à votre micro, puis connexion au service d'entretien.</p>
         </Ecran>
       )}
@@ -86,7 +86,7 @@ export default function Scene({ phase, nom, entretien, salle, refDistant, refLoc
 
       {phase === 'negociation' && (
         <Ecran
-          icone={Loader2}
+          icone={LoaderCircle}
           titre={`${nom} est dans la salle`}
           actions={<BoutonSalle variante="discret" onClick={onAide}>Ça dure trop longtemps ?</BoutonSalle>}
         >

@@ -1,5 +1,5 @@
 // Liaison de la boîte mail de recrutement : Gmail / Google Workspace, ou autre messagerie (adresse + mot de passe).
-import { AtSign, FileKey, Loader2, Mail, ShieldCheck } from 'lucide-react';
+import { AtSign, FileKey, LoaderCircle, Mail, ShieldCheck } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { api } from '../api.js';
 import { Alerte, Bouton, Carte, Champ, MotDePasse, Saisie } from '../components/ui.jsx';
@@ -74,7 +74,7 @@ function CarteGmail() {
       ) : attente ? (
         <div className="flex flex-col gap-3 rounded-lg border border-trait bg-survol p-4 text-sm text-texte">
           <p className="flex items-center gap-2 font-semibold">
-            <Loader2 className="size-4 animate-spin" aria-hidden /> En attente de Google…
+            <LoaderCircle className="size-4 animate-spin" aria-hidden /> En attente de Google…
           </p>
           <p>Une fenêtre Google vient de s'ouvrir dans votre navigateur. Autorisez l'accès, puis revenez ici.</p>
           <p className="text-doux">

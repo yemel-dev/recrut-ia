@@ -1,5 +1,5 @@
 // Composants d'interface communs : ils ne lisent que les tokens sémantiques (styles/tokens.css).
-import { AlertCircle, CheckCircle2, Eye, EyeOff, Info, Loader2, TriangleAlert, X } from 'lucide-react';
+import { CircleAlert, CircleCheck, Eye, EyeOff, Info, LoaderCircle, TriangleAlert, X } from 'lucide-react';
 import { m } from 'motion/react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { STATUTS } from '../constantes.js';
@@ -43,7 +43,7 @@ export function Bouton({ variante = 'primaire', taille = 'md', chargement = fals
       )}
     >
       {chargement ? (
-        <Loader2 className="size-4 animate-spin" aria-hidden />
+        <LoaderCircle className="size-4 animate-spin" aria-hidden />
       ) : (
         Icone && <Icone className="size-4 shrink-0" aria-hidden data-geste={geste} />
       )}
@@ -68,7 +68,7 @@ export function Champ({ label, erreur, aide, obligatoire, children, className })
       })}
       {erreur ? (
         <p id={`${id}-info`} className="flex items-start gap-1.5 text-sm text-danger">
-          <AlertCircle className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+          <CircleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden />
           {erreur}
         </p>
       ) : (
@@ -181,10 +181,10 @@ export function Carte({ as: Element = 'section', sansMarge = false, className, c
 }
 
 const TONS_ALERTE = {
-  danger: { classes: 'border-danger-trait bg-danger-doux text-danger', icone: AlertCircle },
+  danger: { classes: 'border-danger-trait bg-danger-doux text-danger', icone: CircleAlert },
   alerte: { classes: 'border-alerte-trait bg-alerte-doux text-alerte', icone: TriangleAlert },
   info: { classes: 'border-info-trait bg-info-doux text-info', icone: Info },
-  succes: { classes: 'border-accent-trait bg-accent-doux text-accent-texte', icone: CheckCircle2 },
+  succes: { classes: 'border-accent-trait bg-accent-doux text-accent-texte', icone: CircleCheck },
 };
 
 /** Message encadré. Par défaut : une erreur (role="alert"). */

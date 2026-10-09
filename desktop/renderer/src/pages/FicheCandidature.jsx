@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, ExternalLink, FileDown, Mail, Phone, RefreshCw, RotateCcw, ScanText, Sparkles } from 'lucide-react';
+import { ArrowLeft, Check, ExternalLink, FileDown, Gauge, Mail, Phone, RefreshCw, RotateCcw, ScanText } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { api } from '../api.js';
@@ -290,13 +290,13 @@ export default function FicheCandidature() {
   );
 }
 
-/** Bloc produit par l'analyse automatique : étincelle et liseré vert, pour le distinguer de ce que saisit le recruteur. */
+/** Bloc produit par l'analyse automatique : jauge et liseré vert, pour le distinguer de ce que saisit le recruteur. */
 function CarteIA({ titre, droite, children }) {
   return (
     <Carte className="relative overflow-hidden border-accent-trait/60 before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:bg-gradient-to-b before:from-accent before:to-transparent">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
         <h2 className="titre-section flex items-center gap-2">
-          <Sparkles className="size-4 text-accent-texte" aria-label="Analyse automatique" />
+          <Gauge className="size-4 text-accent-texte" aria-label="Analyse automatique" />
           {titre}
         </h2>
         {droite}

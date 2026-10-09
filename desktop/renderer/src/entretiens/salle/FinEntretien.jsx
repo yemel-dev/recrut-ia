@@ -5,8 +5,6 @@ import { formaterDateHeure } from '../../format.js';
 import { cx } from './elements.jsx';
 import { SectionBilanRegard, SectionLivrables, SectionVigilance } from './panneaux.jsx';
 
-const TRAIT = 1.5;
-
 /** « 754 s » → « 12 min » ; « 3 840 s » → « 1 h 04 ». */
 export function formaterDureeLongue(secondes) {
   if (secondes < 60) return 'Moins d’une minute';
@@ -21,7 +19,7 @@ function Fait({ icone: Icone, libelle, children }) {
   return (
     <div className="flex items-start gap-3">
       <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-full bg-sal-surface text-sal-doux">
-        <Icone className="size-[18px]" strokeWidth={TRAIT} aria-hidden />
+        <Icone className="size-[18px]" aria-hidden />
       </span>
       <div className="min-w-0">
         <dt className="text-xs text-sal-doux">{libelle}</dt>
@@ -46,12 +44,12 @@ export default function FinEntretien({ entretien, nom, poste, erreur, rapportEnC
           to={`/candidatures/${entretien.candidature_id}`}
           className="inline-flex w-fit items-center gap-1.5 rounded-md text-sm text-sal-corps transition-colors duration-200 hover:text-sal-fort"
         >
-          <ArrowLeft className="size-4" strokeWidth={TRAIT} aria-hidden /> Retour à la fiche de {nom}
+          <ArrowLeft className="size-4" aria-hidden /> Retour à la fiche de {nom}
         </Link>
 
         <header className="flex flex-col items-center gap-3 text-center">
           <span className={cx('grid size-14 place-items-center rounded-full ring-1', annule ? 'bg-sal-surface text-sal-doux ring-trait' : 'bg-accent-doux text-accent-texte ring-accent-trait shadow-halo')}>
-            <Icone className="size-7" strokeWidth={TRAIT} aria-hidden />
+            <Icone className="size-7" aria-hidden />
           </span>
           <h1 className="titre-ecran">{annule ? 'Entretien annulé' : 'Entretien terminé'}</h1>
           <p className="text-sm text-sal-corps">

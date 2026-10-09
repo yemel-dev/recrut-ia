@@ -142,9 +142,6 @@
   .geste-hote:hover [data-geste='pivoter'] {
     transform: rotate(60deg);
   }
-  .geste-hote:hover [data-geste='scintiller'] {
-    transform: rotate(18deg) scale(1.1);
-  }
   .geste-hote:hover [data-geste='decoller'] {
     transform: translate(2px, -2px);
   }

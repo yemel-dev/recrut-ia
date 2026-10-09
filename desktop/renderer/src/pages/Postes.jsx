@@ -1,4 +1,4 @@
-import { Briefcase, CalendarClock, Eye, GraduationCap, MapPin, MoreHorizontal, Pencil, Plus, SearchX, Trash2 } from 'lucide-react';
+import { Briefcase, CalendarClock, Ellipsis, Eye, GraduationCap, MapPin, Pencil, Plus, SearchX, Trash2 } from 'lucide-react';
 import { m } from 'motion/react';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -134,7 +134,7 @@ function LignePoste({ poste, actions, onMenu }) {
           libelle={`Actions sur ${poste.intitule}`}
           alignement="fin"
           elements={actions}
-          declencheur={(props) => <Bouton variante="discret" icone={MoreHorizontal} aria-label={`Actions sur ${poste.intitule}`} {...props} />}
+          declencheur={(props) => <Bouton variante="discret" icone={Ellipsis} aria-label={`Actions sur ${poste.intitule}`} {...props} />}
         />
       </div>
     </m.li>

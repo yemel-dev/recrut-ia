@@ -1,6 +1,6 @@
 // Les 10 meilleures candidatures d'un poste, avec le détail par critère et la décision du recruteur.
 // Le filtre par décision montre toutes les candidatures du poste ayant cette décision, à leur rang d'origine.
-import { ChevronDown, Sparkles, Trophy } from 'lucide-react';
+import { ChevronDown, Gauge, ListOrdered } from 'lucide-react';
 import { AnimatePresence, m } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -30,7 +30,7 @@ export default function TopPoste({ posteId, actif }) {
       <div className="flex flex-wrap items-end justify-between gap-3 px-5 pt-5 pb-4">
         <div>
           <h2 className="titre-section flex items-center gap-2">
-            <Trophy className="size-4 text-accent-texte" aria-hidden /> Meilleurs profils
+            <ListOrdered className="size-4 text-accent-texte" aria-hidden /> Meilleurs profils
           </h2>
           <p className="mt-0.5 text-sm text-doux">
             {top.total_rattachees} candidature{top.total_rattachees > 1 ? 's' : ''} rattachée{top.total_rattachees > 1 ? 's' : ''} à ce poste
@@ -113,7 +113,7 @@ export default function TopPoste({ posteId, actif }) {
                       className="overflow-hidden bg-survol"
                     >
                       <div className="mx-5 mb-4 ml-[86px] rounded-md border border-accent-trait/60 bg-surface p-4">
-                        <p className="etiquette mb-3 flex items-center gap-1.5"><Sparkles className="size-3.5 text-accent-texte" aria-hidden /> Détail du score</p>
+                        <p className="etiquette mb-3 flex items-center gap-1.5"><Gauge className="size-3.5 text-accent-texte" aria-hidden /> Détail du score</p>
                         <DetailScore detail={c.detail} />
                       </div>
                     </m.div>

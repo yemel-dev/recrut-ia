@@ -1,5 +1,5 @@
 // Petits éléments de la salle d'entretien (thème sombre) : boutons, alertes, sections.
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { CircleAlert, LoaderCircle } from 'lucide-react';
 
 export const cx = (...classes) => classes.filter(Boolean).join(' ');
 
@@ -24,7 +24,7 @@ export function BoutonSalle({ variante = 'doux', icone: Icone, chargement = fals
         className,
       )}
     >
-      {chargement ? <Loader2 className="size-4 animate-spin" aria-hidden /> : Icone && <Icone className="size-4" aria-hidden />}
+      {chargement ? <LoaderCircle className="size-4 animate-spin" aria-hidden /> : Icone && <Icone className="size-4" aria-hidden />}
       {children}
     </button>
   );
@@ -33,7 +33,7 @@ export function BoutonSalle({ variante = 'doux', icone: Icone, chargement = fals
 export function AlerteSalle({ children }) {
   return (
     <div role="alert" className="flex items-start gap-2.5 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2.5 text-sm text-sal-danger">
-      <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
+      <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
       <div>{children}</div>
     </div>
   );
@@ -48,7 +48,7 @@ export function Section({ titre, icone: Icone, children }) {
   return (
     <section className="flex flex-col gap-3 border-b border-sal-bord px-5 py-5 text-sm last:border-b-0">
       <h3 className="flex items-center gap-2 font-medium text-sal-fort">
-        {Icone && <Icone className="size-4 text-sal-doux" strokeWidth={1.5} aria-hidden />} {titre}
+        {Icone && <Icone className="size-4 text-sal-doux" aria-hidden />} {titre}
       </h3>
       {children}
     </section>

@@ -40,7 +40,7 @@ body {
 body[data-ecran="entretien"] { background: var(--chrome); color: #fff; }
 ::selection { background: rgb(0 191 99 / 0.3); }
 .sprite { position: absolute; }
-.icone { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.icone { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
 h1 { margin: 0 0 8px; font-family: 'Paytone One', 'Segoe UI', sans-serif; font-size: 1.75rem; line-height: 1.2; font-weight: 400; font-synthesis: none; letter-spacing: 0; color: var(--fort); text-wrap: balance; }
 h2 { margin: 28px 0 12px; font-family: 'Paytone One', 'Segoe UI', sans-serif; font-size: 1rem; font-weight: 400; font-synthesis: none; letter-spacing: 0; color: var(--fort); }
 p { text-wrap: pretty; }

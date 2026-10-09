@@ -76,7 +76,7 @@ Aucun skill ne contient de script exécutable : ce sont uniquement des consignes
 | [motion.dev](https://motion.dev/) (v14) | `AnimatePresence` pour les sorties, `layout` pour les réordonnancements, `stagger`, ressorts | Seule bibliothèque d'animation. Transitions d'écran, modales, tiroirs, réordonnancement du classement |
 | [prompt-motion.com](https://prompt-motion.com/) | Galerie de vidéos de motion design classées (Product UI, Shapes, Charts…) | Catégories « Product UI » et « Shapes » : loader géométrique tiré du symbole, apparition des jauges de score. Pas de particules : trop chargé pour un outil de travail |
 | [Awwwards](https://www.awwwards.com/inspiration_search/) | Les sites primés du mois sont surtout des vitrines (portfolios, marques) ; la page ne montre ni captures ni tableaux de bord | Retenu seulement l'idée d'un **moment orchestré** unique (écran de connexion) plutôt que des effets partout |
-| [itshover](https://itshover.com/icons) (code lu sur GitHub, Apache-2.0) | Icônes SVG animées au survol avec `motion/react` (`useAnimate`) : rotation de l'icône « actualiser », étincelles qui scintillent, couvercle de corbeille qui se soulève | Réinterprété **sans copier** : les icônes Lucide de l'app reçoivent un geste propre à leur sens (rotation pour actualiser, flèche qui avance, envoi qui décolle, étincelle IA qui pivote), en CSS (moins coûteux que du JS pour un survol), désactivé en mouvement réduit |
+| [itshover](https://itshover.com/icons) (code lu sur GitHub, Apache-2.0) | Icônes SVG animées au survol avec `motion/react` (`useAnimate`) : rotation de l'icône « actualiser », étincelles qui scintillent, couvercle de corbeille qui se soulève | Réinterprété **sans copier** : les icônes Lucide de l'app reçoivent un geste propre à leur sens (rotation pour actualiser, flèche qui avance, envoi qui décolle), en CSS (moins coûteux que du JS pour un survol), désactivé en mouvement réduit |
 | Linear, [« Behind the latest design refresh »](https://linear.app/now/behind-the-latest-design-refresh) | « Ne réclame pas une attention que tu n'as pas méritée » : sidebar atténuée de quelques niveaux, séparateurs adoucis (« structure ressentie, pas vue »), moins d'icônes et plus petites, actions d'en-tête toujours au même endroit | Sidebar en bleu nuit 950 plus sombre que la zone de travail, traits à faible contraste, actions d'écran toujours en haut à droite |
 | Raycast, Arc (connaissance générale, non consultés en ligne) | Palette de commandes instantanée et sans animation ; barre latérale qui se replie | Palette `Ctrl+K` sans animation d'ouverture (cohérent avec `animate`) ; sidebar repliable |
 | Recherche Dribbble / Behance (ATS, salles vidéo IA) | Peu de résultats exploitables par la recherche : surtout des fiches de services. Motifs récurrents : score de correspondance mis en avant, file de revue humaine, scène vidéo sombre avec commandes en pastilles | Score en jauge annulaire avec chiffres tabulaires, rappel constant que la décision reste humaine (déjà dans l'app), scène vidéo bleu nuit |
@@ -173,7 +173,9 @@ Moments animés :
   (l'installeur Windows utilise maintenant le `.ico`).
 - Le symbole à huit branches sert de chargement (rotation lente), de filigrane de l'écran de connexion et d'état
   vide.
-- Icônes : Lucide (déjà présent), aucun emoji.
+- Icônes : Lucide uniquement (`lucide-react` dans l'application, mêmes tracés en sprite SVG sur la page candidat),
+  trait unique de 1,75 fixé par `LucideProvider` (`main.jsx`), aucun emoji, aucune étincelle ni symbole « magique » :
+  l'analyse automatique est signalée par une jauge (`Gauge`), le classement par une liste ordonnée (`ListOrdered`).
 
 ## 8. Ce qui a changé
 
