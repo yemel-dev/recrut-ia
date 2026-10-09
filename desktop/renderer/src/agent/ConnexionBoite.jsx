@@ -1,5 +1,5 @@
 // Liaison de la boîte mail de recrutement : Gmail / Google Workspace, ou autre messagerie (adresse + mot de passe).
-import { FileKey, Loader2, Mail, ShieldCheck } from 'lucide-react';
+import { AtSign, FileKey, Loader2, Mail, ShieldCheck } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { api } from '../api.js';
 import { Alerte, Bouton, Carte, Champ, MotDePasse, Saisie } from '../components/ui.jsx';
@@ -10,7 +10,7 @@ export default function ConnexionBoite() {
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       <CarteGmail />
       <FormulaireMessagerie />
-      <p className="flex items-center gap-2 text-xs text-muted lg:col-span-2">
+      <p className="flex items-center gap-2 text-sm text-doux lg:col-span-2">
         <ShieldCheck className="size-4" aria-hidden />
         INJARA lit uniquement la boîte mail : il n'envoie, ne supprime et ne modifie aucun email. Le mot de passe est rangé
         dans le coffre sécurisé de l'ordinateur.
@@ -51,10 +51,10 @@ function CarteGmail() {
   return (
     <Carte className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
-        <span className="flex size-10 items-center justify-center rounded-lg bg-brand-50 text-brand-700"><Mail className="size-5" aria-hidden /></span>
+        <span className="flex size-10 items-center justify-center rounded-lg border border-accent-trait bg-accent-doux text-accent-texte"><Mail className="size-5" aria-hidden /></span>
         <div>
-          <h2 className="font-semibold text-navy-900">Gmail ou Google Workspace</h2>
-          <p className="text-sm text-muted">Connectez-vous avec votre compte Google.</p>
+          <h2 className="titre-section">Gmail ou Google Workspace</h2>
+          <p className="text-sm text-doux">Connectez-vous avec votre compte Google.</p>
         </div>
       </div>
 
@@ -62,7 +62,7 @@ function CarteGmail() {
 
       {identifiantsManquants ? (
         <>
-          <p className="text-sm text-navy-800">
+          <p className="text-sm text-texte">
             Pour lier un compte Google, importez d'abord le fichier d'identifiants Google de votre entreprise
             (<span className="font-mono text-xs">credentials.json</span>, un « ID client OAuth » de type « Application de bureau »
             créé dans la console Google Cloud).
@@ -72,12 +72,12 @@ function CarteGmail() {
           </Bouton>
         </>
       ) : attente ? (
-        <div className="flex flex-col gap-3 rounded-lg border border-line bg-mist p-4 text-sm text-navy-800">
+        <div className="flex flex-col gap-3 rounded-lg border border-trait bg-survol p-4 text-sm text-texte">
           <p className="flex items-center gap-2 font-semibold">
             <Loader2 className="size-4 animate-spin" aria-hidden /> En attente de Google…
           </p>
           <p>Une fenêtre Google vient de s'ouvrir dans votre navigateur. Autorisez l'accès, puis revenez ici.</p>
-          <p className="text-muted">
+          <p className="text-doux">
             Si Google affiche « Google n'a pas validé cette application », cliquez sur « Paramètres avancés », puis sur
             « Continuer ».
           </p>
@@ -171,10 +171,10 @@ function FormulaireMessagerie() {
     <Carte>
       <form onSubmit={soumettre} noValidate className="flex flex-col gap-4">
         <div className="flex items-center gap-3">
-          <span className="flex size-10 items-center justify-center rounded-lg bg-navy-50 text-navy-700"><Mail className="size-5" aria-hidden /></span>
+          <span className="flex size-10 items-center justify-center rounded-lg border border-trait bg-survol-fort text-doux"><AtSign className="size-5" aria-hidden /></span>
           <div>
-            <h2 className="font-semibold text-navy-900">Autre messagerie</h2>
-            <p className="text-sm text-muted">Adresse et mot de passe de la boîte mail de recrutement.</p>
+            <h2 className="titre-section">Autre messagerie</h2>
+            <p className="text-sm text-doux">Adresse et mot de passe de la boîte mail de recrutement.</p>
           </div>
         </div>
         {erreur && (
@@ -213,7 +213,7 @@ function FormulaireMessagerie() {
           </div>
         )}
         <div className="flex items-center justify-between gap-2">
-          <button type="button" onClick={() => setAvance((v) => !v)} className="text-sm font-medium text-navy-700 hover:underline">
+          <button type="button" onClick={() => setAvance((v) => !v)} aria-expanded={avance} className="text-sm font-medium text-doux hover:text-fort hover:underline">
             {avance ? 'Masquer les paramètres avancés' : 'Paramètres avancés'}
           </button>
           <Bouton type="submit" chargement={envoi}>Lier la boîte mail</Bouton>

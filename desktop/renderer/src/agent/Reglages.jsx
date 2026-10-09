@@ -1,5 +1,5 @@
 // Compte lié et réglages de l'agent (profils + réglages avancés).
-import { Check, LogOut, TriangleAlert } from 'lucide-react';
+import { Check, ChevronDown, LogOut, TriangleAlert } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { Alerte, Bouton, Carte, Champ, Chargement, Confirmation, Interrupteur, Liste, Saisie, SaisieListe } from '../components/ui.jsx';
@@ -42,16 +42,16 @@ function CompteLie() {
     <Carte>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold tracking-wide text-muted uppercase">Boîte mail liée</p>
-          <p className="mt-1 text-lg font-semibold text-navy-900">{statut.account_email || FOURNISSEURS[statut.provider]}</p>
-          <p className="text-sm text-muted">
+          <p className="etiquette">Boîte mail liée</p>
+          <p className="mt-1 text-lg font-semibold text-fort">{statut.account_email || FOURNISSEURS[statut.provider]}</p>
+          <p className="text-sm text-doux">
             {statut.account_email && `${FOURNISSEURS[statut.provider]} · `}{statut.total_cvs} CV · Dernière vérification : {formaterDateHeure(statut.last_sync_at)}
           </p>
         </div>
-        <Bouton variante="secondaire" icone={LogOut} onClick={() => setConfirmation(true)}>Déconnecter le compte</Bouton>
+        <Bouton variante="secondaire" icone={LogOut} geste="avancer" onClick={() => setConfirmation(true)}>Déconnecter le compte</Bouton>
       </div>
       {reconnexionConseillee && (
-        <p className="mt-4 flex items-start gap-2 rounded-lg bg-danger-50 px-4 py-3 text-sm text-danger">
+        <p className="mt-4 flex items-start gap-2 rounded-md border border-danger-trait bg-danger-doux px-4 py-3 text-base text-danger">
           <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
           Les dernières vérifications ont échoué. Déconnectez le compte, puis liez-le de nouveau avec le mot de passe ou
           l'autorisation à jour.
@@ -140,8 +140,8 @@ function ReglagesAgent() {
   return (
     <Carte className="flex flex-col gap-5">
       <div>
-        <h2 className="font-semibold text-navy-900">Réglages de l'agent</h2>
-        <p className="mt-1 text-sm text-muted">{config.description}</p>
+        <h2 className="titre-section">Réglages de l'agent</h2>
+        <p className="mt-1 text-sm text-doux">{config.description}</p>
       </div>
       <Alerte>{erreur}</Alerte>
 
@@ -153,24 +153,26 @@ function ReglagesAgent() {
               key={p.name}
               type="button"
               onClick={() => !actif && choisirProfil(p.name)}
-              className={`rounded-xl border p-4 text-left transition-colors ${actif ? 'border-brand-500 bg-brand-50' : 'border-line hover:border-navy-200'}`}
+              className={`appui rounded-lg border p-4 text-left ${actif ? 'border-accent-trait bg-accent-doux shadow-halo' : 'border-trait hover:border-trait-fort hover:bg-survol'}`}
             >
-              <span className="flex items-center gap-2 font-semibold text-navy-900">
-                {actif && <Check className="size-4 text-brand-700" aria-hidden />}
+              <span className="flex items-center gap-2 font-semibold text-fort">
+                {actif && <Check className="size-4 text-accent-texte" aria-hidden />}
                 {p.label}
               </span>
-              <span className="mt-1 block text-sm text-muted">{p.description}</span>
+              <span className="mt-1 block text-sm text-doux">{p.description}</span>
             </button>
           );
         })}
       </div>
-      {config.profile === 'custom' && <p className="text-sm text-muted">Réglages personnalisés (voir les réglages avancés).</p>}
+      {config.profile === 'custom' && <p className="text-sm text-doux">Réglages personnalisés (voir les réglages avancés).</p>}
 
-      <details className="rounded-xl border border-line">
-        <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-navy-800">Réglages avancés</summary>
-        <form onSubmit={enregistrer} noValidate className="flex flex-col gap-5 border-t border-line p-4">
+      <details className="group rounded-lg border border-trait">
+        <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-base font-semibold text-texte hover:text-fort">
+          <ChevronDown className="size-4 transition-transform group-open:rotate-180" aria-hidden /> Réglages avancés
+        </summary>
+        <form onSubmit={enregistrer} noValidate className="flex flex-col gap-5 border-t border-trait p-4">
           {config.warnings?.length > 0 && (
-            <div className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <div className="rounded-md border border-alerte-trait bg-alerte-doux px-4 py-3 text-base text-texte">
               {config.warnings.map((w) => <p key={w} className="flex gap-2"><TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />{w}</p>)}
             </div>
           )}
@@ -202,7 +204,7 @@ function ReglagesAgent() {
               libelle="Seulement les emails non lus"
             />
             {formulaire.unread_only && (
-              <p className="ml-14 text-sm text-amber-800">
+              <p className="ml-12 text-sm text-alerte">
                 Attention : un email ouvert avant la prochaine vérification n'est plus « non lu » et sera manqué.
               </p>
             )}
@@ -216,12 +218,12 @@ function ReglagesAgent() {
 
           <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
             <fieldset className="flex flex-col gap-1.5">
-              <legend className="mb-1.5 text-sm font-medium text-navy-800">Types de fichiers acceptés</legend>
+              <legend className="mb-1.5 text-sm font-medium text-texte">Types de fichiers acceptés</legend>
               {['pdf', 'docx'].map((ext) => (
-                <label key={ext} className="flex items-center gap-2 text-sm text-navy-800">
+                <label key={ext} className="flex items-center gap-2 text-sm text-texte">
                   <input
                     type="checkbox"
-                    className="size-4 accent-brand-600"
+                    className="size-4 accent-[var(--accent)]"
                     checked={formulaire.allowed_extensions.includes(ext)}
                     disabled={formulaire.allowed_extensions.length === 1 && formulaire.allowed_extensions.includes(ext)}
                     onChange={(e) => extension(ext, e.target.checked)}
