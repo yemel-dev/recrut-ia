@@ -8,8 +8,8 @@
 .public-photo {
   /* Flou léger sur la photo elle-même ; le flou fort est celui de la carte (backdrop-filter). Agrandie pour que
    * le flou ne laisse pas de bord clair. */
-  filter: blur(6px) saturate(1.05);
-  transform: scale(1.06);
+  filter: blur(2px) saturate(1.05);
+  transform: scale(1.02);
   object-position: 62% 50%;
 }
 
@@ -151,6 +151,7 @@
   border-radius: 999px 999px 1.25rem 1.25rem;
   background: linear-gradient(180deg, #ffffff 0%, var(--vert-100) 100%);
   box-shadow:
-    0 0 0 1px rgb(3 30 64 / 0.06),
-    0 18px 40px -20px rgb(3 30 64 / 0.25);
+    0 0 0 1px rgb(3 30 64 / 0.08),
+    0 28px 56px -18px rgb(3 30 64 / 0.4),
+    0 6px 16px -6px rgb(3 30 64 / 0.18);
 }

@@ -1,7 +1,8 @@
 // Écrans accessibles sans connexion (création du compte, connexion, récupération).
 // À gauche : la marque (soleil et logotype) et le formulaire dans une carte en verre, posée sur une photo floutée.
-// À droite : panneau blanc cassé à motifs, accroche, illustration et atouts. Les deux soleils tournent en continu
-// (CSS, .soleil-tournant). Aucune animation en JavaScript. Styles propres à ces écrans : styles/ecran-public.css.
+// À droite : panneau blanc cassé à motifs, accroche, illustration au premier plan et atouts. Le soleil de gauche est
+// fixe ; celui de droite tourne en continu (CSS, .soleil-tournant). Aucune animation en JavaScript.
+// Styles propres à ces écrans : styles/ecran-public.css.
 import { ScanText, ShieldCheck, Video } from 'lucide-react';
 
 const ATOUTS = [
@@ -25,7 +26,7 @@ export default function EcranPublic({ titre, sousTitre, accroche, children, larg
         </div>
 
         <header className="flex items-center gap-3.5">
-          <img src="./marque/symbole-vert-192.webp" alt="" width="56" height="56" className="soleil-tournant size-14" />
+          <img src="./marque/symbole-vert-192.webp" alt="" width="56" height="56" className="size-14" />
           <img src="./marque/logotype-blanc-128.webp" alt="INJARA" height="40" className="h-10 w-auto" />
         </header>
 
@@ -50,7 +51,7 @@ export default function EcranPublic({ titre, sousTitre, accroche, children, larg
           alt=""
           width="520"
           height="520"
-          className="soleil-tournant pointer-events-none absolute -right-44 -bottom-48 -z-10 size-[520px] opacity-12"
+          className="soleil-tournant pointer-events-none absolute -right-44 -bottom-48 -z-10 size-[520px] opacity-45"
         />
 
         <div className="m-auto flex w-full max-w-[34rem] flex-col items-center px-10 py-8 text-center">
@@ -58,7 +59,7 @@ export default function EcranPublic({ titre, sousTitre, accroche, children, larg
             Le tri des candidatures est fait. La décision vous appartient.
           </h2>
 
-          <div className="arche mt-7 flex w-[min(100%,40vh,26rem)] items-end justify-center overflow-hidden px-4 pt-8">
+          <div className="arche relative z-10 mt-7 flex w-[min(100%,48vh,30rem)] items-end justify-center overflow-hidden px-4 pt-8">
             <img
               src="./connexion/femme-analyse.webp"
               alt="Une recruteuse examine des CV à la loupe."
