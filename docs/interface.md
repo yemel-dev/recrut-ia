@@ -6,7 +6,7 @@ Refonte visuelle de 2026 (branche `redesign-ui`). Le détail des choix (assets, 
 ## Design system
 
 - **Tokens** : `desktop/renderer/src/styles/tokens.css`. Échelles brutes (`--nuit-*`, `--vert-*`) dérivées de
-  `#031e40` et `#00bf63`, puis tokens sémantiques (`--fond`, `--surface`, `--texte-doux`, `--accent`…) redéfinis
+  `#031e40` et `#37bb68`, puis tokens sémantiques (`--fond`, `--surface`, `--texte-doux`, `--accent`…) redéfinis
   par thème (`data-theme="sombre"` ou `"clair"` sur `<html>`). Les composants n'utilisent que les classes
   sémantiques générées dans `styles.css` (`bg-surface`, `text-doux`, `border-trait`, `text-accent-texte`…).
 - **Polices** : Paytone One (titres : h1, h2, `.titre-ecran`, `.titre-section`), PT Sans 400/700 et italiques

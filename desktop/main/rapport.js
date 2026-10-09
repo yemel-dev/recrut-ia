@@ -11,7 +11,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { BrowserWindow } = require('electron');
 
-const COULEURS = { navy: '#031e40', navy700: '#1b3b66', brand: '#00a656', brand50: '#e8faf0', muted: '#5b6b7f', line: '#e2e8f0', mist: '#f4f7fa' };
+const COULEURS = { navy: '#031e40', navy700: '#1b3b66', brand: '#2c9653', brand50: '#e1f5e8', muted: '#5b6b7f', line: '#e2e8f0', mist: '#f4f7fa' };
 
 const esc = (valeur) =>
   String(valeur ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -229,12 +229,12 @@ const STYLE = `
   .message td { color: ${COULEURS.muted}; font-size: 8.5pt; padding-bottom: 5px; }
   .colonnes { display: flex; gap: 18px; } .colonnes > div { flex: 1; }
   .etiquette { display: inline-block; border-radius: 9px; padding: 0 7px; margin: 1px 0; font-size: 8.5pt; }
-  .etiquette.ok { background: ${COULEURS.brand50}; color: #007a3f; }
+  .etiquette.ok { background: ${COULEURS.brand50}; color: #1e6438; }
   .etiquette.manque { background: ${COULEURS.mist}; color: ${COULEURS.navy700}; border: 1px solid ${COULEURS.line}; }
   ul { margin: 2px 0; padding-left: 16px; }
   .signaux { list-style: none; padding: 0; } .signaux li { margin: 3px 0; }
   .note { display: inline-block; min-width: 30px; font-weight: 700; color: ${COULEURS.brand}; }
-  .recommandation { background: ${COULEURS.brand50}; color: #007a3f; padding: 5px 8px; border-radius: 6px; }
+  .recommandation { background: ${COULEURS.brand50}; color: #1e6438; padding: 5px 8px; border-radius: 6px; }
   .avertissement { background: ${COULEURS.mist}; border-left: 3px solid ${COULEURS.navy700}; padding: 5px 8px; margin: 6px 0; }
   .discret, small { color: ${COULEURS.muted}; }
   footer { margin-top: 16px; padding-top: 6px; border-top: 1px solid ${COULEURS.line}; font-size: 8.5pt; color: ${COULEURS.muted}; font-style: italic; }

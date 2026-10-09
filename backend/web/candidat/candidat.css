@@ -24,8 +24,8 @@
   --chrome: #010d1f; --fond: #031e40; --surface: #072648; --surface-2: #0b3160; --enfonce: rgb(1 13 31 / 0.45);
   --trait: rgb(143 176 217 / 0.13); --trait-fort: rgb(143 176 217 / 0.26);
   --fort: #f0f5fb; --texte: #c9d8ec; --doux: #8fa9cc;
-  --accent: #00bf63; --accent-survol: #2ed384; --accent-texte: #2ed384; --sur-accent: #031e40;
-  --accent-doux: rgb(0 191 99 / 0.12); --accent-trait: rgb(0 191 99 / 0.38); --halo: rgb(0 191 99 / 0.35);
+  --accent: #37bb68; --accent-survol: #59ce85; --accent-texte: #59ce85; --sur-accent: #031e40;
+  --accent-doux: rgb(55 187 104 / 0.12); --accent-trait: rgb(55 187 104 / 0.38); --halo: rgb(55 187 104 / 0.35);
   --danger: #ff7a7a; --danger-plein: #c9302c; --alerte: #f5b94a;
   --courbe: cubic-bezier(0.23, 1, 0.32, 1);
 }
@@ -34,11 +34,11 @@
 body {
   margin: 0; min-height: 100vh;
   font-family: 'PT Sans', 'Segoe UI', system-ui, sans-serif; font-size: 15px; line-height: 1.55;
-  background: radial-gradient(900px 600px at 85% -10%, rgb(0 191 99 / 0.10), transparent 60%), var(--fond);
+  background: radial-gradient(900px 600px at 85% -10%, rgb(55 187 104 / 0.10), transparent 60%), var(--fond);
   color: var(--texte); -webkit-font-smoothing: antialiased;
 }
 body[data-ecran="entretien"] { background: var(--chrome); color: #fff; }
-::selection { background: rgb(0 191 99 / 0.3); }
+::selection { background: rgb(55 187 104 / 0.3); }
 .sprite { position: absolute; }
 .icone { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
 h1 { margin: 0 0 8px; font-family: 'Paytone One', 'Segoe UI', sans-serif; font-size: 1.75rem; line-height: 1.2; font-weight: 400; font-synthesis: none; letter-spacing: 0; color: var(--fort); text-wrap: balance; }
@@ -105,7 +105,7 @@ p { text-wrap: pretty; }
 #video-local { position: absolute; right: 12px; bottom: 12px; width: 24%; max-width: 220px; min-width: 96px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 12px; box-shadow: 0 8px 24px rgb(0 4 12 / 0.5), 0 0 0 1px rgb(255 255 255 / 0.25); transform: scaleX(-1); background: var(--surface); }
 .attente {
   position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
-  padding: 24px 24px 96px; background: radial-gradient(600px 400px at 50% 40%, rgb(0 191 99 / 0.08), transparent 70%), linear-gradient(180deg, var(--surface), var(--chrome));
+  padding: 24px 24px 96px; background: radial-gradient(600px 400px at 50% 40%, rgb(55 187 104 / 0.08), transparent 70%), linear-gradient(180deg, var(--surface), var(--chrome));
   color: var(--texte); text-align: center;
 }
 .attente p { margin: 0; font-size: 1.0625rem; }

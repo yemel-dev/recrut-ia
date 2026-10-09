@@ -1,7 +1,7 @@
 /* Design system INJARA : tokens.
  *
  * Deux niveaux :
- *  1. Les échelles brutes (nuit, vert) dérivées des deux couleurs officielles #031e40 et #00bf63.
+ *  1. Les échelles brutes (nuit, vert) dérivées des deux couleurs de la charte #031e40 et #37bb68.
  *     Elles ne servent qu'à définir les tokens sémantiques et la salle d'entretien (toujours sombre).
  *  2. Les tokens sémantiques (fond, surface, texte, trait, accent…), redéfinis pour chaque thème.
  *     Les composants n'utilisent QUE ceux-là (classes Tailwind générées dans styles.css).
@@ -25,14 +25,18 @@
   --nuit-50: #f0f5fb;
 
   /* Vert INJARA (accent) */
-  --vert-800: #00733b; /* texte vert sur fond clair (le 700 est à 4,4:1 sur blanc, sous le seuil AA) */
-  --vert-700: #008a47;
-  --vert-600: #00a355;
-  --vert-500: #00bf63;
-  --vert-400: #2ed384;
-  --vert-300: #6be3a6;
-  --vert-100: #d9f8e8;
-  --vert-halo: rgb(0 191 99 / 0.35);
+  /* Même teinte que #37bb68 (142°), luminosité variable. Le logo soleil garde son vert d'origine (#00bf63). */
+  --vert-800: #1e6438; /* 7,2:1 sur blanc */
+  --vert-700: #247a44; /* texte vert sur fond clair : 5,3:1 sur blanc, 4,9:1 sur blanc cassé */
+  --vert-600: #2c9653;
+  --vert-500: #37bb68;
+  --vert-400: #59ce85; /* texte vert sur fond sombre : 7,7:1 sur surface */
+  --vert-300: #89dca8;
+  --vert-100: #e1f5e8;
+  --vert-halo: rgb(55 187 104 / 0.35);
+
+  /* Blanc cassé chaud : fond des écrans publics (connexion, création de compte, récupération). */
+  --blanc-casse: #f7f5ef;
 
   /* Typographie : trois polices, trois rôles.
    *  - titres : Paytone One (h1, h2, titres d'écran et de section), une seule graisse (400) ;
@@ -82,9 +86,9 @@
   --accent: var(--vert-500);
   --accent-survol: var(--vert-400);
   --accent-texte: var(--vert-400); /* 7,8:1 sur surface */
-  --sur-accent: var(--nuit-900); /* texte sur bouton vert : 6,8:1 */
-  --accent-doux: rgb(0 191 99 / 0.12);
-  --accent-trait: rgb(0 191 99 / 0.38);
+  --sur-accent: var(--nuit-900); /* texte sur bouton vert : 6,7:1 */
+  --accent-doux: rgb(55 187 104 / 0.12);
+  --accent-trait: rgb(55 187 104 / 0.38);
   --halo: var(--vert-halo);
 
   --danger: #ff7a7a;
@@ -129,11 +133,11 @@
 
   --accent: var(--vert-500);
   --accent-survol: var(--vert-600);
-  --accent-texte: var(--vert-800); /* 5,5:1 sur blanc */
+  --accent-texte: var(--vert-700); /* 5,3:1 sur blanc */
   --sur-accent: var(--nuit-900);
-  --accent-doux: rgb(0 191 99 / 0.1);
-  --accent-trait: rgb(0 138 71 / 0.35);
-  --halo: rgb(0 191 99 / 0.25);
+  --accent-doux: rgb(55 187 104 / 0.1);
+  --accent-trait: rgb(36 122 68 / 0.35);
+  --halo: rgb(55 187 104 / 0.25);
 
   --danger: #c0292b;
   --danger-plein: #c0292b;

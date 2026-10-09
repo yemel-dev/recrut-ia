@@ -24,7 +24,7 @@ const FILTRES = [
 ];
 
 /** Initiales sur une pastille de teinte stable (repère visuel pour parcourir la liste). */
-const TEINTES = ['#2ed384', '#7fb0ff', '#f5b94a', '#c49bff', '#ff9b8a', '#5fd4d4'];
+const TEINTES = ['#59ce85', '#7fb0ff', '#f5b94a', '#c49bff', '#ff9b8a', '#5fd4d4'];
 function Initiales({ nom }) {
   const mots = (nom || '?').replace(/[^\p{L}\s-]/gu, ' ').trim().split(/\s+/);
   const initiales = ((mots[0]?.[0] || '?') + (mots.length > 1 ? mots[mots.length - 1][0] : '')).toUpperCase();

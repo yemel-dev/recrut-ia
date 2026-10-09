@@ -32,7 +32,8 @@ Le logo se compose d'un **symbole** (étoile à huit branches autour d'un octogo
 
 Remarques :
 - Le vert du logotype (`30`, `31`) est `#37ba68`, légèrement différent du vert officiel `#00bf63` (symbole).
-  Les logos sont utilisés **tels quels** ; l'interface suit la palette officielle `#00bf63`.
+  Les logos sont utilisés **tels quels**. Depuis la refonte de la connexion (octobre 2026), l'interface suit le
+  vert de la charte donnée par l'équipe, `#37bb68` (celui du logotype et des illustrations) ; le symbole reste en `#00bf63`.
 - Le bleu nuit varie de `#031e40` à `#0c1e3c` selon les fichiers (antialiasing / export) : référence `#031e40`.
 - Les PNG font 4500 px avec de grandes marges transparentes : ils seront **recadrés et réduits** (WebP/PNG aux
   tailles utiles) sans retouche du dessin. Variantes manquantes à produire par simple export : icône d'application
@@ -133,7 +134,7 @@ que 4,44:1 sur blanc, sous le seuil AA de 4,5. Le vert 800 sert donc au texte ve
 | Texte | `#c9d8ec`, 10,5:1 | `#23395a`, 11,6:1 |
 | Texte doux | `#8fa9cc`, 6,3:1 | `#4d6587`, 5,9:1 |
 | Texte tenu (indications de champ vide, désactivé) | `#6c88ae`, 4,2:1 | `#61779a` |
-| Accent (boutons, actif, IA) | `#00bf63` | `#00bf63` |
+| Accent (boutons, actif, IA) | `#37bb68` | `#37bb68` |
 | Texte vert | `#2ed384`, 7,8:1 | `#00733b`, 5,5:1 |
 | Texte sur bouton vert | `#031e40`, 6,8:1 | `#031e40`, 6,8:1 |
 | Danger, alerte, info | `#ff7a7a`, `#f5b94a`, `#7fb0ff` | `#c0292b`, `#8a5300`, `#1b4f93` |
@@ -212,8 +213,8 @@ seulement.
 2. **Linux / Wayland** : la surcouche native de boutons fait planter Electron sur ton poste. J'ai donc dessiné
    les boutons dans l'interface sous Linux. Plus généralement, les fenêtres Electron avec cadre natif plantent
    sur ce poste sous Wayland ; ça ne concerne plus INJARA, mais c'est bon à savoir.
-3. **Vert du logotype** `#37ba68` (fichiers 30 et 31), différent du vert officiel `#00bf63` : je ne l'ai pas
-   utilisé. À harmoniser dans la charte ?
+3. **Vert du logotype** `#37ba68` (fichiers 30 et 31), différent du vert du symbole `#00bf63` : tranché en
+   octobre 2026, l'interface suit `#37bb68` ; le fichier du symbole n'a pas été retouché.
 4. **Taille minimale** de fenêtre portée de 960 × 640 à 1100 × 680.
 5. **Salle d'entretien en bleu nuit**, ton choix ; elle reste sombre en thème clair, comme les outils de visio.
 6. **Page candidat** passée en sombre (elle était claire) pour l'identité de marque.
