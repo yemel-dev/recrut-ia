@@ -5,6 +5,11 @@ Le score d'entretien reste un indicateur (le regard surtout) : il ne modifie ni 
 La transcription est chiffrée en base avec la clé de données de la session, comme les textes des CV.
 Le candidat n'a pas de session : il accède à son entretien par le code du lien (valide jusqu'à `expire_le`) et donne
 lui-même son consentement. L'enregistrement n'est accepté qu'après ce consentement ; il est chiffré morceau par morceau.
+
+Planification annoncée au candidat (mails aux candidats) : durée, mode (en ligne : la visio d'INJARA ; sur site : une
+adresse), message facultatif chiffré. Une date passée est refusée ; un chevauchement avec un autre entretien est signalé
+sans bloquer. Le candidat confirme en répondant au mail : le recruteur le note (`confirme_le`). Changer la date remet
+cette confirmation à zéro.
 """
 from __future__ import annotations
 
@@ -34,6 +39,10 @@ TRANSITIONS = {
     "annule": ("planifie", "en_cours"),
 }
 LONGUEUR_MAX_RESUME = 4000
+MODES = ("en_ligne", "sur_site")
+DUREE_MIN, DUREE_MAX = 15, 480
+LONGUEUR_MAX_MESSAGE = 1000
+LONGUEUR_MAX_ADRESSE = 300
 VALIDITE_LIEN = timedelta(days=7)  # après la date prévue (ou la création, sans date)
 TAILLE_MAX_MORCEAU = 16 * 1024 * 1024
 
@@ -59,22 +68,102 @@ class EntretiensService:
         self.dossier_enregistrements = dossier_enregistrements
         self._cle_session = cle
 
-    def planifier(self, candidature_id: int, date_entretien: datetime | None = None) -> dict[str, Any]:
+    def planifier(
+        self,
+        candidature_id: int,
+        date_entretien: datetime | None = None,
+        duree_minutes: int = 60,
+        mode: str = "en_ligne",
+        adresse: str | None = None,
+        message: str | None = None,
+    ) -> dict[str, Any]:
         candidature = self.candidatures.get(candidature_id)
         if candidature is None:
             raise Introuvable("Cette candidature n'existe pas.")
         if any(e["statut"] in ("planifie", "en_cours") for e in self.entretiens.lister(candidature_id)):
             raise Conflit("Un entretien est déjà prévu pour cette candidature.")
-        if date_entretien is not None and date_entretien.tzinfo is None:
-            date_entretien = date_entretien.replace(tzinfo=timezone.utc)
+        date_entretien = _en_utc(date_entretien)
+        champs = self._planification(date_entretien, duree_minutes, mode, adresse, message, date_verifiee=True)
         entretien = self.entretiens.creer(
             candidature_id=candidature_id,
             poste_id=candidature["poste_id"],
             code_invitation=secrets.token_urlsafe(12),
             date_entretien=date_entretien,
             expire_le=(date_entretien or _maintenant()) + VALIDITE_LIEN,
+            **champs,
         )
-        return self._resume(entretien)
+        return self._detail(entretien)
+
+    def replanifier(
+        self,
+        entretien_id: int,
+        date_entretien: datetime | None,
+        duree_minutes: int = 60,
+        mode: str = "en_ligne",
+        adresse: str | None = None,
+        message: str | None = None,
+    ) -> dict[str, Any]:
+        """Change la date, la durée, le lieu ou le message d'un entretien planifié. Aucun mail ne part."""
+        entretien = self._get(entretien_id)
+        if entretien["statut"] != "planifie":
+            raise Conflit("Seul un entretien planifié peut être modifié.")
+        date_entretien = _en_utc(date_entretien)
+        date_changee = date_entretien != entretien["date_entretien"]
+        champs = self._planification(date_entretien, duree_minutes, mode, adresse, message, date_verifiee=date_changee)
+        if date_changee:
+            champs.update(date_entretien=date_entretien, expire_le=(date_entretien or _maintenant()) + VALIDITE_LIEN, confirme_le=None)
+        return self._detail(self.entretiens.maj(entretien_id, **champs))
+
+    def confirmer(self, entretien_id: int, confirme: bool = True) -> dict[str, Any]:
+        """Le candidat a confirmé sa présence (en répondant au mail) : le recruteur le note."""
+        entretien = self._get(entretien_id)
+        if entretien["statut"] != "planifie":
+            raise Conflit("Seul un entretien planifié peut être confirmé.")
+        return self._detail(self.entretiens.maj(entretien_id, confirme_le=_maintenant() if confirme else None))
+
+    def _planification(self, date_entretien, duree_minutes, mode, adresse, message, date_verifiee: bool) -> dict[str, Any]:
+        adresse = (adresse or "").strip() or None
+        message = (message or "").strip() or None
+        erreurs = {}
+        if date_verifiee and date_entretien is not None and date_entretien <= _maintenant():
+            erreurs["date_entretien"] = "La date de l'entretien est déjà passée."
+        if not DUREE_MIN <= int(duree_minutes) <= DUREE_MAX:
+            erreurs["duree_minutes"] = f"La durée doit être comprise entre {DUREE_MIN} minutes et {DUREE_MAX // 60} heures."
+        if mode not in MODES:
+            erreurs["mode"] = "Choisissez en ligne ou sur site."
+        elif mode == "sur_site" and not adresse:
+            erreurs["adresse"] = "Indiquez l'adresse de l'entretien."
+        if adresse and len(adresse) > LONGUEUR_MAX_ADRESSE:
+            erreurs["adresse"] = f"L'adresse ne doit pas dépasser {LONGUEUR_MAX_ADRESSE} caractères."
+        if message and len(message) > LONGUEUR_MAX_MESSAGE:
+            erreurs["message"] = f"Le message ne doit pas dépasser {LONGUEUR_MAX_MESSAGE} caractères."
+        if erreurs:
+            raise ErreurValidation(erreurs)
+        return {
+            "duree_minutes": int(duree_minutes),
+            "mode": mode,
+            "adresse": adresse if mode == "sur_site" else None,
+            "message": coffre.chiffrer_texte(message, self._cle()) if message else None,
+        }
+
+    def _detail(self, entretien: dict[str, Any]) -> dict[str, Any]:
+        """Résumé, plus les entretiens qui chevauchent celui-ci (avertissement, jamais bloquant)."""
+        resume = self._resume(entretien)
+        debut = entretien["date_entretien"]
+        if debut is None:
+            return {**resume, "chevauchements": []}
+        fin = debut + timedelta(minutes=entretien["duree_minutes"] or 60)
+        return {
+            **resume,
+            "chevauchements": [
+                {"candidat": c["candidat"], "poste_intitule": c["poste_intitule"], "date_entretien": c["date_entretien"], "duree_minutes": c["duree_minutes"]}
+                for c in self.entretiens.chevauchements(debut, fin, sauf_id=entretien["id"])
+            ],
+        }
+
+    def message_en_clair(self, entretien: dict[str, Any]) -> str | None:
+        cle = self._cle_session()
+        return coffre.dechiffrer_texte(entretien.get("message"), cle) if cle else None
 
     def lister(self, candidature_id: int | None = None, statut: str | None = None) -> list[dict[str, Any]]:
         if statut is not None and statut not in STATUTS:
@@ -85,7 +174,7 @@ class EntretiensService:
         entretien = self._get(entretien_id)
         alertes = self.entretiens.alertes(entretien_id)
         return {
-            **self._resume(entretien),
+            **self._detail(entretien),
             "resume": entretien["resume"],
             "bilan_regard": entretien["bilan_regard"],
             "transcription": coffre.dechiffrer_texte(entretien["transcription"], self._cle()),
@@ -261,6 +350,11 @@ class EntretiensService:
             "score_contenu": e["score_contenu"],
             "score_confiance": e["score_confiance"],
             "score_entretien": e["score_entretien"],
+            "duree_minutes": e["duree_minutes"],
+            "mode": e["mode"],
+            "adresse": e["adresse"],
+            "message": self.message_en_clair(e),
+            "confirme_le": e["confirme_le"],
         }
 
     def _get(self, entretien_id: int) -> dict[str, Any]:
@@ -274,6 +368,13 @@ class EntretiensService:
         if cle is None:
             raise SessionRequise("Vous devez être connecté.")
         return cle
+
+
+def _en_utc(date: datetime | None) -> datetime | None:
+    if date is None:
+        return None
+    date = date if date.tzinfo is not None else date.replace(tzinfo=timezone.utc)
+    return date.astimezone(timezone.utc).replace(second=0, microsecond=0)
 
 
 def _score_entretien(regard: float | None, contenu: float | None, confiance: float | None) -> float | None:

@@ -1,0 +1,97 @@
+# Mails aux candidats
+
+Invitation à un entretien pour les candidats retenus, réponse négative pour les candidats écartés.
+
+**Aucun mail ne part automatiquement.** Un changement de décision, une planification d'entretien ou une clôture de
+la sélection n'envoie jamais rien : le recruteur prépare l'envoi, voit l'aperçu de chaque mail, puis confirme.
+
+## Parcours
+
+1. **Fiche candidat** : décision « retenu », puis carte « Entretien » (date et heure, durée, sur site avec adresse ou
+   en ligne, message facultatif). Une date passée est refusée ; un chevauchement avec un autre entretien est signalé
+   sans bloquer. Le candidat confirme en répondant au mail ; le recruteur marque ensuite l'entretien « confirmé » ou
+   le replanifie. Si la date change après l'invitation, la fiche propose le mail de modification.
+2. **Page du poste** :
+   - « Envoyer les invitations » : candidats retenus avec un entretien planifié et sans invitation envoyée ; un retenu
+     sans date est listé à part, avec la raison ;
+   - « Clôturer la sélection » : après confirmation, les candidatures encore « à examiner » passent à « écarté » ;
+     « en attente » et « retenu » ne bougent pas ;
+   - « Envoyer les réponses négatives » : candidats « écarté ».
+   Chaque envoi ouvre un écran de confirmation : nombre de destinataires, aperçu du mail de chacun, exclus avec la
+   raison, puis résultat ligne par ligne et « Relancer les échecs ».
+3. **Carte « Mails »** de la fiche et **classement** : état de chaque mail (non envoyé, envoyé le…, échec et raison).
+
+Toujours exclus : CV illisibles, candidatures non classées, candidats sans adresse, et ceux qui ont déjà reçu ce mail
+pour ce poste. Seul « Renvoyer » (fiche, avec confirmation) envoie une seconde fois le même mail.
+
+## Envoi
+
+- Un mail à la fois ; chaque résultat est enregistré aussitôt (`mails_candidats` : envoyé ou échec, raison, date) et un
+  échec n'arrête pas les autres.
+- Destinataire : l'adresse qui a envoyé la candidature, à défaut l'email lu dans le CV.
+- Réponse dans le fil du mail de candidature quand c'est possible (CV reçu par mail, compte Gmail). L'objet devient
+  alors « Re: <objet du mail du candidat> » : Gmail ne range un message dans un fil que si l'objet correspond. Pour un
+  CV importé à la main, ou si le fil est introuvable, c'est un nouveau mail avec l'objet du modèle.
+- Texte brut UTF-8, sans pièce jointe. Les mails ne mentionnent jamais le score, le classement ni l'analyse.
+
+## Modèles
+
+Paramètres › Mails aux candidats : objet et texte de l'invitation et de la réponse négative, modifiables, avec
+aperçu. Variables : `{civilite_nom}`, `{poste}`, `{entreprise}`, `{date}`, `{heure}`, `{duree}`, `{lieu}`, `{message}`
+(toute autre variable est refusée). `{civilite_nom}` vaut le nom lu dans le CV s'il est fiable (2 à 4 mots de lettres,
+sans mot de métier ni titre de section), sinon « Madame, Monsieur » ; le genre n'est jamais deviné. Une ligne réduite
+à `{message}` disparaît quand le message est vide. Le nom de l'entreprise (profil entreprise) est obligatoire : il
+signe les mails.
+
+## Mode test
+
+Tous les mails partent vers une adresse de redirection, avec le vrai destinataire au début de l'objet
+(« [TEST → candidat@…] … »), hors du fil. Un envoi de test ne compte pas comme envoyé au candidat. Actif par défaut en
+développement (`INJARA_ENVIRONNEMENT`, fourni par Electron), inactif dans l'application installée ; un bandeau le
+signale sur tous les écrans. Actif sans adresse : l'envoi est bloqué.
+
+## Depuis quelle boîte partent les mails
+
+Les mails partent de la boîte de recrutement liée à INJARA (page Boîte mail), quelle que soit l'adresse du candidat
+(Gmail ou autre). Deux transports, choisis automatiquement selon la façon dont la boîte est liée :
+
+| Boîte liée… | Transport | Ce que l'entreprise fait |
+|---|---|---|
+| avec Google (Gmail, Google Workspace) | API Gmail | « Autoriser l'envoi » une fois (voir ci-dessous) |
+| par IMAP (adresse pro chez un hébergeur, Yahoo…) | SMTP | rien : mêmes adresse et mot de passe que pour la lecture |
+
+### Envoi par SMTP (boîte liée par IMAP)
+
+- Serveur d'envoi deviné d'après celui de lecture (`imap.domaine` → `smtp.domaine`, ports 465 puis 587) ; Gmail,
+  Yahoo et Outlook sont connus d'avance. S'il ne répond pas, l'entreprise saisit le serveur et le port indiqués par son
+  hébergeur (Paramètres › Mails aux candidats › « Modifier le serveur d'envoi »).
+- La connexion est testée avant le premier envoi ; « Tester la connexion » la refait à la demande.
+- Réponse dans le fil : l'en-tête Message-ID du mail de candidature est relu en IMAP (lecture seule).
+- Une copie de chaque mail envoyé est déposée dans le dossier « Envoyés » de la boîte quand il est repérable.
+- Microsoft 365 / Outlook professionnel désactive souvent l'envoi par mot de passe (« SMTP AUTH ») : l'écran le
+  dit, et l'administrateur de la messagerie doit l'autoriser pour la boîte.
+- Code : `services/expediteur_smtp.py`.
+
+## Autorisation Gmail
+
+- La lecture des candidatures garde son autorisation `gmail.readonly` ; le module agent mail n'a pas changé.
+- L'envoi demande une autorisation **séparée**, accordée par l'entreprise (« Autoriser l'envoi ») :
+  `gmail.send` et `gmail.metadata` (identifiant du fil, en-têtes du mail de candidature, adresse du compte). Jeton :
+  `<données>/secrets/jeton_envoi_gmail.json`. Le compte autorisé doit être celui qui reçoit les candidatures.
+- Autorisation retirée, expirée, ou compte différent : bandeau « Reconnecter » et envoi bloqué.
+- Projet Google Cloud : ajouter `gmail.send` et `gmail.metadata` à l'écran de consentement. En mode « test »
+  (utilisateurs déclarés), rien d'autre à faire ; une diffusion large demandera la validation de l'application par
+  Google.
+- Mode démo (`GMAIL_MODE=fake`) : faux expéditeur, rien ne part.
+
+## Code
+
+| Fichier | Rôle |
+|---|---|
+| `services/envoi_mails.py` | Règles : éligibilité, aperçu, envoi un par un, historique, modification |
+| `services/expediteur.py` | Interface de transport, message MIME, faux expéditeur |
+| `services/expediteur_gmail.py` | API Gmail et autorisation d'envoi |
+| `services/expediteur_smtp.py` | SMTP pour les boîtes liées par IMAP |
+| `services/modeles_mail.py`, `services/reglages_mails.py` | Modèles, variables, mode test |
+| `services/entretiens.py` | Planification des entretiens |
+| `desktop/renderer/src/mails/` | Cartes de la fiche, actions du poste, écran de confirmation |

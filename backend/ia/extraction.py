@@ -51,8 +51,9 @@ def _deviner_nom(texte: str) -> str | None:
         mots = ligne.replace(",", " ").split()
         if not 2 <= len(mots) <= 4 or len(ligne) > 50:
             continue
-        if _MOTS_PAS_UN_NOM.search(normaliser(ligne)) or not all(_MOT_DE_NOM.fullmatch(m) for m in mots):
-            continue
+        norm = normaliser(ligne)
+        if _MOTS_PAS_UN_NOM.search(norm) or _section_du_titre(norm) or not all(_MOT_DE_NOM.fullmatch(m) for m in mots):
+            continue  # « EXPÉRIENCE PROFESSIONNELLE » a la forme d'un nom : c'est un titre de section
         return " ".join(m if not m.isupper() else m.capitalize() for m in mots)
     return None
 

@@ -1,12 +1,13 @@
 """Accès aux données. Les services ne manipulent que des dictionnaires, jamais des sessions SQLAlchemy."""
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import Any
 
 from sqlalchemy import and_, func, or_, select
 
 from .db import Database
-from .models import AlerteTriche, Candidature, Compte, Entretien, Entreprise, Parametre, Poste, Score
+from .models import AlerteTriche, Candidature, Compte, Entretien, Entreprise, MailCandidat, Parametre, Poste, Score
 
 
 def _as_dict(row: Any) -> dict[str, Any]:
@@ -126,6 +127,12 @@ class ParametreRepository:
                 s.add(Parametre(cle=cle, valeur=valeur))
             else:
                 parametre.valeur = valeur
+
+    def supprimer(self, cle: str) -> None:
+        with self.db.session() as s:
+            parametre = s.get(Parametre, cle)
+            if parametre is not None:
+                s.delete(parametre)
 
 
 # Colonnes lourdes exclues des listes (texte complet, vecteur, extraction détaillée)
@@ -374,6 +381,30 @@ class EntretienRepository:
         with self.db.session() as s:
             return [_as_dict(e) for e in s.scalars(query)]
 
+    def actif(self, candidature_id: int, poste_id: int | None = None) -> dict[str, Any] | None:
+        """L'entretien planifié ou en cours de la candidature (pour ce poste si précisé), ou None."""
+        for entretien in self.lister(candidature_id):
+            if entretien["statut"] in ("planifie", "en_cours") and (poste_id is None or entretien["poste_id"] == poste_id):
+                return entretien
+        return None
+
+    def chevauchements(self, debut, fin, sauf_id: int | None = None) -> list[dict[str, Any]]:
+        """Entretiens planifiés ou en cours dont la plage [date, date + durée[ recoupe [debut, fin[ (tous postes)."""
+        with self.db.session() as s:
+            requete = (
+                select(Entretien, Candidature.nom, Candidature.expediteur_nom, Poste.intitule)
+                .join(Candidature, Candidature.id == Entretien.candidature_id)
+                .outerjoin(Poste, Poste.id == Entretien.poste_id)
+                .where(Entretien.date_entretien.is_not(None), Entretien.date_entretien < fin, Entretien.statut.in_(("planifie", "en_cours")))
+            )
+            if sauf_id is not None:
+                requete = requete.where(Entretien.id != sauf_id)
+            resultat = []
+            for entretien, nom, expediteur, intitule in s.execute(requete):
+                if entretien.date_entretien + timedelta(minutes=entretien.duree_minutes or 60) > debut:
+                    resultat.append({**_as_dict(entretien), "candidat": nom or expediteur, "poste_intitule": intitule})
+            return resultat
+
     def ajouter_alerte(self, entretien_id: int, type_alerte: str, details: dict[str, Any]) -> dict[str, Any]:
         with self.db.session() as s:
             alerte = AlerteTriche(entretien_id=entretien_id, type_alerte=type_alerte, details=details)
@@ -385,3 +416,26 @@ class EntretienRepository:
         query = select(AlerteTriche).where(AlerteTriche.entretien_id == entretien_id).order_by(AlerteTriche.horodatage, AlerteTriche.id)
         with self.db.session() as s:
             return [_as_dict(a) for a in s.scalars(query)]
+
+
+class MailCandidatRepository:
+    def __init__(self, db: Database) -> None:
+        self.db = db
+
+    def ajouter(self, **fields: Any) -> dict[str, Any]:
+        with self.db.session() as s:
+            mail = MailCandidat(**fields)
+            s.add(mail)
+            s.flush()
+            return _as_dict(mail)
+
+    def pour_candidature(self, candidature_id: int) -> list[dict[str, Any]]:
+        """Historique, le plus récent d'abord."""
+        with self.db.session() as s:
+            requete = select(MailCandidat).where(MailCandidat.candidature_id == candidature_id).order_by(MailCandidat.id.desc())
+            return [_as_dict(m) for m in s.scalars(requete)]
+
+    def pour_poste(self, poste_id: int) -> list[dict[str, Any]]:
+        with self.db.session() as s:
+            requete = select(MailCandidat).where(MailCandidat.poste_id == poste_id).order_by(MailCandidat.id.desc())
+            return [_as_dict(m) for m in s.scalars(requete)]

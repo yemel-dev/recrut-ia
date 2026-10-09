@@ -8,9 +8,10 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from ..database.repositories import CandidatureRepository, PosteRepository, ScoreRepository
+from ..database.repositories import CandidatureRepository, MailCandidatRepository, PosteRepository, ScoreRepository
 from . import coffre
 from .erreurs import ErreurService, ErreurValidation, Introuvable, SessionRequise
+from .envoi_mails import resumer as resumer_mails
 from .traitement import TraitementService
 
 TAILLE_TOP = 10
@@ -28,11 +29,13 @@ class CandidaturesService:
         scores: ScoreRepository,
         postes: PosteRepository,
         traitement: TraitementService,
+        mails: MailCandidatRepository | None = None,
     ) -> None:
         self.candidatures = candidatures
         self.scores = scores
         self.postes = postes
         self.traitement = traitement
+        self.mails = mails
 
     def lister(
         self,
@@ -131,6 +134,29 @@ class CandidaturesService:
         self.traitement.demander(f"relecture de la candidature {candidature_id}")
         return self.consulter(candidature_id)
 
+    def apercu_cloture(self, poste_id: int) -> dict[str, int]:
+        """Combien de candidatures du poste la clôture ferait passer de « à examiner » à « écarté »."""
+        self._poste(poste_id)
+        du_poste = [c for c in self.candidatures.toutes() if c["poste_id"] == poste_id]
+        return {
+            "a_ecarter": sum(c["decision"] == "a_examiner" for c in du_poste),
+            "en_attente": sum(c["decision"] == "en_attente" for c in du_poste),
+            "retenus": sum(c["decision"] == "retenu" for c in du_poste),
+        }
+
+    def cloturer_selection(self, poste_id: int) -> dict[str, int]:
+        """Fin de la sélection : les candidatures encore « à examiner » passent à « écarté ».
+
+        « En attente » et « retenu » ne sont pas touchées. Aucun mail ne part : les réponses négatives s'envoient
+        ensuite, après confirmation.
+        """
+        apercu = self.apercu_cloture(poste_id)
+        maintenant = datetime.now(timezone.utc)
+        for candidature in self.candidatures.toutes():
+            if candidature["poste_id"] == poste_id and candidature["decision"] == "a_examiner":
+                self.candidatures.maj(candidature["id"], decision="ecarte", decision_le=maintenant)
+        return {"ecartes": apercu["a_ecarter"], "en_attente": apercu["en_attente"]}
+
     def top(self, poste_id: int, decision: str | None = None) -> dict[str, Any]:
         """Les meilleurs profils du poste ; avec `decision`, toutes les candidatures du poste ayant cette décision,
         chacune à son rang dans le classement complet."""
@@ -141,6 +167,9 @@ class CandidaturesService:
             raise ErreurValidation({"decision": "Décision inconnue."})
         lignes = self.scores.top(poste_id, TAILLE_TOP, decision)
         decisions = self.candidatures.compter_decisions(poste_id)
+        mails: dict[int, list] = {}
+        for ligne_mail in self.mails.pour_poste(poste_id) if self.mails else []:
+            mails.setdefault(ligne_mail["candidature_id"], []).append(ligne_mail)
         return {
             "poste_id": poste_id,
             "taille": TAILLE_TOP,
@@ -156,6 +185,7 @@ class CandidaturesService:
                     "detail": l["detail"],
                     "adequation_ignoree": l["adequation_ignoree"],
                     "potentiel_niveau": l["potentiel_niveau"],
+                    "mails": {t: e["statut"] for t, e in resumer_mails(mails.get(l["candidature"]["id"], [])).items()},
                 }
                 for l in lignes
             ],
@@ -187,6 +217,12 @@ class CandidaturesService:
             "note": coffre.dechiffrer_texte(candidature["decision_note"], self._cle()),
             "le": candidature["decision_le"],
         }
+
+    def _poste(self, poste_id: int) -> dict[str, Any]:
+        poste = self.postes.get(poste_id)
+        if poste is None:
+            raise Introuvable("Ce poste n'existe pas ou a été supprimé.")
+        return poste
 
     def _get(self, candidature_id: int) -> dict[str, Any]:
         candidature = self.candidatures.get(candidature_id)

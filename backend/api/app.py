@@ -14,6 +14,7 @@ from ..database.repositories import (
     CompteRepository,
     EntretienRepository,
     EntrepriseRepository,
+    MailCandidatRepository,
     ParametreRepository,
     PosteRepository,
     ScoreRepository,
@@ -26,6 +27,11 @@ from ..services.auth import AuthService
 from ..services.candidatures import CandidaturesService
 from ..services.entreprise import EntrepriseService
 from ..services.entretiens import EntretiensService
+from ..services.envoi_mails import EnvoiMailsService
+from ..services.expediteur import FauxExpediteur
+from ..services.expediteur_gmail import NOM_JETON, GmailExpediteur
+from ..services.expediteur_smtp import CompteImap, SmtpExpediteur
+from ..services.reglages_mails import ReglagesMailsService
 from ..services.regard import RegardService
 from ..services.reseau import ReseauService
 from ..services.postes import PostesService
@@ -35,7 +41,7 @@ from ..services.rapport import RapportService
 from ..services.tableau_de_bord import TableauDeBordService
 from ..services.traitement import TraitementService
 from ..services.erreurs import Conflit, ErreurService, ErreurValidation, Indisponible, Introuvable, NonAutorise, SessionRequise
-from . import routes_agent, routes_auth, routes_candidat, routes_candidatures, routes_entretiens, routes_metier
+from . import routes_agent, routes_auth, routes_candidat, routes_candidatures, routes_entretiens, routes_mails, routes_metier
 from .securite import JetonDeLancementMiddleware
 
 
@@ -54,6 +60,8 @@ class Services:
     reseau: ReseauService
     signalisation: SignalisationService
     tunnel: TunnelService
+    reglages_mails: ReglagesMailsService
+    envoi_mails: EnvoiMailsService
 
 
 def construire_services(db: Database, settings: Settings, modele: ModeleSemantique | None = None) -> Services:
@@ -67,7 +75,9 @@ def construire_services(db: Database, settings: Settings, modele: ModeleSemantiq
         CandidatureRepository(db), ScoreRepository(db), PosteRepository(db), agent_mail, modele,
         cle=auth.cle_session, ocr=MoteurOCR(),
     )
-    candidatures = CandidaturesService(CandidatureRepository(db), ScoreRepository(db), PosteRepository(db), traitement)
+    candidatures = CandidaturesService(
+        CandidatureRepository(db), ScoreRepository(db), PosteRepository(db), traitement, MailCandidatRepository(db)
+    )
 
     entretiens = EntretiensService(
         EntretienRepository(db), CandidatureRepository(db), PosteRepository(db), auth.cle_session,
@@ -76,6 +86,8 @@ def construire_services(db: Database, settings: Settings, modele: ModeleSemantiq
     regard = RegardService(entretiens.entretiens, AnalyseurVisage(modeles / NOM_MODELE_VISAGE))
     reseau = ReseauService(ParametreRepository(db), auth.cle_session)
     tunnel = TunnelService()
+    reglages_mails = ReglagesMailsService(ParametreRepository(db), settings.environnement)
+    envoi_mails = _envoi_mails(db, settings, agent_mail, reglages_mails, tunnel, auth)
 
     auth.a_la_connexion += [agent_mail.session_ouverte, traitement.demarrer]
     auth.a_la_deconnexion += [agent_mail.session_fermee, traitement.arreter, tunnel.arreter]
@@ -93,10 +105,50 @@ def construire_services(db: Database, settings: Settings, modele: ModeleSemantiq
         reseau=reseau,
         signalisation=SignalisationService(),
         tunnel=tunnel,
+        reglages_mails=reglages_mails,
+        envoi_mails=envoi_mails,
         rapport=RapportService(
             CandidatureRepository(db), ScoreRepository(db), PosteRepository(db), EntrepriseRepository(db), cle=auth.cle_session,
-            entretiens=EntretienRepository(db),
+            entretiens=EntretienRepository(db), mails=MailCandidatRepository(db),
         ),
+    )
+
+
+def _envoi_mails(db, settings, agent_mail, reglages_mails, tunnel, auth) -> EnvoiMailsService:
+    """Mails aux candidats : le transport dépend de la façon dont la boîte de recrutement est liée."""
+    faux_expediteur = FauxExpediteur()
+
+    def compte_lecture() -> tuple[str | None, str | None]:
+        """(fournisseur, adresse) de la boîte qui reçoit les candidatures."""
+        agent = agent_mail.agent()
+        return (agent.provider, agent.account_email) if agent.connected else (None, None)
+
+    def compte_imap() -> CompteImap | None:
+        """Le compte IMAP lié par l'agent mail (adresse, mot de passe du coffre, serveur), lu sans rien modifier."""
+        agent = agent_mail.agent()
+        charge = agent.account_store.load_imap() if agent.account_store else None
+        if not charge:
+            return None
+        config, mot_de_passe = charge
+        return CompteImap(config.email, mot_de_passe, config.host, config.port, config.folder)
+
+    gmail_expediteur = GmailExpediteur(agent_mail.reglages.credentials_path, settings.data_dir / "secrets" / NOM_JETON, compte_lecture)
+    smtp_expediteur = SmtpExpediteur(compte_imap, reglages_mails.serveur_smtp)
+
+    def expediteur():
+        # Mode démo : rien ne part réellement. Boîte liée par IMAP : SMTP avec les mêmes identifiants.
+        # Boîte Gmail liée avec Google : API Gmail, avec l'autorisation d'envoi séparée.
+        if settings.mode_agent == "fake":
+            return faux_expediteur
+        return smtp_expediteur if compte_lecture()[0] == "imap" else gmail_expediteur
+
+    def lien_entretien(entretien: dict) -> str | None:
+        """Lien public de la visio du candidat (comme GET /entretiens/{id}/lien), ou None sans accès à distance."""
+        return f"{tunnel.url}/public/entretien/{entretien['code_invitation']}" if tunnel.url else None
+
+    return EnvoiMailsService(
+        CandidatureRepository(db), PosteRepository(db), EntretienRepository(db), MailCandidatRepository(db),
+        EntrepriseRepository(db), reglages_mails, expediteur, cle=auth.cle_session, lien_entretien=lien_entretien,
     )
 
 
@@ -116,6 +168,7 @@ def create_app(settings: Settings, modele: ModeleSemantique | None = None) -> Fa
     app.include_router(routes_metier.router)
     app.include_router(routes_candidatures.router)
     app.include_router(routes_entretiens.router)
+    app.include_router(routes_mails.router)
     app.include_router(routes_candidat.router)
     routes_agent.monter(app)
     return app

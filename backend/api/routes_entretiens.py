@@ -21,6 +21,14 @@ def _service(request: Request):
 
 class Planification(BaseModel):
     date_entretien: datetime | None = None
+    duree_minutes: int = 60
+    mode: str = "en_ligne"  # en_ligne (visio d'INJARA) | sur_site
+    adresse: str | None = None
+    message: str | None = None
+
+
+class Confirmation(BaseModel):
+    confirme: bool = True
 
 
 class Statut(BaseModel):
@@ -46,7 +54,22 @@ class Resultats(BaseModel):
 
 @router.post("/candidatures/{candidature_id}/entretiens", status_code=201)
 def planifier(candidature_id: int, corps: Planification, request: Request):
-    return _service(request).planifier(candidature_id, corps.date_entretien)
+    return _service(request).planifier(
+        candidature_id, corps.date_entretien, corps.duree_minutes, corps.mode, corps.adresse, corps.message
+    )
+
+
+@router.put("/entretiens/{entretien_id}")
+def replanifier(entretien_id: int, corps: Planification, request: Request):
+    """Nouvelle date, durée, lieu ou message (aucun mail ne part : le mail de modification est proposé à part)."""
+    return _service(request).replanifier(
+        entretien_id, corps.date_entretien, corps.duree_minutes, corps.mode, corps.adresse, corps.message
+    )
+
+
+@router.put("/entretiens/{entretien_id}/confirmation")
+def confirmer(entretien_id: int, corps: Confirmation, request: Request):
+    return _service(request).confirmer(entretien_id, corps.confirme)
 
 
 @router.get("/candidatures/{candidature_id}/entretiens")

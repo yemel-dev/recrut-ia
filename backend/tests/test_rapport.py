@@ -9,7 +9,7 @@ from .test_traitement import POSTE_COMPTABLE, POSTE_DEV, boite, candidature_de, 
 
 CLES = {
     "genere_le", "entreprise", "poste", "candidat", "lecture", "assignation", "score", "competences", "experience",
-    "diplome", "potentiel", "decision", "entretien", "mention",
+    "diplome", "potentiel", "decision", "entretien", "entretien_prevu", "mails", "mention",
 }
 
 
@@ -103,6 +103,35 @@ def test_cv_illisible_sans_score(connecte, services, boite, tmp_path):  # noqa: 
     assert rapport["potentiel"]["calcule"] is False
     assert rapport["poste"] is not None and "aucun score" in rapport["poste"]["mention"].lower()
     assert rapport["decision"]["libelle"] == "À examiner"
+
+
+def test_rapport_avec_entretien_prevu_et_mails(connecte, services, boite, tmp_path):  # noqa: F811
+    from datetime import datetime, timedelta, timezone
+
+    connecte.put("/entreprise", json={"nom": "Cabinet Ndong"})
+    connecte.put("/parametres/mails/mode-test", json={"actif": False, "adresse": ""})
+    creer_poste(connecte, POSTE_DEV)
+    cid = _une_candidature(connecte, services, boite, tmp_path)
+    connecte.put(f"/candidatures/{cid}/decision", json={"decision": "retenu"})
+    debut = (datetime.now(timezone.utc) + timedelta(days=3)).replace(hour=9, minute=0, second=0, microsecond=0)
+    r = connecte.post(f"/candidatures/{cid}/entretiens", json={"date_entretien": debut.isoformat(), "duree_minutes": 90, "mode": "sur_site", "adresse": "Bonapriso, Douala"})
+    assert r.status_code == 201, r.text
+    assert connecte.post(f"/candidatures/{cid}/mails/invitation", json={}).json()["statut"] == "envoye"
+
+    rapport = connecte.get(f"/candidatures/{cid}/rapport").json()
+    prevu = rapport["entretien_prevu"]
+    assert prevu["duree"] == "1 h 30" and prevu["lieu"] == "Bonapriso, Douala" and prevu["confirme"] is False
+    assert rapport["entretien"] is None  # aucun entretien vidéo terminé
+    mails = {m["type"]: m for m in rapport["mails"]}
+    assert mails["invitation"]["statut"] == "envoye" and mails["invitation"]["le"]
+    assert mails["refus"]["statut"] == "non_envoye"
+
+
+def test_rapport_sans_entretien_ni_mail(connecte, services, boite, tmp_path):  # noqa: F811
+    creer_poste(connecte, POSTE_DEV)
+    rapport = connecte.get(f"/candidatures/{_une_candidature(connecte, services, boite, tmp_path)}/rapport").json()
+    assert rapport["entretien_prevu"] is None
+    assert {m["statut"] for m in rapport["mails"]} == {"non_envoye"}
 
 
 def test_rapport_introuvable(connecte):

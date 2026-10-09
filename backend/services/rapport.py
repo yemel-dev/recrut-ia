@@ -13,8 +13,16 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from ..database.repositories import CandidatureRepository, EntrepriseRepository, EntretienRepository, PosteRepository, ScoreRepository
-from . import coffre
+from ..database.repositories import (
+    CandidatureRepository,
+    EntrepriseRepository,
+    EntretienRepository,
+    MailCandidatRepository,
+    PosteRepository,
+    ScoreRepository,
+)
+from . import coffre, modeles_mail
+from .envoi_mails import NOMS_TYPES, resumer
 from .erreurs import Introuvable, SessionRequise
 
 MENTION = "Les scores et indicateurs sont des aides à la décision. La décision appartient au recruteur."
@@ -54,12 +62,14 @@ class RapportService:
         entreprise: EntrepriseRepository,
         cle,
         entretiens: EntretienRepository | None = None,
+        mails: MailCandidatRepository | None = None,
     ) -> None:
         self.candidatures = candidatures
         self.scores = scores
         self.postes = postes
         self.entreprise = entreprise
         self.entretiens = entretiens
+        self.mails = mails
         self.cle = cle  # clé de données de la session (note du recruteur chiffrée)
 
     def donnees(self, candidature_id: int) -> dict[str, Any]:
@@ -116,8 +126,38 @@ class RapportService:
                 "le": candidature["decision_le"].isoformat() if candidature["decision_le"] else None,
             },
             "entretien": self._entretien(candidature_id),
+            "entretien_prevu": self._entretien_prevu(candidature_id),
+            "mails": self._mails(candidature_id, poste["id"] if poste else None),
             "mention": MENTION,
         }
+
+    def _entretien_prevu(self, candidature_id: int) -> dict[str, Any] | None:
+        """L'entretien planifié (pas encore passé) annoncé au candidat, ou None."""
+        actif = self.entretiens.actif(candidature_id) if self.entretiens else None
+        if actif is None or actif["statut"] != "planifie" or actif["date_entretien"] is None:
+            return None
+        return {
+            "date_entretien": actif["date_entretien"].isoformat(),
+            "date": modeles_mail.formater_date(actif["date_entretien"]),
+            "heure": modeles_mail.formater_heure(actif["date_entretien"]),
+            "duree": modeles_mail.formater_duree(actif["duree_minutes"] or 60),
+            "lieu": "En ligne (visio INJARA)" if actif["mode"] == "en_ligne" else (actif["adresse"] or "Sur site"),
+            "confirme": actif["confirme_le"] is not None,
+        }
+
+    def _mails(self, candidature_id: int, poste_id: int | None) -> list[dict[str, Any]]:
+        """État de chaque mail pour le poste du rapport (les envois de test ne comptent pas)."""
+        historique = [m for m in self.mails.pour_candidature(candidature_id) if m["poste_id"] == poste_id] if self.mails and poste_id else []
+        return [
+            {
+                "type": type_,
+                "libelle": NOMS_TYPES[type_],
+                "statut": etat["statut"],
+                "le": etat["le"].isoformat() if etat.get("le") else None,
+                "erreur": etat.get("erreur"),
+            }
+            for type_, etat in resumer(historique).items()
+        ]
 
     def _entretien(self, candidature_id: int) -> dict[str, Any] | None:
         """Le dernier entretien terminé de la candidature, ou None."""

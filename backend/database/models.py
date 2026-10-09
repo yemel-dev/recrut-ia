@@ -202,6 +202,13 @@ class Entretien(Base):
     consentement_enregistrement: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("0"))
     consentement_le: Mapped[datetime | None] = mapped_column(DateHeureUTC)
     consignes_acceptees_le: Mapped[datetime | None] = mapped_column(DateHeureUTC)  # le candidat s'est engagé à fermer les autres applications
+
+    # Planification annoncée au candidat (mails aux candidats, services/envoi_mails.py)
+    duree_minutes: Mapped[int] = mapped_column(Integer, default=60, server_default=text("60"))
+    mode: Mapped[str] = mapped_column(String(20), default="en_ligne", server_default=text("'en_ligne'"))  # en_ligne (visio) | sur_site
+    adresse: Mapped[str | None] = mapped_column(Text)  # sur site
+    message: Mapped[str | None] = mapped_column(Text)  # mot au candidat, chiffré avec la clé de données
+    confirme_le: Mapped[datetime | None] = mapped_column(DateHeureUTC)  # le candidat a confirmé (marqué par le recruteur)
     debut_le: Mapped[datetime | None] = mapped_column(DateHeureUTC)
     fin_le: Mapped[datetime | None] = mapped_column(DateHeureUTC)
 
@@ -230,3 +237,25 @@ class AlerteTriche(Base):
     type_alerte: Mapped[str] = mapped_column(String(50), nullable=False)
     details: Mapped[dict] = mapped_column(JSON, default=dict)
     horodatage: Mapped[datetime] = mapped_column(DateHeureUTC, default=_now)
+
+
+class MailCandidat(Base):
+    """Historique des mails envoyés (ou en échec) à un candidat. Aucune ligne pour un type : « non envoyé »."""
+
+    __tablename__ = "mails_candidats"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    candidature_id: Mapped[int] = mapped_column(ForeignKey("candidatures.id", ondelete="CASCADE"), nullable=False, index=True)
+    poste_id: Mapped[int | None] = mapped_column(ForeignKey("postes.id", ondelete="SET NULL"), index=True)
+    type: Mapped[str] = mapped_column(String(20), nullable=False)  # invitation | modification | refus
+    statut: Mapped[str] = mapped_column(String(20), nullable=False)  # envoye | echec
+    mode_test: Mapped[bool] = mapped_column(Boolean, default=False)  # envoyé à l'adresse de test : ne bloque pas un vrai envoi
+    destinataire: Mapped[str | None] = mapped_column(String(255))  # destinataire réel
+    destinataire_effectif: Mapped[str | None] = mapped_column(String(255))  # adresse de test en mode test
+    objet: Mapped[str | None] = mapped_column(Text)
+    corps: Mapped[str | None] = mapped_column(Text)  # chiffré avec la clé de données
+    dans_le_fil: Mapped[bool] = mapped_column(Boolean, default=False)
+    entretien_debut: Mapped[datetime | None] = mapped_column(DateHeureUTC)  # date annoncée (invitation, modification)
+    erreur: Mapped[str | None] = mapped_column(Text)
+    gmail_id: Mapped[str | None] = mapped_column(String(255))
+    cree_le: Mapped[datetime] = mapped_column(DateHeureUTC, default=_now)
