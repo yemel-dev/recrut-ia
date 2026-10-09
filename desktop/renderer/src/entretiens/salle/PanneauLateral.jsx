@@ -3,7 +3,7 @@ import { Circle, X } from 'lucide-react';
 import { formaterDateHeure } from '../../format.js';
 import { STATUTS_ENTRETIEN } from '../../constantes.js';
 import { cx, Corps, Discret, Ligne, Section } from './elements.jsx';
-import { SectionBilanRegard, SectionInvitation, SectionLivrables, SectionRegard, SectionVigilance } from './panneaux.jsx';
+import { SectionInvitation, SectionRegard, SectionVigilance } from './panneaux.jsx';
 
 function SectionDetails({ entretien, enregistrement, salle }) {
   const consentement = entretien.consentement_enregistrement;
@@ -30,9 +30,8 @@ function SectionDetails({ entretien, enregistrement, salle }) {
   );
 }
 
-export default function PanneauLateral({ onglet, onglets, onChoisir, onFermer, entretien, regard, enregistrement, salle, rapportEnCours, onRapport, onExporter }) {
+export default function PanneauLateral({ onglet, onglets, onChoisir, onFermer, entretien, regard, enregistrement, salle }) {
   const ouvert = ['planifie', 'en_cours'].includes(entretien.statut);
-  const termine = entretien.statut === 'termine';
   const actif = onglets.find((o) => o.id === onglet) ?? onglets[0];
 
   return (
@@ -83,13 +82,6 @@ export default function PanneauLateral({ onglet, onglets, onChoisir, onFermer, e
                   <Corps>Le regard et la vigilance du candidat s'affichent ici pendant l'entretien.</Corps>
                 </Section>
               )}
-              <SectionVigilance entretien={entretien} />
-            </>
-          )}
-          {actif.id === 'bilan' && termine && (
-            <>
-              <SectionLivrables entretien={entretien} rapportEnCours={rapportEnCours} onRapport={onRapport} onExporter={onExporter} />
-              <SectionBilanRegard entretien={entretien} />
               <SectionVigilance entretien={entretien} />
             </>
           )}

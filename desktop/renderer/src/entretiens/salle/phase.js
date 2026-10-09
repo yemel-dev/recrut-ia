@@ -1,9 +1,7 @@
 // Phase de la salle, déduite uniquement de l'état réel (statut de l'entretien, salle, présence, connexion WebRTC, image reçue).
 
-/** fermee | ouverture | attente | negociation | connecte | interrompue | terminee | annulee */
+/** fermee | ouverture | attente | negociation | connecte | interrompue (les entretiens terminés ou annulés ont leur propre écran) */
 export function phaseSalle({ entretien, salle, imageRecue }) {
-  if (entretien.statut === 'termine') return 'terminee';
-  if (entretien.statut === 'annule') return 'annulee';
   if (salle.etat === 'ouverture') return 'ouverture';
   if (salle.etat !== 'ouverte') return 'fermee';
   if (!salle.candidatPresent) return 'attente';
@@ -20,8 +18,6 @@ export const INDICATEURS = {
   negociation: ['Connexion en cours', 'bg-amber-400'],
   connecte: ['Connexion établie', 'bg-brand-500'],
   interrompue: ['Connexion interrompue', 'bg-red-500'],
-  terminee: ['Entretien terminé', 'bg-white/40'],
-  annulee: ['Entretien annulé', 'bg-white/40'],
 };
 
 /** « 2026-10-09T10:00:00+00:00 » → secondes écoulées (le serveur donne de l'UTC ; sans fuseau, on le suppose). */

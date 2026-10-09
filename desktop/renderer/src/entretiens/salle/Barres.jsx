@@ -27,7 +27,6 @@ export function BarreSuperieure({ entretien, nom, poste, phase, duree, enregistr
           {poste ? `${poste} · ` : ''}
           {STATUTS_ENTRETIEN[entretien.statut]}
           {entretien.statut === 'planifie' && entretien.date_entretien && ` · prévu le ${formaterDateHeure(entretien.date_entretien)}`}
-          {entretien.statut === 'termine' && entretien.fin_le && ` · le ${formaterDateHeure(entretien.fin_le)}`}
         </p>
       </div>
       {enregistrement === 'actif' && (
@@ -92,72 +91,61 @@ function Commande({ icone: Icone, libelle, actif = true, variante = 'neutre', ba
 export function BarreCommandes({ entretien, salle, occupe, onOuvrirSalle, onDemarrer, onTerminer, onChoisirOnglet, onglets, ongletActif, panneauOuvert }) {
   const enCours = entretien.statut === 'en_cours';
   const planifie = entretien.statut === 'planifie';
-  const ouvert = planifie || enCours;
   const salleOuverte = salle.etat === 'ouverte';
 
   return (
     <div className="flex items-center justify-center px-1">
       {/* Commandes */}
       <div className="flex flex-wrap items-center justify-center gap-2.5 rounded-full bg-nuit-800/90 px-3 py-2 shadow-xl ring-1 ring-white/10 backdrop-blur" role="toolbar" aria-label="Commandes de la salle">
-        {ouvert && (
-          <>
+        <>
+          <Commande
+            icone={salle.microActif ? Mic : MicOff}
+            libelle={salle.microActif ? 'Couper le micro' : 'Réactiver le micro'}
+            variante={salle.microActif ? 'neutre' : 'coupe'}
+            disabled={!salleOuverte}
+            aria-pressed={!salle.microActif}
+            onClick={salle.basculerMicro}
+          />
+          <Commande
+            icone={salle.cameraActive ? Video : VideoOff}
+            libelle={salle.cameraActive ? 'Couper la caméra' : 'Réactiver la caméra'}
+            variante={salle.cameraActive ? 'neutre' : 'coupe'}
+            disabled={!salleOuverte}
+            aria-pressed={!salle.cameraActive}
+            onClick={salle.basculerCamera}
+          />
+          <span className="mx-1 h-7 w-px bg-white/15" aria-hidden />
+          {salleOuverte ? (
             <Commande
-              icone={salle.microActif ? Mic : MicOff}
-              libelle={salle.microActif ? 'Couper le micro' : 'Réactiver le micro'}
-              variante={salle.microActif ? 'neutre' : 'coupe'}
-              disabled={!salleOuverte}
-              aria-pressed={!salle.microActif}
-              onClick={salle.basculerMicro}
+              icone={DoorClosed}
+              libelle={enCours ? "Terminez l'entretien d'abord pour fermer la salle" : 'Fermer la salle'}
+              disabled={enCours}
+              onClick={salle.fermer}
             />
-            <Commande
-              icone={salle.cameraActive ? Video : VideoOff}
-              libelle={salle.cameraActive ? 'Couper la caméra' : 'Réactiver la caméra'}
-              variante={salle.cameraActive ? 'neutre' : 'coupe'}
-              disabled={!salleOuverte}
-              aria-pressed={!salle.cameraActive}
-              onClick={salle.basculerCamera}
-            />
-            <span className="mx-1 h-7 w-px bg-white/15" aria-hidden />
-            {salleOuverte ? (
-              <Commande
-                icone={DoorClosed}
-                libelle={enCours ? "Terminez l'entretien d'abord pour fermer la salle" : 'Fermer la salle'}
-                disabled={enCours}
-                onClick={salle.fermer}
-              />
-            ) : (
-              <Commande icone={DoorOpen} libelle="Ouvrir la salle" variante="selection" disabled={salle.etat === 'ouverture'} onClick={onOuvrirSalle} />
-            )}
-            {planifie && (
-              <button
-                type="button"
-                onClick={onDemarrer}
-                disabled={occupe || !salleOuverte || !salle.candidatConnecte}
-                title={!salleOuverte ? "Ouvrez la salle d'abord" : !salle.candidatConnecte ? 'Disponible dès que le candidat est connecté' : undefined}
-                className="inline-flex h-12 items-center gap-2 rounded-full bg-brand-500 px-5 text-sm font-semibold text-nuit-950 transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-brand-500/30 disabled:text-white/50"
-              >
-                <Play className="size-4 fill-current" aria-hidden /> Démarrer l'entretien
-              </button>
-            )}
-            {enCours && (
-              <button
-                type="button"
-                onClick={onTerminer}
-                className="inline-flex h-12 items-center gap-2 rounded-full bg-red-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-red-500"
-              >
-                <PhoneOff className="size-4" aria-hidden /> Terminer l'entretien
-              </button>
-            )}
-          </>
-        )}
-        {!ouvert && (
-          <Link
-            to={`/candidatures/${entretien.candidature_id}`}
-            className="inline-flex h-12 items-center gap-2 rounded-full bg-white/10 px-5 text-sm font-semibold text-white hover:bg-white/20"
-          >
-            <ArrowLeft className="size-4" aria-hidden /> Retour à la fiche
-          </Link>
-        )}
+          ) : (
+            <Commande icone={DoorOpen} libelle="Ouvrir la salle" variante="selection" disabled={salle.etat === 'ouverture'} onClick={onOuvrirSalle} />
+          )}
+          {planifie && (
+            <button
+              type="button"
+              onClick={onDemarrer}
+              disabled={occupe || !salleOuverte || !salle.candidatConnecte}
+              title={!salleOuverte ? "Ouvrez la salle d'abord" : !salle.candidatConnecte ? 'Disponible dès que le candidat est connecté' : undefined}
+              className="inline-flex h-12 items-center gap-2 rounded-full bg-brand-500 px-5 text-sm font-semibold text-nuit-950 transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-brand-500/30 disabled:text-white/50"
+            >
+              <Play className="size-4 fill-current" aria-hidden /> Démarrer l'entretien
+            </button>
+          )}
+          {enCours && (
+            <button
+              type="button"
+              onClick={onTerminer}
+              className="inline-flex h-12 items-center gap-2 rounded-full bg-red-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-red-500"
+            >
+              <PhoneOff className="size-4" aria-hidden /> Terminer l'entretien
+            </button>
+          )}
+        </>
         <span className="mx-1 h-7 w-px bg-white/15" aria-hidden />
         {onglets.map(({ id, libelle, icone: Icone, badge }) => (
           <Commande

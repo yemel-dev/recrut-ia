@@ -1,4 +1,4 @@
-import { Activity, ClipboardCheck, Info, UserPlus } from 'lucide-react';
+import { Activity, Info, UserPlus } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '../api.js';
@@ -7,6 +7,7 @@ import { Alerte, Chargement, Confirmation } from '../components/ui.jsx';
 import { creerEnregistreur, enregistrementPossible } from '../entretiens/enregistreur.js';
 import { creerAnalyseurRegard } from '../entretiens/regard.js';
 import { AlerteSalle } from '../entretiens/salle/elements.jsx';
+import FinEntretien from '../entretiens/salle/FinEntretien.jsx';
 import PanneauLateral from '../entretiens/salle/PanneauLateral.jsx';
 import { compterSignaux } from '../entretiens/salle/panneaux.jsx';
 import { BarreCommandes, BarreSuperieure } from '../entretiens/salle/Barres.jsx';
@@ -138,7 +139,6 @@ export default function Entretien() {
         if (complet !== true) setErreur("L'enregistrement est incomplet : un morceau n'a pas pu être enregistré.");
       }
       setEntretien(await api.put(`/entretiens/${entretienId}/statut`, { statut: 'termine' }));
-      setPanneau({ ouvert: true, onglet: 'bilan' });
       salle.fermer();
       setConfirmerFin(false);
       notifier('Entretien terminé.', 'succes');
@@ -177,8 +177,7 @@ export default function Entretien() {
     panneauInitialise.current = true;
     const large = window.matchMedia('(min-width: 1024px)').matches; // sur fenêtre étroite, le panneau est un tiroir : fermé au départ
     if (entretien.statut === 'planifie') setPanneau({ ouvert: large, onglet: 'invitation' });
-    else if (entretien.statut === 'termine') setPanneau({ ouvert: large, onglet: 'bilan' });
-    else setPanneau({ ouvert: false, onglet: entretien.statut === 'en_cours' ? 'suivi' : 'details' });
+    else setPanneau({ ouvert: false, onglet: 'suivi' });
   }, [entretien]);
 
   // Image réellement reçue du candidat : seule preuve que la vidéo arrive (l'état WebRTC seul ne suffit pas).
@@ -205,22 +204,27 @@ export default function Entretien() {
   if (!entretien) return <div className="p-8">{erreur ? <Alerte>{erreur}</Alerte> : <Chargement />}</div>;
 
   const nom = candidature?.nom || candidature?.email || `Candidature ${entretien.candidature_id}`;
-  const ouvertAuxEchanges = ['planifie', 'en_cours'].includes(entretien.statut);
+  if (['termine', 'annule'].includes(entretien.statut)) {
+    return (
+      <FinEntretien
+        entretien={entretien}
+        nom={nom}
+        poste={candidature?.poste_intitule}
+        erreur={erreur}
+        rapportEnCours={rapportEnCours}
+        onRapport={exporterRapport}
+        onExporter={exporter}
+      />
+    );
+  }
   const phase = phaseSalle({ entretien, salle, imageRecue });
   const duree = enCoursChrono ? formaterDuree(secondesDepuis(entretien.debut_le, maintenant)) : null;
 
-  const onglets = ouvertAuxEchanges
-    ? [
-        { id: 'invitation', libelle: 'Invitation', icone: UserPlus },
-        { id: 'suivi', libelle: 'Suivi', icone: Activity, badge: compterSignaux(entretien) },
-        { id: 'details', libelle: 'Infos', icone: Info },
-      ]
-    : entretien.statut === 'termine'
-      ? [
-          { id: 'bilan', libelle: 'Bilan', icone: ClipboardCheck },
-          { id: 'details', libelle: 'Infos', icone: Info },
-        ]
-      : [{ id: 'details', libelle: 'Infos', icone: Info }];
+  const onglets = [
+    { id: 'invitation', libelle: 'Invitation', icone: UserPlus },
+    { id: 'suivi', libelle: 'Suivi', icone: Activity, badge: compterSignaux(entretien) },
+    { id: 'details', libelle: 'Infos', icone: Info },
+  ];
   const ongletActif = (onglets.find((o) => o.id === panneau.onglet) ?? onglets[0]).id;
   const choisirOnglet = (id) => setPanneau((p) => (p.ouvert && p.onglet === id ? { ...p, ouvert: false } : { ouvert: true, onglet: id }));
   const ouvrirOnglet = (id) => setPanneau({ ouvert: true, onglet: id });
@@ -257,7 +261,6 @@ export default function Entretien() {
             onOuvrir={salle.ouvrir}
             onInviter={() => ouvrirOnglet('invitation')}
             onAide={() => ouvrirOnglet('invitation')}
-            onBilan={() => ouvrirOnglet('bilan')}
           />
           <BarreCommandes
             entretien={entretien}
@@ -283,9 +286,6 @@ export default function Entretien() {
             regard={regard}
             enregistrement={enregistrement}
             salle={salle}
-            rapportEnCours={rapportEnCours}
-            onRapport={exporterRapport}
-            onExporter={exporter}
           />
         )}
       </div>

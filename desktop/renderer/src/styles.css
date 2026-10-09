@@ -18,11 +18,26 @@
   --color-navy-800: #0b2a52;
   --color-navy-900: #031e40;
 
-  /* Salle d'entretien : bleus nuit plus profonds que le marine de la marque. */
-  --color-nuit-950: #010b18;
-  --color-nuit-900: #02142b;
-  --color-nuit-800: #061d3a;
-  --color-nuit-700: #0c2a50;
+  /* Salle d'entretien : anthracite mat, plus doux qu'un bleu nuit. */
+  --color-nuit-950: #121417;
+  --color-nuit-900: #1a1d21;
+  --color-nuit-800: #23272c;
+  --color-nuit-700: #30353b;
+
+  /* Teintes sémantiques des panneaux : sombres par défaut, claires sous .ecran-clair (écran de fin d'entretien). */
+  --color-sal-fort: #ffffff;
+  --color-sal-corps: rgb(255 255 255 / 0.75);
+  --color-sal-doux: rgb(255 255 255 / 0.55);
+  --color-sal-creux: rgb(255 255 255 / 0.05);
+  --color-sal-surface: rgb(255 255 255 / 0.1);
+  --color-sal-surface-fort: rgb(255 255 255 / 0.16);
+  --color-sal-bord: rgb(255 255 255 / 0.1);
+  --color-sal-champ: #121417;
+  --color-sal-succes: #ccf2df;
+  --color-sal-alerte: #fde68a;
+  --color-sal-danger: #fecaca;
+  --color-meet: #1a73e8;
+  --color-meet-700: #1558b0;
 
   --color-mist: #f4f7fa;
   --color-muted: #5b6b7f;
@@ -42,3 +57,17 @@
 .glisser-entree { animation: glisser-entree .18s ease-out; }
 .apparition { animation: apparition .2s ease-out; }
 @media (prefers-reduced-motion: reduce) { .glisser-entree, .apparition { animation: none; } }
+
+.ecran-clair {
+  --color-sal-fort: #1f2328;
+  --color-sal-corps: #4b5563;
+  --color-sal-doux: #6b7280;
+  --color-sal-creux: #f6f7f9;
+  --color-sal-surface: #eef0f3;
+  --color-sal-surface-fort: #e3e6ea;
+  --color-sal-bord: #e5e7eb;
+  --color-sal-champ: #ffffff;
+  --color-sal-succes: #137333;
+  --color-sal-alerte: #92400e;
+  --color-sal-danger: #b3261e;
+}

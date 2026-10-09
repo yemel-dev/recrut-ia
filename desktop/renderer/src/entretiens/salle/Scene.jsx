@@ -31,7 +31,7 @@ function Ecran({ icone: Icone, titre, children, actions, ton = 'neutre' }) {
   );
 }
 
-export default function Scene({ phase, nom, entretien, salle, refDistant, refLocal, onOuvrir, onInviter, onAide, onBilan }) {
+export default function Scene({ phase, nom, entretien, salle, refDistant, refLocal, onOuvrir, onInviter, onAide }) {
   const ouverte = salle.etat === 'ouverte';
   const consentement = entretien.consentement_enregistrement;
   const enCours = entretien.statut === 'en_cours';
@@ -107,27 +107,11 @@ export default function Scene({ phase, nom, entretien, salle, refDistant, refLoc
         </div>
       )}
 
-      {phase === 'terminee' && (
-        <Ecran
-          icone={Check}
-          titre="Entretien terminé"
-          actions={<BoutonSalle variante="plein" onClick={onBilan}>Voir le bilan, le rapport et l'enregistrement</BoutonSalle>}
-        >
-          <p>L'entretien avec {nom} est clos et la salle est fermée.</p>
-        </Ecran>
-      )}
-
-      {phase === 'annulee' && (
-        <Ecran icone={VideoOff} titre="Entretien annulé">
-          <p>Cet entretien a été annulé.</p>
-        </Ecran>
-      )}
-
       {/* Aperçu du recruteur : visible tant que la salle est ouverte ; l'effet miroir ne concerne que cet aperçu. */}
       <div
         className={cx(
           'absolute right-3 bottom-3 z-10 aspect-video w-1/4 min-w-32 max-w-60 overflow-hidden rounded-xl bg-nuit-900 shadow-xl ring-1 ring-white/25 transition-opacity',
-          ouverte && phase !== 'terminee' && phase !== 'annulee' ? 'opacity-100' : 'pointer-events-none opacity-0',
+          ouverte ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
       >
         <video ref={refLocal} autoPlay playsInline muted aria-label="Votre caméra" className="size-full -scale-x-100 object-cover" />

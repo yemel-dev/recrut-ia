@@ -63,7 +63,7 @@ export function SectionInvitation({ entretien }) {
               value={lien.lien}
               onFocus={(e) => e.target.select()}
               aria-label="Lien d'entretien du candidat"
-              className="w-full rounded-lg border border-white/15 bg-nuit-950 px-3 py-2.5 text-xs text-white"
+              className="w-full rounded-lg border border-sal-bord bg-sal-champ px-3 py-2.5 text-xs text-sal-fort"
             />
             <BoutonSalle variante="plein" icone={copie ? Check : Copy} onClick={copier}>{copie ? 'Lien copié' : 'Copier le lien'}</BoutonSalle>
             {lien.expire_le && <Discret>Valable jusqu'au {formaterDateHeure(lien.expire_le)}.</Discret>}
@@ -138,12 +138,12 @@ function ReseauTurn() {
     }
   };
 
-  const champ = 'w-full rounded-lg border border-white/15 bg-nuit-950 px-3 py-2 text-xs text-white placeholder:text-white/30';
-  const etiquette = 'flex flex-col gap-1 text-xs font-medium text-white/80';
+  const champ = 'w-full rounded-lg border border-sal-bord bg-sal-champ px-3 py-2 text-xs text-sal-fort placeholder:text-sal-doux';
+  const etiquette = 'flex flex-col gap-1 text-xs font-medium text-sal-corps';
   return (
-    <details className="group border-b border-white/10 px-5 py-4 text-sm">
-      <summary className="cursor-pointer list-none font-semibold text-white marker:hidden [&::-webkit-details-marker]:hidden">
-        <span className="mr-1.5 inline-block text-white/50 transition-transform group-open:rotate-90" aria-hidden>›</span>
+    <details className="group border-b border-sal-bord px-5 py-4 text-sm">
+      <summary className="cursor-pointer list-none font-semibold text-sal-fort marker:hidden [&::-webkit-details-marker]:hidden">
+        <span className="mr-1.5 inline-block text-sal-doux transition-transform group-open:rotate-90" aria-hidden>›</span>
         Le candidat n'arrive pas à se connecter ?{' '}
         {(etat?.turn.configure || etat?.cloudflare.configure) && <span className="ml-1 text-xs font-normal text-brand-500">(TURN configuré)</span>}
       </summary>
@@ -154,15 +154,15 @@ function ReseauTurn() {
         </Corps>
         {etat?.source_forcee && <AlerteSalle>La variable INJARA_ICE_SERVERS est définie : elle remplace cette configuration.</AlerteSalle>}
         {etat?.cloudflare.configure && !etat.turn.configure && (
-          <div className="flex flex-col gap-2 rounded-lg bg-white/5 p-3 text-xs text-white/80">
-            <p><strong className="text-white">Cloudflare TURN</strong> est configuré dans le fichier .env : des identifiants temporaires sont demandés automatiquement.</p>
+          <div className="flex flex-col gap-2 rounded-lg bg-sal-creux p-3 text-xs text-sal-corps">
+            <p><strong className="text-sal-fort">Cloudflare TURN</strong> est configuré dans le fichier .env : des identifiants temporaires sont demandés automatiquement.</p>
             <div><BoutonSalle chargement={occupe} onClick={tester}>Tester le serveur</BoutonSalle></div>
           </div>
         )}
         {etat?.turn.configure && (
-          <div className="flex flex-col gap-2 rounded-lg bg-white/5 p-3 text-xs text-white/80">
-            <p><strong className="text-white">Adresses :</strong> {etat.turn.urls.join(', ')}</p>
-            <p><strong className="text-white">Utilisateur :</strong> {etat.turn.username} · mot de passe enregistré (chiffré)</p>
+          <div className="flex flex-col gap-2 rounded-lg bg-sal-creux p-3 text-xs text-sal-corps">
+            <p><strong className="text-sal-fort">Adresses :</strong> {etat.turn.urls.join(', ')}</p>
+            <p><strong className="text-sal-fort">Utilisateur :</strong> {etat.turn.username} · mot de passe enregistré (chiffré)</p>
             <div className="flex gap-2">
               <BoutonSalle chargement={occupe} onClick={tester}>Tester le serveur</BoutonSalle>
               <BoutonSalle variante="discret" disabled={occupe} onClick={retirer}>Retirer</BoutonSalle>
@@ -192,16 +192,16 @@ function ReseauTurn() {
 }
 
 const ETATS_REGARD = {
-  attentif: ["Face à l'écran", 'bg-brand-500/15 text-brand-100 ring-brand-500/40'],
-  regard_detourne: ['Regard détourné', 'bg-amber-500/15 text-amber-200 ring-amber-400/40'],
-  visage_absent: ['Visage absent', 'bg-red-500/15 text-red-200 ring-red-400/40'],
-  plusieurs_visages: ['Plusieurs visages', 'bg-red-500/15 text-red-200 ring-red-400/40'],
+  attentif: ["Face à l'écran", 'bg-brand-500/15 text-sal-succes ring-brand-500/40'],
+  regard_detourne: ['Regard détourné', 'bg-amber-500/15 text-sal-alerte ring-amber-400/40'],
+  visage_absent: ['Visage absent', 'bg-red-500/15 text-sal-danger ring-red-400/40'],
+  plusieurs_visages: ['Plusieurs visages', 'bg-red-500/15 text-sal-danger ring-red-400/40'],
 };
 export const LIBELLES_ALERTE = { regard_detourne: 'Regard détourné', visage_absent: 'Visage absent', plusieurs_visages: "Plusieurs visages dans l'image" };
 
 /** Indicateur en direct. Ce n'est qu'une aide : un regard qui s'éloigne un instant n'a rien d'anormal. */
 export function SectionRegard({ regard, consentement }) {
-  const [libelle, couleur] = ETATS_REGARD[regard.etat] || ["En attente d'images…", 'bg-white/5 text-white/60 ring-white/15'];
+  const [libelle, couleur] = ETATS_REGARD[regard.etat] || ["En attente d'images…", 'bg-sal-creux text-sal-doux ring-sal-bord'];
   return (
     <Section titre="Regard et mouvements de tête" icone={Eye}>
       {!consentement ? (
@@ -214,7 +214,7 @@ export function SectionRegard({ regard, consentement }) {
         <>
           <span className={`inline-flex w-fit rounded-full px-3 py-1 text-sm font-semibold ring-1 ${couleur}`}>{libelle}</span>
           {regard.evenements.length > 0 && (
-            <ul className="flex flex-col gap-1 text-xs text-white/60">
+            <ul className="flex flex-col gap-1 text-xs text-sal-doux">
               {regard.evenements.map((e, i) => <li key={i}>{e.a.toLocaleTimeString('fr-FR')} · {LIBELLES_ALERTE[e.type] || e.type}</li>)}
             </ul>
           )}
@@ -234,8 +234,8 @@ export function SectionBilanRegard({ entretien }) {
         <Corps>Aucune analyse pour cet entretien (pas de consentement, ou aucune image analysée).</Corps>
       ) : (
         <>
-          <p className="text-3xl font-bold text-white">{Math.round(entretien.score_regard)}<span className="text-sm font-medium text-white/55"> / 100</span></p>
-          <dl className="divide-y divide-white/5">
+          <p className="text-3xl font-bold text-sal-fort">{Math.round(entretien.score_regard)}<span className="text-sm font-medium text-sal-doux"> / 100</span></p>
+          <dl className="divide-y divide-sal-bord">
             <Ligne libelle="Face à l'écran">{b.part_attentif} %</Ligne>
             <Ligne libelle="Regard détourné">{b.part_regard_detourne} %</Ligne>
             <Ligne libelle="Visage absent">{b.part_visage_absent} %</Ligne>
@@ -243,7 +243,7 @@ export function SectionBilanRegard({ entretien }) {
             <Ligne libelle="Agitation de la tête">{b.agitation_tete_deg_par_min} °/min</Ligne>
           </dl>
           {alertes.length > 0 && (
-            <ul className="flex flex-col gap-1 border-t border-white/10 pt-2 text-xs text-white/60">
+            <ul className="flex flex-col gap-1 border-t border-sal-bord pt-2 text-xs text-sal-doux">
               {alertes.map((a) => <li key={a.id}>{formaterDateHeure(a.horodatage)} · {LIBELLES_ALERTE[a.type]}</li>)}
             </ul>
           )}
@@ -269,7 +269,7 @@ export function SectionVigilance({ entretien }) {
   const signaux = (entretien.alertes ?? []).filter((a) => SIGNAUX_PAGE[a.type]);
   return (
     <Section titre="Vigilance" icone={ShieldAlert}>
-      <p className={entretien.consignes_acceptees_le ? 'text-brand-100' : 'text-white/75'}>
+      <p className={entretien.consignes_acceptees_le ? 'text-sal-succes' : 'text-sal-corps'}>
         {entretien.consignes_acceptees_le
           ? `Le candidat s'est engagé à fermer les autres applications et fenêtres (${formaterDateHeure(entretien.consignes_acceptees_le)}).`
           : "Le candidat ne s'est pas (encore) engagé à respecter les consignes."}
@@ -282,9 +282,9 @@ export function SectionVigilance({ entretien }) {
         <ul className="flex flex-col gap-2">
           {signaux.map((a) => (
             <li key={a.id} className="flex flex-wrap gap-x-2 rounded-lg bg-amber-500/10 px-3 py-2 ring-1 ring-amber-400/25">
-              <span className="text-white/55">{formaterDateHeure(a.horodatage)}</span>
-              <span className="font-medium text-amber-100">{SIGNAUX_PAGE[a.type]}</span>
-              {a.details?.duree_s != null && <span className="text-white/60">pendant {a.details.duree_s} s{a.details.raison ? ` (${RAISONS[a.details.raison] || a.details.raison})` : ''}</span>}
+              <span className="text-sal-doux">{formaterDateHeure(a.horodatage)}</span>
+              <span className="font-medium text-sal-alerte">{SIGNAUX_PAGE[a.type]}</span>
+              {a.details?.duree_s != null && <span className="text-sal-doux">pendant {a.details.duree_s} s{a.details.raison ? ` (${RAISONS[a.details.raison] || a.details.raison})` : ''}</span>}
             </li>
           ))}
         </ul>
@@ -300,7 +300,7 @@ export function SectionLivrables({ entretien, rapportEnCours, onRapport, onExpor
     <>
       <Section titre="Rapport" icone={FileDown}>
         <Corps>Le rapport PDF du candidat reprend son CV, ce bilan d'entretien (regard, vigilance).</Corps>
-        <BoutonSalle variante="plein" icone={FileDown} chargement={rapportEnCours} onClick={onRapport} className="self-start">Exporter le rapport (PDF)</BoutonSalle>
+        <BoutonSalle variante="bleu" icone={FileDown} chargement={rapportEnCours} onClick={onRapport} className="self-start">Exporter le rapport (PDF)</BoutonSalle>
       </Section>
       <Section titre="Enregistrement" icone={Download}>
         {entretien.enregistrement ? (
