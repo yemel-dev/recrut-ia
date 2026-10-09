@@ -30,7 +30,7 @@ export function BarreSuperieure({ entretien, nom, poste, phase, duree, enregistr
         </p>
       </div>
       {enregistrement === 'actif' && (
-        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-red-500/15 px-3 py-1 text-xs font-semibold text-red-200 ring-1 ring-red-400/30">
+        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-danger/15 px-3 py-1 text-xs font-semibold text-sal-danger ring-1 ring-danger/30">
           <Circle className="size-2.5 animate-pulse fill-current" aria-hidden /> <span className="hidden sm:inline">Enregistrement</span><span className="sm:hidden">REC</span>
         </span>
       )}
@@ -58,8 +58,8 @@ export function BarreSuperieure({ entretien, nom, poste, phase, duree, enregistr
 function Commande({ icone: Icone, libelle, actif = true, variante = 'neutre', badge, className, ...props }) {
   const styles = {
     neutre: 'bg-white/10 text-white hover:bg-white/20',
-    coupe: 'bg-red-500/90 text-white hover:bg-red-500',
-    selection: 'bg-brand-500/20 text-brand-100 ring-1 ring-brand-500/50 hover:bg-brand-500/30',
+    coupe: 'bg-danger-plein text-white hover:brightness-110',
+    selection: 'bg-accent/20 text-vert-100 ring-1 ring-accent/50 hover:bg-accent/30',
   };
   return (
     <span className="group relative">
@@ -75,7 +75,7 @@ function Commande({ icone: Icone, libelle, actif = true, variante = 'neutre', ba
       >
         <Icone className="size-5" aria-hidden />
         {badge > 0 && (
-          <span className="absolute -top-1 -right-1 grid min-w-5 place-items-center rounded-full bg-amber-400 px-1 text-[11px] font-bold text-nuit-950">{badge}</span>
+          <span className="absolute -top-1 -right-1 grid min-w-5 place-items-center rounded-full bg-alerte px-1 text-[11px] font-bold text-nuit-950">{badge}</span>
         )}
       </button>
       <span
@@ -131,7 +131,7 @@ export function BarreCommandes({ entretien, salle, occupe, onOuvrirSalle, onDema
               onClick={onDemarrer}
               disabled={occupe || !salleOuverte || !salle.candidatConnecte}
               title={!salleOuverte ? "Ouvrez la salle d'abord" : !salle.candidatConnecte ? 'Disponible dès que le candidat est connecté' : undefined}
-              className="inline-flex h-12 items-center gap-2 rounded-full bg-brand-500 px-5 text-sm font-semibold text-white-950 transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-brand-500/30 disabled:text-white/50"
+              className="inline-flex h-12 items-center gap-2 rounded-full bg-accent px-5 text-sm font-semibold text-sur-accent shadow-halo transition-colors hover:bg-accent-survol disabled:cursor-not-allowed disabled:bg-accent/25 disabled:text-white/50 disabled:shadow-none"
             >
               <Play className="size-4 fill-current" aria-hidden /> Démarrer l'entretien
             </button>
@@ -140,7 +140,7 @@ export function BarreCommandes({ entretien, salle, occupe, onOuvrirSalle, onDema
             <button
               type="button"
               onClick={onTerminer}
-              className="inline-flex h-12 items-center gap-2 rounded-full bg-red-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-red-500"
+              className="inline-flex h-12 items-center gap-2 rounded-full bg-danger-plein px-5 text-sm font-semibold text-white transition-[filter] hover:brightness-110"
             >
               <PhoneOff className="size-4" aria-hidden /> Terminer l'entretien
             </button>

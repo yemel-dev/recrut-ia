@@ -126,6 +126,21 @@
   --color-meet-700: #1558b0;
 }
 
+/* Écran de fin d'entretien : les teintes de la salle suivent le thème de l'application. */
+.ecran-theme {
+  --color-sal-fort: var(--texte-fort);
+  --color-sal-corps: var(--texte);
+  --color-sal-doux: var(--texte-doux);
+  --color-sal-creux: var(--survol);
+  --color-sal-surface: var(--survol-fort);
+  --color-sal-surface-fort: var(--survol-fort);
+  --color-sal-bord: var(--trait);
+  --color-sal-champ: var(--enfonce);
+  --color-sal-succes: var(--accent-texte);
+  --color-sal-alerte: var(--alerte);
+  --color-sal-danger: var(--danger);
+}
+
 .ecran-clair {
   --color-sal-fort: var(--nuit-900);
   --color-sal-corps: #23395a;

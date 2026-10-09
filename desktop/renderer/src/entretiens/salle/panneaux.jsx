@@ -145,7 +145,7 @@ function ReseauTurn() {
       <summary className="cursor-pointer list-none font-semibold text-sal-fort marker:hidden [&::-webkit-details-marker]:hidden">
         <span className="mr-1.5 inline-block text-sal-doux transition-transform group-open:rotate-90" aria-hidden>›</span>
         Le candidat n'arrive pas à se connecter ?{' '}
-        {(etat?.turn.configure || etat?.cloudflare.configure) && <span className="ml-1 text-xs font-normal text-brand-500">(TURN configuré)</span>}
+        {(etat?.turn.configure || etat?.cloudflare.configure) && <span className="ml-1 text-xs font-normal text-vert-400">(TURN configuré)</span>}
       </summary>
       <div className="mt-3 flex flex-col gap-3">
         <Corps>
@@ -192,10 +192,10 @@ function ReseauTurn() {
 }
 
 const ETATS_REGARD = {
-  attentif: ["Face à l'écran", 'bg-brand-500/15 text-sal-succes ring-brand-500/40'],
-  regard_detourne: ['Regard détourné', 'bg-amber-500/15 text-sal-alerte ring-amber-400/40'],
-  visage_absent: ['Visage absent', 'bg-red-500/15 text-sal-danger ring-red-400/40'],
-  plusieurs_visages: ['Plusieurs visages', 'bg-red-500/15 text-sal-danger ring-red-400/40'],
+  attentif: ["Face à l'écran", 'bg-accent/15 text-sal-succes ring-accent/40'],
+  regard_detourne: ['Regard détourné', 'bg-alerte/15 text-sal-alerte ring-alerte/40'],
+  visage_absent: ['Visage absent', 'bg-danger/15 text-sal-danger ring-danger/40'],
+  plusieurs_visages: ['Plusieurs visages', 'bg-danger/15 text-sal-danger ring-danger/40'],
 };
 export const LIBELLES_ALERTE = { regard_detourne: 'Regard détourné', visage_absent: 'Visage absent', plusieurs_visages: "Plusieurs visages dans l'image" };
 
@@ -281,7 +281,7 @@ export function SectionVigilance({ entretien }) {
       ) : (
         <ul className="flex flex-col gap-2">
           {signaux.map((a) => (
-            <li key={a.id} className="flex flex-wrap gap-x-2 rounded-lg bg-amber-500/10 px-3 py-2 ring-1 ring-amber-400/25">
+            <li key={a.id} className="flex flex-wrap gap-x-2 rounded-lg bg-alerte/10 px-3 py-2 ring-1 ring-alerte/25">
               <span className="text-sal-doux">{formaterDateHeure(a.horodatage)}</span>
               <span className="font-medium text-sal-alerte">{SIGNAUX_PAGE[a.type]}</span>
               {a.details?.duree_s != null && <span className="text-sal-doux">pendant {a.details.duree_s} s{a.details.raison ? ` (${RAISONS[a.details.raison] || a.details.raison})` : ''}</span>}

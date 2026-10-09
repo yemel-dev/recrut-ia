@@ -40,7 +40,7 @@ export default function FinEntretien({ entretien, nom, poste, erreur, rapportEnC
   const Icone = annule ? CircleSlash : CircleCheck;
 
   return (
-    <div className="ecran-clair min-h-0 flex-1 overflow-y-auto bg-[#f8f9fa]">
+    <div className="ecran-theme contenu-selectionnable min-h-0 flex-1 overflow-y-auto bg-fond">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-5 py-8 sm:px-8 sm:py-12">
         <Link
           to={`/candidatures/${entretien.candidature_id}`}
@@ -50,10 +50,10 @@ export default function FinEntretien({ entretien, nom, poste, erreur, rapportEnC
         </Link>
 
         <header className="flex flex-col items-center gap-3 text-center">
-          <span className={cx('grid size-14 place-items-center rounded-full', annule ? 'bg-sal-surface text-sal-doux' : 'bg-meet/10 text-meet')}>
+          <span className={cx('grid size-14 place-items-center rounded-full ring-1', annule ? 'bg-sal-surface text-sal-doux ring-trait' : 'bg-accent-doux text-accent-texte ring-accent-trait shadow-halo')}>
             <Icone className="size-7" strokeWidth={TRAIT} aria-hidden />
           </span>
-          <h1 className="text-2xl font-medium tracking-tight text-sal-fort">{annule ? 'Entretien annulé' : 'Entretien terminé'}</h1>
+          <h1 className="titre-ecran">{annule ? 'Entretien annulé' : 'Entretien terminé'}</h1>
           <p className="text-sm text-sal-corps">
             {annule ? 'Cet entretien a été annulé' : 'La salle a été fermée'} · {nom}
             {poste ? ` · ${poste}` : ''}
@@ -62,7 +62,7 @@ export default function FinEntretien({ entretien, nom, poste, erreur, rapportEnC
 
         {!annule && (
           <>
-            <dl className="grid grid-cols-1 gap-5 rounded-2xl border border-sal-bord bg-white p-6 sm:grid-cols-2">
+            <dl className="grid grid-cols-1 gap-5 rounded-lg border border-trait bg-surface p-6 shadow-carte sm:grid-cols-2">
               {duree && <Fait icone={Clock} libelle="Durée">{duree}</Fait>}
               {entretien.fin_le && <Fait icone={CalendarCheck} libelle="Clôturé le">{formaterDateHeure(entretien.fin_le)}</Fait>}
               <Fait icone={Users} libelle="Participants">Vous et {nom}</Fait>
@@ -70,27 +70,27 @@ export default function FinEntretien({ entretien, nom, poste, erreur, rapportEnC
               <Fait icone={ShieldCheck} libelle="Consentement du candidat">{entretien.consentement_enregistrement ? 'Donné' : 'Non donné'}</Fait>
             </dl>
 
-            {erreur && <p role="alert" className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">{erreur}</p>}
+            {erreur && <p role="alert" className="rounded-lg border border-alerte-trait bg-alerte-doux px-4 py-3 text-sm text-texte">{erreur}</p>}
 
             <div className="flex flex-wrap items-center justify-center gap-3">
               <button
                 type="button"
                 onClick={() => document.getElementById('compte-rendu')?.scrollIntoView({ behavior: 'smooth' })}
-                className="rounded-full bg-meet px-6 py-2.5 text-sm font-medium text-white transition-colors duration-200 hover:bg-meet-700"
+                className="appui rounded-full bg-accent px-6 py-2.5 text-sm font-semibold text-sur-accent hover:bg-accent-survol"
               >
                 Voir le compte-rendu
               </button>
               <Link
                 to="/candidatures"
-                className="rounded-full border border-sal-bord bg-white px-6 py-2.5 text-sm font-medium text-sal-fort transition-colors duration-200 hover:bg-sal-surface"
+                className="appui rounded-full border border-trait-fort bg-surface-2 px-6 py-2.5 text-sm font-semibold text-fort hover:bg-survol-fort"
               >
                 Retourner aux candidatures
               </Link>
             </div>
 
             <section id="compte-rendu" aria-label="Compte-rendu de l'entretien" className="scroll-mt-6">
-              <h2 className="mb-3 text-lg font-medium text-sal-fort">Compte-rendu</h2>
-              <div className="overflow-hidden rounded-2xl border border-sal-bord bg-white">
+              <h2 className="titre-section mb-3">Compte-rendu</h2>
+              <div className="overflow-hidden rounded-lg border border-trait bg-surface shadow-carte">
                 <SectionLivrables entretien={entretien} rapportEnCours={rapportEnCours} onRapport={onRapport} onExporter={onExporter} />
                 <SectionBilanRegard entretien={entretien} />
                 <SectionVigilance entretien={entretien} />
@@ -101,7 +101,7 @@ export default function FinEntretien({ entretien, nom, poste, erreur, rapportEnC
 
         {annule && (
           <div className="flex justify-center">
-            <Link to="/candidatures" className="rounded-full border border-sal-bord bg-white px-6 py-2.5 text-sm font-medium text-sal-fort transition-colors duration-200 hover:bg-sal-surface">
+            <Link to="/candidatures" className="appui rounded-full border border-trait-fort bg-surface-2 px-6 py-2.5 text-sm font-semibold text-fort hover:bg-survol-fort">
               Retourner aux candidatures
             </Link>
           </div>

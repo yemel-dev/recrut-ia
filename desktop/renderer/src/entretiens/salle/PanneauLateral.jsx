@@ -14,9 +14,9 @@ function SectionDetails({ entretien, enregistrement, salle }) {
         {entretien.date_entretien && <Ligne libelle="Prévu le">{formaterDateHeure(entretien.date_entretien)}</Ligne>}
         {entretien.debut_le && <Ligne libelle="Commencé le">{formaterDateHeure(entretien.debut_le)}</Ligne>}
         {entretien.fin_le && <Ligne libelle="Terminé le">{formaterDateHeure(entretien.fin_le)}</Ligne>}
-        <Ligne libelle="Consentement"><span className={consentement ? 'text-brand-500' : 'text-amber-300'}>{consentement ? 'Donné' : 'Pas encore donné'}</span></Ligne>
+        <Ligne libelle="Consentement"><span className={consentement ? 'text-vert-400' : 'text-sal-alerte'}>{consentement ? 'Donné' : 'Pas encore donné'}</span></Ligne>
         <Ligne libelle="Enregistrement">
-          {enregistrement === 'actif' ? <span className="text-red-300">En cours</span> : enregistrement === 'erreur' ? <span className="text-red-300">En erreur</span> : entretien.enregistrement ? 'Conservé (chiffré)' : 'Aucun'}
+          {enregistrement === 'actif' ? <span className="text-sal-danger">En cours</span> : enregistrement === 'erreur' ? <span className="text-sal-danger">En erreur</span> : entretien.enregistrement ? 'Conservé (chiffré)' : 'Aucun'}
         </Ligne>
         <Ligne libelle="Salle">{salle.etat === 'ouverte' ? 'Ouverte' : salle.etat === 'ouverture' ? 'Ouverture…' : 'Fermée'}</Ligne>
       </dl>
@@ -63,7 +63,7 @@ export default function PanneauLateral({ onglet, onglets, onChoisir, onFermer, e
                 )}
               >
                 <Icone className="size-4" aria-hidden /> {libelle}
-                {badge > 0 && <span className="rounded-full bg-amber-400 px-1.5 text-[11px] font-bold text-nuit-950">{badge}</span>}
+                {badge > 0 && <span className="rounded-full bg-alerte px-1.5 text-[11px] font-bold text-nuit-950">{badge}</span>}
               </button>
             ))}
           </div>

@@ -13,11 +13,11 @@ export function phaseSalle({ entretien, salle, imageRecue }) {
 /** Indicateur de connexion de la barre supérieure : [libellé, couleur du voyant]. */
 export const INDICATEURS = {
   fermee: ['Salle fermée', 'bg-white/40'],
-  ouverture: ['Ouverture…', 'bg-amber-400'],
-  attente: ['En attente du candidat', 'bg-amber-400'],
-  negociation: ['Connexion en cours', 'bg-amber-400'],
-  connecte: ['Connexion établie', 'bg-brand-500'],
-  interrompue: ['Connexion interrompue', 'bg-red-500'],
+  ouverture: ['Ouverture…', 'bg-alerte'],
+  attente: ['En attente du candidat', 'bg-alerte'],
+  negociation: ['Connexion en cours', 'bg-alerte'],
+  connecte: ['Connexion établie', 'bg-accent'],
+  interrompue: ['Connexion interrompue', 'bg-danger'],
 };
 
 /** « 2026-10-09T10:00:00+00:00 » → secondes écoulées (le serveur donne de l'UTC ; sans fuseau, on le suppose). */

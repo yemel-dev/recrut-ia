@@ -7,7 +7,7 @@ function Etape({ fait, encours, children }) {
   const Icone = fait ? Check : encours ? Loader2 : CircleDashed;
   return (
     <li className={cx('flex items-center gap-3', fait ? 'text-white' : 'text-white/55')}>
-      <span className={cx('grid size-6 shrink-0 place-items-center rounded-full', fait ? 'bg-brand-500 text-nuit-950' : 'bg-white/10')}>
+      <span className={cx('grid size-6 shrink-0 place-items-center rounded-full', fait ? 'bg-accent text-nuit-950' : 'bg-white/10')}>
         <Icone className={cx('size-3.5', encours && !fait && 'animate-spin')} aria-hidden />
       </span>
       {children}
@@ -20,7 +20,7 @@ function Ecran({ icone: Icone, titre, children, actions, ton = 'neutre' }) {
   return (
     <div className="apparition absolute inset-0 grid place-items-center overflow-y-auto bg-gradient-to-b from-nuit-800 to-nuit-950 p-6 pb-32 sm:pb-28">
       <div className="flex w-full max-w-md flex-col items-center gap-5 py-10 text-center">
-        <span className={cx('grid size-20 place-items-center rounded-full ring-1', ton === 'alerte' ? 'bg-red-500/10 text-red-300 ring-red-400/30' : 'bg-brand-500/10 text-brand-500 ring-brand-500/30')}>
+        <span className={cx('grid size-20 place-items-center rounded-full ring-1', ton === 'alerte' ? 'bg-danger/10 text-sal-danger ring-danger/30' : 'bg-accent/10 text-vert-400 ring-accent/30 shadow-halo')}>
           <Icone className={cx('size-9', Icone === Loader2 && 'animate-spin')} aria-hidden />
         </span>
         <h2 className="text-xl font-semibold tracking-tight text-white">{titre}</h2>
@@ -100,7 +100,7 @@ export default function Scene({ phase, nom, entretien, salle, refDistant, refLoc
       )}
 
       {phase === 'interrompue' && (
-        <div className="apparition absolute inset-x-0 top-0 z-10 flex flex-wrap items-center justify-center gap-3 bg-red-600/90 px-4 py-2.5 text-sm font-medium text-white backdrop-blur">
+        <div className="apparition absolute inset-x-0 top-0 z-10 flex flex-wrap items-center justify-center gap-3 bg-danger-plein/90 px-4 py-2.5 text-sm font-medium text-white backdrop-blur">
           <TriangleAlert className="size-4" aria-hidden />
           Connexion interrompue : la vidéo peut reprendre d'elle-même. Sinon, le candidat peut recharger sa page.
           <button type="button" onClick={onAide} className="rounded-md bg-white/20 px-2.5 py-1 text-xs font-semibold hover:bg-white/30">Aide</button>
@@ -121,7 +121,7 @@ export default function Scene({ phase, nom, entretien, salle, refDistant, refLoc
           </div>
         )}
         <span className="absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded bg-black/55 px-1.5 py-0.5 text-[11px] font-medium text-white">
-          {!salle.microActif && <MicOff className="size-3 text-red-300" aria-label="Micro coupé" />} Vous
+          {!salle.microActif && <MicOff className="size-3 text-sal-danger" aria-label="Micro coupé" />} Vous
         </span>
       </div>
     </div>
