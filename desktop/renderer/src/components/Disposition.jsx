@@ -1,6 +1,6 @@
 import { Briefcase, Building2, CheckCircle2, CircleAlert, FileText, Info, LayoutDashboard, LogOut, Mail, X } from 'lucide-react';
 import { useState } from 'react';
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { Link, NavLink, Outlet, useMatch } from 'react-router-dom';
 import { FournisseurAgent, useAgent } from '../agent/ContexteAgent.jsx';
 import { useSession } from '../session.jsx';
 
@@ -25,10 +25,11 @@ function Cadre() {
   const { email, deconnecter } = useSession();
   const { statut, reconnexionConseillee, oublierErreursSync } = useAgent();
   const [sortie, setSortie] = useState(false);
+  const salle = useMatch('/entretiens/:id'); // la salle d'entretien occupe toute la zone de contenu
 
   return (
     <div className="flex h-full">
-      <aside className="flex w-64 shrink-0 flex-col bg-navy-900 text-navy-100">
+      <aside className={`${salle ? 'hidden xl:flex' : 'flex'} w-64 shrink-0 flex-col bg-navy-900 text-navy-100`}>
         <div className="flex items-center gap-2.5 px-6 py-6">
           <img src="./symbol-green.webp" alt="" className="size-8" />
           <span className="text-lg font-bold tracking-wide text-white">INJARA</span>
@@ -94,7 +95,7 @@ function Cadre() {
             <Link to="/boite-mail" onClick={oublierErreursSync} className="font-semibold underline">Reconnecter le compte</Link>
           </div>
         )}
-        <div className="mx-auto w-full max-w-5xl px-8 py-8">
+        <div className={salle ? 'flex min-h-[34rem] w-full flex-1 flex-col' : 'mx-auto w-full max-w-5xl px-8 py-8'}>
           <Outlet />
         </div>
       </main>

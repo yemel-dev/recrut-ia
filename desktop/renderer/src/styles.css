@@ -18,6 +18,12 @@
   --color-navy-800: #0b2a52;
   --color-navy-900: #031e40;
 
+  /* Salle d'entretien : bleus nuit plus profonds que le marine de la marque. */
+  --color-nuit-950: #010b18;
+  --color-nuit-900: #02142b;
+  --color-nuit-800: #061d3a;
+  --color-nuit-700: #0c2a50;
+
   --color-mist: #f4f7fa;
   --color-muted: #5b6b7f;
   --color-line: #e2e8f0;
@@ -30,3 +36,9 @@
   body { @apply bg-mist font-sans text-navy-900 antialiased; }
   :focus-visible { @apply outline-2 outline-offset-2 outline-brand-500; }
 }
+
+@keyframes glisser-entree { from { opacity: 0; transform: translateX(1rem); } to { opacity: 1; transform: none; } }
+@keyframes apparition { from { opacity: 0; transform: translateY(.25rem); } to { opacity: 1; transform: none; } }
+.glisser-entree { animation: glisser-entree .18s ease-out; }
+.apparition { animation: apparition .2s ease-out; }
+@media (prefers-reduced-motion: reduce) { .glisser-entree, .apparition { animation: none; } }

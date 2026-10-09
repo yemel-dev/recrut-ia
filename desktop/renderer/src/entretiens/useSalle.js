@@ -10,6 +10,9 @@ export function useSalle(entretienId) {
   const [erreur, setErreur] = useState('');
   const [fluxLocal, setFluxLocal] = useState(null);
   const [fluxDistant, setFluxDistant] = useState(null);
+  const [etatConnexion, setEtatConnexion] = useState('new'); // état WebRTC réel : new | connecting | connected | disconnected | failed | closed
+  const [microActif, setMicroActif] = useState(true);
+  const [cameraActive, setCameraActive] = useState(true);
 
   const salle = useRef({ pc: null, ice: [], local: null, file: Promise.resolve(), desabonner: [], pret: Promise.resolve() });
 
@@ -18,6 +21,7 @@ export function useSalle(entretienId) {
     salle.current.pc = null;
     setFluxDistant(null);
     setCandidatConnecte(false);
+    setEtatConnexion('new');
   }, []);
 
   const envoyer = (type, donnees) => window.injara.entretien.envoyer(JSON.stringify({ type, donnees }));
@@ -30,7 +34,11 @@ export function useSalle(entretienId) {
     s.local.getTracks().forEach((piste) => pc.addTrack(piste, s.local));
     pc.onicecandidate = (e) => e.candidate && envoyer('ice', e.candidate.toJSON());
     pc.ontrack = (e) => setFluxDistant(e.streams[0]);
-    pc.onconnectionstatechange = () => setCandidatConnecte(pc.connectionState === 'connected');
+    pc.onconnectionstatechange = () => {
+      if (salle.current.pc !== pc) return; // une ancienne connexion ne doit pas écraser l'état de la nouvelle
+      setCandidatConnecte(pc.connectionState === 'connected');
+      setEtatConnexion(pc.connectionState);
+    };
     await pc.setLocalDescription(await pc.createOffer());
     await envoyer('offre', pc.localDescription.toJSON());
   }, [fermerPair]);
@@ -62,6 +70,8 @@ export function useSalle(entretienId) {
     s.local = null;
     setFluxLocal(null);
     setCandidatPresent(false);
+    setMicroActif(true);
+    setCameraActive(true);
     setEtat('fermee');
     window.injara.entretien.fermerSalle();
   }, [fermerPair]);
@@ -102,8 +112,22 @@ export function useSalle(entretienId) {
     setEtat('ouverte');
   }, [entretienId, traiter, fermer]);
 
+  // Couper le micro ou la caméra : la piste reste dans la connexion (pas de renégociation), elle envoie du silence ou du noir.
+  const basculerPiste = useCallback((type, setActif) => {
+    const pistes = salle.current.local?.[type === 'audio' ? 'getAudioTracks' : 'getVideoTracks']() ?? [];
+    if (pistes.length === 0) return;
+    const actif = !pistes[0].enabled;
+    pistes.forEach((p) => (p.enabled = actif));
+    setActif(actif);
+  }, []);
+  const basculerMicro = useCallback(() => basculerPiste('audio', setMicroActif), [basculerPiste]);
+  const basculerCamera = useCallback(() => basculerPiste('video', setCameraActive), [basculerPiste]);
+
   // Quitter la page ferme la salle (caméra éteinte, connexion coupée).
   useEffect(() => () => fermer(), [fermer]);
 
-  return { etat, candidatPresent, candidatConnecte, erreur, fluxLocal, fluxDistant, ouvrir, fermer };
+  return {
+    etat, candidatPresent, candidatConnecte, etatConnexion, erreur, fluxLocal, fluxDistant, ouvrir, fermer,
+    microActif, cameraActive, basculerMicro, basculerCamera,
+  };
 }
