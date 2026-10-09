@@ -1,6 +1,6 @@
 // Processus principal d'Electron : fenêtre, cycle de vie du backend Python, pont API.
 
-const { app, BrowserWindow, Menu, dialog, session } = require('electron');
+const { app, BrowserWindow, Menu, dialog, ipcMain, session } = require('electron');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 
@@ -12,6 +12,17 @@ const PAGE = path.join(__dirname, '..', 'renderer', 'dist', 'index.html');
 const URL_PAGE = pathToFileURL(PAGE).href;
 
 let fenetre = null;
+
+// Barre de titre dessinée par l'interface (fenêtre sans cadre natif), aux couleurs du thème.
+const HAUTEUR_TITRE = 40;
+const COULEURS_THEME = {
+  sombre: { fond: '#010d1f', symboles: '#c9d8ec' },
+  clair: { fond: '#e9eff7', symboles: '#031e40' },
+};
+// Boutons natifs par-dessus la page (Window Controls Overlay) sous Windows seulement : sous Linux (Wayland), Electron
+// plante avec cette surcouche ; l'interface y dessine ses propres boutons (canal injara:fenetre). macOS garde ses pastilles.
+const SURCOUCHE_NATIVE = process.platform === 'win32';
+const surcoucheTitre = (theme) => ({ color: COULEURS_THEME[theme].fond, symbolColor: COULEURS_THEME[theme].symboles, height: HAUTEUR_TITRE });
 let backend = null;
 let arretEnCours = false;
 
@@ -23,13 +34,15 @@ function origineAutorisee(url) {
 
 function creerFenetre() {
   fenetre = new BrowserWindow({
-    width: 1280,
-    height: 820,
-    minWidth: 960,
-    minHeight: 640,
+    width: 1360,
+    height: 860,
+    minWidth: 1100,
+    minHeight: 680,
     show: false,
     title: 'INJARA',
-    backgroundColor: '#f4f7fa',
+    backgroundColor: COULEURS_THEME.sombre.fond,
+    titleBarStyle: 'hidden',
+    ...(SURCOUCHE_NATIVE && { titleBarOverlay: surcoucheTitre('sombre') }),
     icon: path.join(__dirname, '..', 'renderer', 'public', 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, '..', 'preload', 'index.js'),
@@ -48,6 +61,9 @@ function creerFenetre() {
   });
   fenetre.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   fenetre.once('ready-to-show', () => fenetre.show());
+  const signalerEtat = () => fenetre?.webContents.send('injara:fenetre-etat', { agrandie: fenetre.isMaximized() });
+  fenetre.on('maximize', signalerEtat);
+  fenetre.on('unmaximize', signalerEtat);
   fenetre.on('closed', () => {
     fenetre = null;
   });
@@ -81,6 +97,17 @@ async function demarrer() {
     return;
   }
   installerPontApi({ backend, origineAutorisee, fenetre: () => fenetre });
+  ipcMain.on('injara:theme', (event, theme) => {
+    if (!fenetre || !COULEURS_THEME[theme] || !origineAutorisee(event.senderFrame?.url)) return;
+    fenetre.setBackgroundColor(COULEURS_THEME[theme].fond);
+    if (SURCOUCHE_NATIVE) fenetre.setTitleBarOverlay(surcoucheTitre(theme));
+  });
+  ipcMain.on('injara:fenetre', (event, action) => {
+    if (!fenetre || !origineAutorisee(event.senderFrame?.url)) return;
+    if (action === 'reduire') fenetre.minimize();
+    else if (action === 'agrandir') fenetre.isMaximized() ? fenetre.unmaximize() : fenetre.maximize();
+    else if (action === 'fermer') fenetre.close();
+  });
   creerFenetre();
 }
 

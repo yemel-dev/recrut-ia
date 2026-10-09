@@ -10,6 +10,15 @@ const abonner = (canal, ecouteur) => {
 };
 
 contextBridge.exposeInMainWorld('injara', {
+  /** Fenêtre : système d'exploitation (place des boutons natifs) et thème de la barre de titre. */
+  fenetre: {
+    plateforme: process.platform,
+    /** Linux : boutons réduire / agrandir / fermer dessinés par l'interface (pas de surcouche native). */
+    boutonsInterface: process.platform === 'linux',
+    theme: (theme) => ipcRenderer.send('injara:theme', theme),
+    action: (action) => ipcRenderer.send('injara:fenetre', action), // reduire | agrandir | fermer
+    surEtat: (rappel) => abonner('injara:fenetre-etat', (_e, etat) => rappel(etat)),
+  },
   api: {
     get: (chemin) => requete('GET', chemin),
     post: (chemin, corps) => requete('POST', chemin, corps),

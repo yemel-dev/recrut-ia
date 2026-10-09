@@ -1,0 +1,151 @@
+/* Design system INJARA : tokens.
+ *
+ * Deux niveaux :
+ *  1. Les échelles brutes (nuit, vert) dérivées des deux couleurs officielles #031e40 et #00bf63.
+ *     Elles ne servent qu'à définir les tokens sémantiques et la salle d'entretien (toujours sombre).
+ *  2. Les tokens sémantiques (fond, surface, texte, trait, accent…), redéfinis pour chaque thème.
+ *     Les composants n'utilisent QUE ceux-là (classes Tailwind générées dans styles.css).
+ *
+ * Contrastes (WCAG 2.1) vérifiés au calcul ; le détail est dans DESIGN_NOTES.md.
+ */
+
+:root {
+  /* Bleu nuit (base) */
+  --nuit-950: #010d1f;
+  --nuit-900: #031e40;
+  --nuit-850: #062548;
+  --nuit-800: #082b57;
+  --nuit-700: #0f3b73;
+  --nuit-600: #1b4f93;
+  --nuit-500: #3a6aad;
+  --nuit-400: #5d88c4;
+  --nuit-300: #8fb0d9;
+  --nuit-200: #b8cde8;
+  --nuit-100: #dbe6f4;
+  --nuit-50: #f0f5fb;
+
+  /* Vert INJARA (accent) */
+  --vert-800: #00733b; /* texte vert sur fond clair (le 700 est à 4,4:1 sur blanc, sous le seuil AA) */
+  --vert-700: #008a47;
+  --vert-600: #00a355;
+  --vert-500: #00bf63;
+  --vert-400: #2ed384;
+  --vert-300: #6be3a6;
+  --vert-100: #d9f8e8;
+  --vert-halo: rgb(0 191 99 / 0.35);
+
+  /* Typographie */
+  --police-affichage: 'Unbounded Variable', 'Unbounded', ui-rounded, sans-serif;
+  --police-texte: 'Instrument Sans Variable', 'Instrument Sans', 'Segoe UI Variable Text', sans-serif;
+  --police-chiffres: var(--police-texte);
+
+  /* Mouvement : courbes fortes (skill « animate ») et durées de bureau, toutes sous 300 ms. */
+  --courbe-sortie: cubic-bezier(0.23, 1, 0.32, 1);
+  --courbe-deplacement: cubic-bezier(0.77, 0, 0.175, 1);
+  --courbe-tiroir: cubic-bezier(0.32, 0.72, 0, 1);
+  --duree-rapide: 150ms;
+  --duree: 220ms;
+  --duree-lente: 300ms;
+
+  /* Gabarit de l'application */
+  --hauteur-titre: 40px;
+  --hauteur-etat: 28px;
+  --largeur-barre: 232px;
+  --largeur-barre-repliee: 60px;
+}
+
+/* ─── Thème sombre : identité principale ─────────────────────────────────── */
+:root,
+[data-theme='sombre'] {
+  color-scheme: dark;
+
+  --chrome: var(--nuit-950); /* barre de titre, barre latérale, barre d'état : en retrait */
+  --fond: var(--nuit-900); /* zone de travail */
+  --surface: #072648; /* cartes, tableaux */
+  --surface-2: #0b3160; /* éléments posés sur une surface : menus, modales, survol fort */
+  --survol: rgb(143 176 217 / 0.08);
+  --survol-fort: rgb(143 176 217 / 0.14);
+  --enfonce: rgb(1 13 31 / 0.45); /* champs de saisie, zones en creux */
+
+  --trait: rgb(143 176 217 / 0.13);
+  --trait-fort: rgb(143 176 217 / 0.26);
+
+  --texte-fort: var(--nuit-50); /* 13,9:1 sur surface */
+  --texte: #c9d8ec; /* 10,5:1 */
+  --texte-doux: #8fa9cc; /* 6,3:1 */
+  --texte-tenu: #6c88ae; /* 4,2:1 : indications de champ vide et éléments désactivés seulement */
+
+  --accent: var(--vert-500);
+  --accent-survol: var(--vert-400);
+  --accent-texte: var(--vert-400); /* 7,8:1 sur surface */
+  --sur-accent: var(--nuit-900); /* texte sur bouton vert : 6,8:1 */
+  --accent-doux: rgb(0 191 99 / 0.12);
+  --accent-trait: rgb(0 191 99 / 0.38);
+  --halo: var(--vert-halo);
+
+  --danger: #ff7a7a;
+  --danger-plein: #c9302c;
+  --danger-doux: rgb(255 122 122 / 0.12);
+  --danger-trait: rgb(255 122 122 / 0.32);
+  --alerte: #f5b94a;
+  --alerte-doux: rgb(245 185 74 / 0.12);
+  --alerte-trait: rgb(245 185 74 / 0.32);
+  --info: #7fb0ff;
+  --info-doux: rgb(127 176 255 / 0.12);
+  --info-trait: rgb(127 176 255 / 0.3);
+
+  --voile: rgb(1 8 20 / 0.62);
+  --ombre-carte: 0 1px 0 0 rgb(255 255 255 / 0.03) inset;
+  --ombre-flottante: 0 1px 0 0 rgb(255 255 255 / 0.05) inset, 0 12px 32px -8px rgb(0 4 12 / 0.6),
+    0 2px 6px rgb(0 4 12 / 0.35);
+  --ombre-halo: 0 0 0 1px var(--accent-trait), 0 0 24px -4px var(--halo);
+  --barre-defilement: rgb(143 176 217 / 0.22);
+  --barre-defilement-survol: rgb(143 176 217 / 0.38);
+}
+
+/* ─── Thème clair ─────────────────────────────────────────────────────────── */
+[data-theme='clair'] {
+  color-scheme: light;
+
+  --chrome: #e9eff7;
+  --fond: #f5f8fc;
+  --surface: #ffffff;
+  --surface-2: #ffffff;
+  --survol: rgb(3 30 64 / 0.045);
+  --survol-fort: rgb(3 30 64 / 0.08);
+  --enfonce: #f2f6fb;
+
+  --trait: rgb(3 30 64 / 0.1);
+  --trait-fort: rgb(3 30 64 / 0.2);
+
+  --texte-fort: var(--nuit-900); /* 16,6:1 sur blanc */
+  --texte: #23395a; /* 11,6:1 */
+  --texte-doux: #4d6587; /* 5,9:1 */
+  --texte-tenu: #61779a;
+
+  --accent: var(--vert-500);
+  --accent-survol: var(--vert-600);
+  --accent-texte: var(--vert-800); /* 5,5:1 sur blanc */
+  --sur-accent: var(--nuit-900);
+  --accent-doux: rgb(0 191 99 / 0.1);
+  --accent-trait: rgb(0 138 71 / 0.35);
+  --halo: rgb(0 191 99 / 0.25);
+
+  --danger: #c0292b;
+  --danger-plein: #c0292b;
+  --danger-doux: rgb(192 41 43 / 0.07);
+  --danger-trait: rgb(192 41 43 / 0.25);
+  --alerte: #8a5300;
+  --alerte-doux: rgb(245 165 30 / 0.12);
+  --alerte-trait: rgb(138 83 0 / 0.25);
+  --info: var(--nuit-600);
+  --info-doux: rgb(27 79 147 / 0.07);
+  --info-trait: rgb(27 79 147 / 0.22);
+
+  --voile: rgb(3 30 64 / 0.32);
+  --ombre-carte: 0 1px 2px rgb(3 30 64 / 0.04);
+  --ombre-flottante: 0 12px 32px -8px rgb(3 30 64 / 0.22), 0 2px 6px rgb(3 30 64 / 0.08);
+  --ombre-halo: 0 0 0 1px var(--accent-trait), 0 0 20px -6px var(--halo);
+  --barre-defilement: rgb(3 30 64 / 0.18);
+  --barre-defilement-survol: rgb(3 30 64 / 0.32);
+}

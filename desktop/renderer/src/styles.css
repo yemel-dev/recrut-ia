@@ -1,15 +1,116 @@
 @import "tailwindcss";
+@import "./styles/tokens.css";
+@import "./styles/base.css";
 
-/* Identité INJARA (mêmes valeurs que le site vitrine) : vert #00BF63, bleu marine #031E40. */
+/* Les classes Tailwind lisent les tokens sémantiques : elles suivent le thème (data-theme) sans variante dark:. */
+@theme inline {
+  --font-affichage: var(--police-affichage);
+  --font-sans: var(--police-texte);
+
+  --color-chrome: var(--chrome);
+  --color-fond: var(--fond);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-survol: var(--survol);
+  --color-survol-fort: var(--survol-fort);
+  --color-enfonce: var(--enfonce);
+  --color-trait: var(--trait);
+  --color-trait-fort: var(--trait-fort);
+
+  --color-fort: var(--texte-fort);
+  --color-texte: var(--texte);
+  --color-doux: var(--texte-doux);
+  --color-tenu: var(--texte-tenu);
+
+  --color-accent: var(--accent);
+  --color-accent-survol: var(--accent-survol);
+  --color-accent-texte: var(--accent-texte);
+  --color-sur-accent: var(--sur-accent);
+  --color-accent-doux: var(--accent-doux);
+  --color-accent-trait: var(--accent-trait);
+
+  --color-danger: var(--danger);
+  --color-danger-plein: var(--danger-plein);
+  --color-danger-doux: var(--danger-doux);
+  --color-danger-trait: var(--danger-trait);
+  --color-alerte: var(--alerte);
+  --color-alerte-doux: var(--alerte-doux);
+  --color-alerte-trait: var(--alerte-trait);
+  --color-info: var(--info);
+  --color-info-doux: var(--info-doux);
+  --color-info-trait: var(--info-trait);
+  --color-voile: var(--voile);
+
+  /* Échelles brutes : salle d'entretien (toujours sombre) et illustrations. */
+  --color-nuit-950: var(--nuit-950);
+  --color-nuit-900: var(--nuit-900);
+  --color-nuit-850: var(--nuit-850);
+  --color-nuit-800: var(--nuit-800);
+  --color-nuit-700: var(--nuit-700);
+  --color-nuit-600: var(--nuit-600);
+  --color-nuit-300: var(--nuit-300);
+  --color-nuit-100: var(--nuit-100);
+  --color-nuit-50: var(--nuit-50);
+  --color-vert-700: var(--vert-700);
+  --color-vert-600: var(--vert-600);
+  --color-vert-500: var(--vert-500);
+  --color-vert-400: var(--vert-400);
+  --color-vert-300: var(--vert-300);
+  --color-vert-100: var(--vert-100);
+
+  --shadow-carte: var(--ombre-carte);
+  --shadow-flottante: var(--ombre-flottante);
+  --shadow-halo: var(--ombre-halo);
+
+  --ease-out: var(--courbe-sortie);
+  --ease-in-out: var(--courbe-deplacement);
+}
+
 @theme {
-  --font-sans: "Segoe UI", system-ui, -apple-system, "Ubuntu", "Cantarell", "Noto Sans", sans-serif;
+  /* Échelle typographique de bureau (base 14 px) : 12 / 13 / 14 / 16 / 20 / 24 / 32 / 44. */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.125rem;
+  --text-base: 0.875rem;
+  --text-base--line-height: 1.25rem;
+  --text-lg: 1rem;
+  --text-lg--line-height: 1.375rem;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.625rem;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 1.875rem;
+  --text-3xl: 2rem;
+  --text-3xl--line-height: 2.25rem;
+  --text-4xl: 2.75rem;
+  --text-4xl--line-height: 3rem;
 
+  /* Rayons hiérarchisés : plus l'élément est grand et posé, plus il est arrondi. */
+  --radius-sm: 0.375rem; /* puces, badges */
+  --radius-md: 0.5rem; /* boutons, champs */
+  --radius-lg: 0.75rem; /* cartes, tableaux */
+  --radius-xl: 1rem; /* panneaux, modales */
+  --radius-2xl: 1.25rem; /* zone de contenu, scène vidéo */
+
+  /* Salle d'entretien : teintes sur fond sombre (claires sous .ecran-clair, écran de fin d'entretien). */
+  --color-sal-fort: #ffffff;
+  --color-sal-corps: rgb(240 245 251 / 0.78);
+  --color-sal-doux: rgb(240 245 251 / 0.58);
+  --color-sal-creux: rgb(143 176 217 / 0.06);
+  --color-sal-surface: rgb(143 176 217 / 0.12);
+  --color-sal-surface-fort: rgb(143 176 217 / 0.2);
+  --color-sal-bord: rgb(143 176 217 / 0.14);
+  --color-sal-champ: #010d1f;
+  --color-sal-succes: #6be3a6;
+  --color-sal-alerte: #f5b94a;
+  --color-sal-danger: #ff9b9b;
+
+  /* Ancienne palette : en cours de remplacement écran par écran, retirée à la fin de la refonte. */
   --color-brand-50: #e8faf0;
   --color-brand-100: #ccf2df;
   --color-brand-500: #00bf63;
   --color-brand-600: #00a656;
   --color-brand-700: #007a3f;
-
   --color-navy-50: #eef2f7;
   --color-navy-100: #c9d3e0;
   --color-navy-200: #9fb0c6;
@@ -17,57 +118,73 @@
   --color-navy-700: #1b3b66;
   --color-navy-800: #0b2a52;
   --color-navy-900: #031e40;
-
-  /* Salle d'entretien : anthracite mat, plus doux qu'un bleu nuit. */
-  --color-nuit-950: #121417;
-  --color-nuit-900: #1a1d21;
-  --color-nuit-800: #23272c;
-  --color-nuit-700: #30353b;
-
-  /* Teintes sémantiques des panneaux : sombres par défaut, claires sous .ecran-clair (écran de fin d'entretien). */
-  --color-sal-fort: #ffffff;
-  --color-sal-corps: rgb(255 255 255 / 0.75);
-  --color-sal-doux: rgb(255 255 255 / 0.55);
-  --color-sal-creux: rgb(255 255 255 / 0.05);
-  --color-sal-surface: rgb(255 255 255 / 0.1);
-  --color-sal-surface-fort: rgb(255 255 255 / 0.16);
-  --color-sal-bord: rgb(255 255 255 / 0.1);
-  --color-sal-champ: #121417;
-  --color-sal-succes: #ccf2df;
-  --color-sal-alerte: #fde68a;
-  --color-sal-danger: #fecaca;
-  --color-meet: #1a73e8;
-  --color-meet-700: #1558b0;
-
   --color-mist: #f4f7fa;
   --color-muted: #5b6b7f;
   --color-line: #e2e8f0;
-  --color-danger: #b42318;
   --color-danger-50: #fef3f2;
+  --color-meet: #1a73e8;
+  --color-meet-700: #1558b0;
 }
-
-@layer base {
-  html, body, #racine { height: 100%; }
-  body { @apply bg-mist font-sans text-navy-900 antialiased; }
-  :focus-visible { @apply outline-2 outline-offset-2 outline-brand-500; }
-}
-
-@keyframes glisser-entree { from { opacity: 0; transform: translateX(1rem); } to { opacity: 1; transform: none; } }
-@keyframes apparition { from { opacity: 0; transform: translateY(.25rem); } to { opacity: 1; transform: none; } }
-.glisser-entree { animation: glisser-entree .18s ease-out; }
-.apparition { animation: apparition .2s ease-out; }
-@media (prefers-reduced-motion: reduce) { .glisser-entree, .apparition { animation: none; } }
 
 .ecran-clair {
-  --color-sal-fort: #1f2328;
-  --color-sal-corps: #4b5563;
-  --color-sal-doux: #6b7280;
-  --color-sal-creux: #f6f7f9;
-  --color-sal-surface: #eef0f3;
-  --color-sal-surface-fort: #e3e6ea;
-  --color-sal-bord: #e5e7eb;
+  --color-sal-fort: var(--nuit-900);
+  --color-sal-corps: #23395a;
+  --color-sal-doux: #4d6587;
+  --color-sal-creux: #f5f8fc;
+  --color-sal-surface: #eef3fa;
+  --color-sal-surface-fort: #e1e9f4;
+  --color-sal-bord: rgb(3 30 64 / 0.1);
   --color-sal-champ: #ffffff;
-  --color-sal-succes: #137333;
-  --color-sal-alerte: #92400e;
-  --color-sal-danger: #b3261e;
+  --color-sal-succes: var(--vert-800);
+  --color-sal-alerte: #8a5300;
+  --color-sal-danger: #c0292b;
+}
+
+/* ─── Styles typographiques nommés ──────────────────────────────────────── */
+
+/* Titre d'écran : Unbounded, large et serrée. Un seul par écran. */
+@utility titre-ecran {
+  font-family: var(--police-affichage);
+  font-size: var(--text-2xl);
+  line-height: var(--text-2xl--line-height);
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  color: var(--texte-fort);
+  text-wrap: balance;
+}
+
+/* Titre de section ou de carte : Instrument Sans, demi-gras. */
+@utility titre-section {
+  font-family: var(--police-texte);
+  font-size: var(--text-lg);
+  line-height: var(--text-lg--line-height);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--texte-fort);
+  text-wrap: balance;
+}
+
+/* Grand chiffre (statistiques, score) : Unbounded, chiffres tabulaires. */
+@utility chiffre {
+  font-family: var(--police-affichage);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+/* Étiquette de donnée (au-dessus d'une valeur) : petite, discrète, en casse normale. */
+@utility etiquette {
+  font-size: var(--text-xs);
+  line-height: var(--text-xs--line-height);
+  font-weight: 500;
+  color: var(--texte-doux);
+}
+
+/* Zone glissable de la barre de titre (fenêtre sans cadre). */
+@utility region-glisser {
+  -webkit-app-region: drag;
+}
+@utility region-fixe {
+  -webkit-app-region: no-drag;
 }

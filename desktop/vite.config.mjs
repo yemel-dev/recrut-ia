@@ -31,5 +31,10 @@ export default defineConfig({
   base: './',
   plugins: [react(), tailwindcss(), csp],
   server: { host: '127.0.0.1', port: 5199 },
-  build: { outDir: 'dist', emptyOutDir: true },
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+    // Polices toujours en fichiers (jamais en data:) : la CSP n'autorise que font-src 'self'.
+    assetsInlineLimit: (fichier) => (fichier.endsWith('.woff2') ? false : undefined),
+  },
 });

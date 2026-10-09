@@ -1,0 +1,331 @@
+/* Design system INJARA : socle (polices, comportement « application », défilement, focus, animations CSS). */
+
+@layer base {
+  html,
+  body,
+  #racine {
+    height: 100%;
+  }
+
+  html {
+    background: var(--chrome);
+    overscroll-behavior: none;
+  }
+
+  body {
+    margin: 0;
+    overflow: hidden; /* jamais de défilement de page : seules les zones de contenu défilent */
+    background: var(--chrome);
+    color: var(--texte);
+    font-family: var(--police-texte);
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+    font-optical-sizing: auto;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: 'ss01' 0;
+    /* Application de bureau : l'interface ne se sélectionne pas, le contenu oui (voir .contenu-selectionnable). */
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: default;
+  }
+
+  /* Contenu lisible et copiable : textes des écrans, champs de saisie. */
+  .contenu-selectionnable,
+  input,
+  textarea,
+  [contenteditable='true'] {
+    user-select: text;
+    -webkit-user-select: text;
+  }
+  .contenu-selectionnable :is(button, [role='tab'], [role='button'], nav, label) {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  a,
+  [role='link'] {
+    cursor: pointer;
+  }
+  button:disabled,
+  [aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    background: rgb(0 191 99 / 0.3);
+    color: inherit;
+  }
+
+  /* Focus : toujours visible au clavier, jamais au clic. */
+  :focus {
+    outline: none;
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* Listes déroulantes natives : couleurs explicites (sinon blanc sur blanc sous Windows en sombre). */
+  select,
+  option {
+    background-color: var(--surface-2);
+    color: var(--texte-fort);
+  }
+
+  /* Barres de défilement fines, dans la palette. */
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--barre-defilement);
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-clip: padding-box;
+    min-height: 40px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--barre-defilement-survol);
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  dialog::backdrop {
+    background: var(--voile);
+  }
+}
+
+/* ─── Icônes animées au survol (inspiration itshover, réinterprétée en CSS) ───────────────────────────
+ * Un élément .geste-hote (bouton, lien) anime l'icône marquée data-geste qu'il contient.
+ * Survol de souris seulement (pas de faux survol au toucher), et rien en mouvement réduit. */
+[data-geste] {
+  transition: transform var(--duree) var(--courbe-sortie);
+  transform-origin: 50% 50%;
+}
+@media (hover: hover) and (pointer: fine) {
+  .geste-hote:hover [data-geste='avancer'] {
+    transform: translateX(2px);
+  }
+  .geste-hote:hover [data-geste='reculer'] {
+    transform: translateX(-2px);
+  }
+  .geste-hote:hover [data-geste='soulever'] {
+    transform: translateY(-2px);
+  }
+  .geste-hote:hover [data-geste='descendre'] {
+    transform: translateY(2px);
+  }
+  .geste-hote:hover [data-geste='tourner'] {
+    transform: rotate(180deg);
+    transition-duration: var(--duree-lente);
+  }
+  .geste-hote:hover [data-geste='pivoter'] {
+    transform: rotate(60deg);
+  }
+  .geste-hote:hover [data-geste='scintiller'] {
+    transform: rotate(18deg) scale(1.1);
+  }
+  .geste-hote:hover [data-geste='decoller'] {
+    transform: translate(2px, -2px);
+  }
+  .geste-hote:hover [data-geste='grandir'] {
+    transform: scale(1.12);
+  }
+  .geste-hote:hover [data-geste='incliner'] {
+    transform: rotate(-12deg);
+  }
+}
+
+/* Appui : retour immédiat (bouton qui s'enfonce). */
+.appui {
+  transition:
+    transform 160ms var(--courbe-sortie),
+    background-color var(--duree-rapide) ease,
+    border-color var(--duree-rapide) ease,
+    color var(--duree-rapide) ease,
+    box-shadow var(--duree-rapide) ease,
+    opacity var(--duree-rapide) ease;
+}
+.appui:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* ─── Squelettes de chargement ─────────────────────────────────────────── */
+.squelette {
+  position: relative;
+  overflow: hidden;
+  background: var(--survol-fort);
+  border-radius: var(--radius-sm);
+}
+.squelette::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgb(143 176 217 / 0.12), transparent);
+  animation: balayage 1.6s linear infinite;
+}
+@keyframes balayage {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* ─── L'IA travaille : pulsation verte et reflet, discrets ──────────────── */
+.ia-pulsation {
+  animation: ia-pulsation 1.8s ease-in-out infinite;
+}
+@keyframes ia-pulsation {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.ia-reflet {
+  background-image: linear-gradient(
+    100deg,
+    var(--accent-texte) 0%,
+    var(--accent-texte) 40%,
+    var(--texte-fort) 50%,
+    var(--accent-texte) 60%,
+    var(--accent-texte) 100%
+  );
+  background-size: 250% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: ia-reflet 2.4s linear infinite;
+}
+@keyframes ia-reflet {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -150% 0;
+  }
+}
+
+/* Symbole INJARA qui tourne lentement : indicateur de chargement de marque. */
+.rotation-lente {
+  animation: rotation 9s linear infinite;
+}
+.rotation {
+  animation: rotation 1s linear infinite;
+}
+@keyframes rotation {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Anciennes classes d'entrée, encore utilisées par la salle d'entretien. */
+@keyframes glisser-entree {
+  from {
+    opacity: 0;
+    transform: translateX(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes apparition {
+  from {
+    opacity: 0;
+    transform: translateY(0.25rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.glisser-entree {
+  animation: glisser-entree var(--duree) var(--courbe-sortie);
+}
+.apparition {
+  animation: apparition var(--duree) var(--courbe-sortie);
+}
+
+/* Mouvement réduit : plus de déplacement ni de boucle décorative ; les fondus de couleur restent. */
+@media (prefers-reduced-motion: reduce) {
+  [data-geste],
+  .appui:active:not(:disabled) {
+    transform: none !important;
+  }
+  .squelette::after,
+  .ia-pulsation,
+  .ia-reflet,
+  .rotation-lente,
+  .glisser-entree,
+  .apparition {
+    animation: none !important;
+  }
+  .ia-reflet {
+    color: var(--accent-texte);
+  }
+  .rotation {
+    animation-duration: 2.4s;
+  }
+}
+
+/* Modale native (<dialog>) : entrée par @starting-style, sans JavaScript. Centrée : origine au centre. */
+.modale-native {
+  opacity: 1;
+  transform: scale(1);
+  transition:
+    opacity var(--duree) var(--courbe-sortie),
+    transform var(--duree) var(--courbe-sortie),
+    overlay var(--duree) allow-discrete,
+    display var(--duree) allow-discrete;
+}
+.modale-native:not([open]) {
+  opacity: 0;
+  transform: scale(0.98);
+}
+@starting-style {
+  .modale-native[open] {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+.modale-native::backdrop {
+  transition:
+    opacity var(--duree) var(--courbe-sortie),
+    overlay var(--duree) allow-discrete,
+    display var(--duree) allow-discrete;
+  opacity: 1;
+}
+.modale-native:not([open])::backdrop {
+  opacity: 0;
+}
+@starting-style {
+  .modale-native[open]::backdrop {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .modale-native,
+  .modale-native:not([open]) {
+    transform: none;
+  }
+}

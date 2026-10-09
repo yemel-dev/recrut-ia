@@ -13,6 +13,7 @@ import PosteFormulaire from './pages/PosteFormulaire.jsx';
 import Postes from './pages/Postes.jsx';
 import ProfilEntreprise from './pages/ProfilEntreprise.jsx';
 import TableauDeBord from './pages/TableauDeBord.jsx';
+import Fenetre from './components/shell/Fenetre.jsx';
 import { FournisseurSession, useSession } from './session.jsx';
 
 /** Écrans sans connexion : création du compte (si aucun compte) ou connexion / récupération (si un compte existe). */
@@ -34,11 +35,13 @@ function AccesProtege() {
 
 function Routeur() {
   const { charge, erreur } = useSession();
-  if (!charge) return <Chargement texte="Démarrage d'INJARA…" />;
+  if (!charge) return <Chargement texte="Démarrage d'INJARA…" plein />;
   if (erreur) {
     return (
-      <div className="mx-auto max-w-md p-12">
-        <Alerte>{erreur}</Alerte>
+      <div className="grid h-full place-items-center p-12">
+        <div className="w-full max-w-md">
+          <Alerte titre="INJARA ne répond pas">{erreur}</Alerte>
+        </div>
       </div>
     );
   }
@@ -74,7 +77,9 @@ export default function App() {
   return (
     <HashRouter>
       <FournisseurSession>
-        <Routeur />
+        <Fenetre>
+          <Routeur />
+        </Fenetre>
       </FournisseurSession>
     </HashRouter>
   );

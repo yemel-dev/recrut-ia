@@ -7,6 +7,7 @@ import ListeCandidatures from '../candidatures/ListeCandidatures.jsx';
 import { FOURNISSEURS, REGLES_IGNORE, resumeSynchro } from '../agent/libelles.js';
 import { Alerte, Bouton, Carte, Chargement, EnTetePage, Interrupteur, Onglets } from '../components/ui.jsx';
 import { formaterDateHeure } from '../format.js';
+import { useCommande } from '../commandes.js';
 
 export default function Candidatures() {
   const { statut, etat, rafraichir, notifier, version, signalerNouveauxCV } = useAgent();
@@ -73,6 +74,10 @@ export default function Candidatures() {
       setVerification(false);
     }
   };
+
+  // Palette de commandes et raccourcis (Ctrl+I) : mêmes actions que les boutons de l'en-tête.
+  useCommande('importer-cv', () => !importEnCours && choisirFichiers());
+  useCommande('verifier-boite', () => statut?.connected && !statut.needs_setup && !verification && verifier());
 
   const basculerSurveillance = async (active) => {
     try {

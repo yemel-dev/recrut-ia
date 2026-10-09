@@ -14,11 +14,14 @@
     "dist": "node scripts/preparer-installeur.mjs && vite build && electron-builder --publish never"
   },
   "devDependencies": {
+    "@fontsource-variable/instrument-sans": "^5.3.0",
+    "@fontsource-variable/unbounded": "^5.3.0",
     "@tailwindcss/vite": "^4.3.3",
     "@vitejs/plugin-react": "^6.1.2",
     "electron": "^44.5.1",
     "electron-builder": "^26.15.3",
     "lucide-react": "^1.52.0",
+    "motion": "^14.0.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-router-dom": "^7.18.4",
@@ -55,7 +58,7 @@
     ],
     "win": {
       "target": "nsis",
-      "icon": "packaging/icon.png"
+      "icon": "packaging/icon.ico"
     },
     "nsis": {
       "oneClick": false,
