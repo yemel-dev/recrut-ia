@@ -1,8 +1,8 @@
-import { Video } from 'lucide-react';
+import { ArrowRight, Video } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
-import { Alerte, Bouton, Carte } from '../components/ui.jsx';
+import { Alerte, Bouton, Carte, cx } from '../components/ui.jsx';
 import { STATUTS_ENTRETIEN } from '../constantes.js';
 import { formaterDateHeure } from '../format.js';
 
@@ -30,29 +30,43 @@ export default function CarteEntretien({ candidatureId, decision }) {
     }
   };
 
-  if (!entretiens) return erreur ? <Alerte>{erreur}</Alerte> : null;
+  if (!entretiens) return erreur ? <Alerte>{erreur}</Alerte> : <div className="squelette h-36 rounded-lg" />;
   const actif = entretiens.find((e) => ['planifie', 'en_cours'].includes(e.statut));
+  const historique = entretiens.filter((e) => e !== actif);
 
   return (
-    <Carte className="flex flex-col gap-3 text-sm">
-      <h2 className="flex items-center gap-2 font-semibold text-navy-900"><Video className="size-4" aria-hidden /> Entretien vidéo</h2>
+    <Carte className="flex flex-col gap-3 text-base">
+      <h2 className="titre-section flex items-center gap-2">
+        <Video className="size-4 text-doux" aria-hidden /> Entretien vidéo
+      </h2>
       {erreur && <Alerte>{erreur}</Alerte>}
       {actif ? (
-        <Link to={`/entretiens/${actif.id}`} className="inline-flex justify-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700">
-          {actif.statut === 'en_cours' ? "Reprendre l'entretien" : "Ouvrir l'entretien"}
+        <Link
+          to={`/entretiens/${actif.id}`}
+          className={cx(
+            'appui geste-hote flex items-center gap-3 rounded-md border px-3.5 py-3',
+            actif.statut === 'en_cours' ? 'border-danger-trait bg-danger-doux' : 'border-accent-trait bg-accent-doux hover:shadow-halo',
+          )}
+        >
+          <span className={cx('size-2 shrink-0 rounded-full', actif.statut === 'en_cours' ? 'ia-pulsation bg-danger' : 'bg-accent')} aria-hidden />
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold text-fort">{actif.statut === 'en_cours' ? "Reprendre l'entretien" : "Ouvrir l'entretien"}</span>
+            <span className="block text-sm text-doux">{STATUTS_ENTRETIEN[actif.statut]}{actif.date_entretien && ` · ${formaterDateHeure(actif.date_entretien)}`}</span>
+          </span>
+          <ArrowRight className="size-4 text-fort" aria-hidden data-geste="avancer" />
         </Link>
       ) : (
         <>
-          <Bouton icone={Video} chargement={occupe} onClick={inviter}>Inviter à un entretien vidéo</Bouton>
-          {decision?.etat !== 'retenu' && <p className="text-xs text-muted">Ce candidat n'est pas marqué « Retenu », vous pouvez tout de même l'inviter.</p>}
+          <Bouton icone={Video} geste="grandir" chargement={occupe} onClick={inviter}>Inviter à un entretien vidéo</Bouton>
+          {decision?.etat !== 'retenu' && <p className="text-sm text-doux">Ce candidat n'est pas marqué « Retenu » : vous pouvez tout de même l'inviter.</p>}
         </>
       )}
-      {entretiens.filter((e) => e !== actif).length > 0 && (
-        <ul className="flex flex-col divide-y divide-line border-t border-line pt-1">
-          {entretiens.filter((e) => e !== actif).map((e) => (
+      {historique.length > 0 && (
+        <ul className="flex flex-col border-t border-trait pt-1">
+          {historique.map((e) => (
             <li key={e.id} className="flex items-center justify-between gap-3 py-2">
-              <Link to={`/entretiens/${e.id}`} className="font-medium text-navy-900 hover:underline">{STATUTS_ENTRETIEN[e.statut]}</Link>
-              <span className="text-xs text-muted">{formaterDateHeure(e.fin_le || e.cree_le || e.date_entretien)}</span>
+              <Link to={`/entretiens/${e.id}`} className="font-medium text-fort hover:underline">{STATUTS_ENTRETIEN[e.statut]}</Link>
+              <span className="text-sm text-doux tabular-nums">{formaterDateHeure(e.fin_le || e.cree_le || e.date_entretien)}</span>
             </li>
           ))}
         </ul>

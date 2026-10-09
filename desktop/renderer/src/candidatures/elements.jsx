@@ -128,8 +128,9 @@ export function PastilleScore({ score, taille = 'normale', anime = false }) {
   const t = TAILLES_JAUGE[taille === 'grande' ? 'grande' : taille === 'petite' ? 'petite' : 'normale'];
   if (score === null || score === undefined) {
     return (
-      <span className="inline-grid shrink-0 place-items-center text-sm text-tenu" style={{ width: t.cote, height: t.cote }} title="Pas de score">
-        —
+      <span className="relative inline-grid shrink-0 place-items-center text-sm text-tenu" style={{ width: t.cote, height: t.cote }} title="Pas de score">
+        {taille === 'grande' && <span className="absolute inset-0 rounded-full border-[5px] border-dashed border-[var(--survol-fort)]" aria-hidden />}
+        <span aria-label="Pas de score">—</span>
       </span>
     );
   }
