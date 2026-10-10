@@ -124,5 +124,5 @@ def retablir_modele(type_: str, request: Request):
 
 @router.post("/parametres/mails/modeles/{type_}/apercu")
 def apercu_modele(type_: str, corps: Modele, request: Request):
-    entreprise = _services(request).entreprise.consulter().get("nom")
-    return _services(request).reglages_mails.apercu(type_, corps.objet, corps.corps, entreprise)
+    profil = _services(request).entreprise.consulter()
+    return _services(request).reglages_mails.apercu(type_, corps.objet, corps.corps, profil)

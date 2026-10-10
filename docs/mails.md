@@ -54,6 +54,16 @@ sans mot de métier ni titre de section), sinon « Madame, Monsieur » ; le genr
 à `{message}` disparaît quand le message est vide. Le nom de l'entreprise (profil entreprise) est obligatoire : il
 signe les mails.
 
+## Mise en forme
+
+Chaque mail part en deux versions (multipart/alternative) : le texte du modèle, et une version mise en forme
+(`services/mail_html.py`) : en-tête au nom de l'entreprise (initiale, secteur), texte du modèle avec liens cliquables,
+encadré « Votre entretien » pour une invitation ou une modification (date, heure, durée, lieu, bouton « Rejoindre
+l'entretien en ligne » pour une visio), pied de page avec les coordonnées du profil entreprise. HTML de mail :
+tableaux et styles en ligne, 600 px de large au plus, lisible sur téléphone ; aucune image ni ressource externe (rien
+à télécharger, pas de pistage d'ouverture). Les aperçus d'INJARA (page des modèles, écran d'envoi) affichent cette
+version, dans un cadre isolé.
+
 ## Pas de mode test
 
 Les mails partent toujours aux vrais candidats, après l'aperçu et la confirmation du recruteur. Il n'y a pas de mode

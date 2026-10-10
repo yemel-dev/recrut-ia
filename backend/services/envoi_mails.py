@@ -27,7 +27,7 @@ from ..database.repositories import (
     MailCandidatRepository,
     PosteRepository,
 )
-from . import coffre
+from . import coffre, mail_html
 from . import modeles_mail as m
 from .erreurs import Conflit, ErreurValidation, Introuvable, SessionRequise
 from .expediteur import EchecEnvoi, Expediteur, MailSortant
@@ -294,6 +294,7 @@ class EnvoiMailsService:
         corps = m.remplir(modele["corps"], valeurs)
         if type_ == m.MODIFICATION:
             corps = corps.replace("\n\n", f"\n\n{m.ANNONCE_MODIFICATION}\n\n", 1)
+        html = mail_html.rendre(corps, mail_html.Signature.depuis_profil(contexte["profil"]), _encadre(type_, entretien, valeurs, self.lien_entretien), objet)
 
         objet_sans_fil = objet  # nouveau mail : l'objet du modèle
         dans_le_fil = bool(candidature["source"] == "email" and candidature["objet"])
@@ -306,6 +307,7 @@ class EnvoiMailsService:
             "objet": objet,
             "objet_sans_fil": objet_sans_fil,
             "corps": corps,
+            "html": html,
             "dans_le_fil": dans_le_fil,
             "entretien_debut": entretien["date_entretien"].isoformat() if entretien else None,
         }
@@ -321,7 +323,7 @@ class EnvoiMailsService:
         objet = mail["objet"] if fil is not None or not mail["dans_le_fil"] else mail["objet_sans_fil"]
         statut, erreur, gmail_id = "envoye", None, None
         try:
-            gmail_id = expediteur.envoyer(MailSortant(mail["destinataire_effectif"], objet, mail["corps"], fil))
+            gmail_id = expediteur.envoyer(MailSortant(mail["destinataire_effectif"], objet, mail["corps"], fil, mail["html"]))
         except EchecEnvoi as exc:
             statut, erreur = "echec", exc.raison
         except Exception as exc:  # panne imprévue : enregistrée comme un échec, le lot continue
@@ -353,6 +355,7 @@ class EnvoiMailsService:
             "expediteur": expediteur,
             "autorisation": expediteur.etat(),
             "entreprise": ((self.entreprise.get() or {}).get("nom") or "").strip(),
+            "profil": self.entreprise.get() or {},
         }
 
     @staticmethod
@@ -410,3 +413,18 @@ class EnvoiMailsService:
         if cle is None:
             raise SessionRequise("Session expirée. Veuillez vous reconnecter.")
         return cle
+
+
+def _encadre(type_: str, entretien: dict | None, valeurs: dict[str, str], lien: Callable[[dict], str | None]) -> mail_html.Entretien | None:
+    """Encadré « Votre entretien » du mail mis en forme (invitation et modification)."""
+    if entretien is None or type_ == m.REFUS:
+        return None
+    en_ligne = entretien["mode"] == "en_ligne"
+    return mail_html.Entretien(
+        date=valeurs["date"],
+        heure=valeurs["heure"],
+        duree=valeurs["duree"],
+        lieu="En ligne (visioconférence)" if en_ligne else (entretien["adresse"] or "").strip() or "Dans nos locaux",
+        lien=lien(entretien) if en_ligne else None,
+        titre="Nouvelle date de votre entretien" if type_ == m.MODIFICATION else "Votre entretien",
+    )

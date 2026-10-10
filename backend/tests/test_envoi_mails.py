@@ -323,3 +323,15 @@ def test_cloture_par_le_formulaire_du_poste_meme_effet(connecte, services, poste
     assert r.json()["statut"] == "cloture" and r.json()["cloture"]["a_informer"] == 3
     assert r.json()["description"].endswith("Mise à jour.")
     assert len(faux.envoyes) == 3
+
+
+def test_le_candidat_recoit_un_mail_mis_en_forme(connecte, services, poste, faux):  # noqa: F811
+    a, _, _ = ids(services)
+    decider(connecte, a, "retenu")
+    planifier(connecte, a)
+    envoyer(connecte, poste, "invitation", [a])
+    mail = faux.envoyes[-1]
+    assert mail.corps.startswith("Bonjour") and "Cabinet Ndong" in mail.html
+    assert "Votre entretien" in mail.html and "Bonapriso, Douala" in mail.html
+    preparation_refus = connecte.get(f"/postes/{poste}/envois/refus").json()
+    assert preparation_refus["destinataires"] == [] or "html" in preparation_refus["destinataires"][0]

@@ -37,6 +37,7 @@ class MailSortant:
     objet: str
     corps: str
     fil: FilOrigine | None = None
+    html: str | None = None  # version mise en forme (services/mail_html.py), envoyée avec le texte
 
 
 class Expediteur(Protocol):
@@ -51,7 +52,8 @@ class Expediteur(Protocol):
 
 
 def construire_mime(mail: MailSortant, expediteur: str | None = None) -> EmailMessage:
-    """Message texte brut en UTF-8 ; en réponse dans le fil, avec In-Reply-To et References."""
+    """Message en UTF-8 : texte, plus la version mise en forme quand elle existe (multipart/alternative) ;
+    en réponse dans le fil, avec In-Reply-To et References."""
     message = EmailMessage()
     message["To"] = mail.destinataire
     if expediteur:
@@ -62,6 +64,8 @@ def construire_mime(mail: MailSortant, expediteur: str | None = None) -> EmailMe
         message["In-Reply-To"] = mail.fil.message_id
         message["References"] = f"{mail.fil.references} {mail.fil.message_id}".strip()
     message.set_content(mail.corps, charset="utf-8")
+    if mail.html:
+        message.add_alternative(mail.html, subtype="html", charset="utf-8")
     return message
 
 

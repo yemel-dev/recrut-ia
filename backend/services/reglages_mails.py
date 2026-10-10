@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from ..database.repositories import ParametreRepository
+from . import mail_html
 from . import modeles_mail as m
 from .erreurs import ErreurValidation
 
@@ -94,12 +95,18 @@ class ReglagesMailsService:
             "variables": list(m.VARIABLES),
         }
 
-    def apercu(self, type_: str, objet: str, corps: str, entreprise: str | None = None) -> dict[str, str]:
-        """Le modèle rempli avec des valeurs d'exemple (avant même de l'enregistrer)."""
+    def apercu(self, type_: str, objet: str, corps: str, profil: dict | None = None) -> dict[str, str]:
+        """Le modèle rempli avec des valeurs d'exemple (avant même de l'enregistrer), en texte et mis en forme."""
         self._type(type_)
         debut = (datetime.now().astimezone() + timedelta(days=7)).replace(hour=10, minute=0, second=0, microsecond=0)
+        entreprise = ((profil or {}).get("nom") or "").strip()
         valeurs = {**EXEMPLE, "entreprise": entreprise or EXEMPLE["entreprise"], "date": m.formater_date(debut), "heure": m.formater_heure(debut)}
-        return {"objet": m.remplir(objet, valeurs), "corps": m.remplir(corps, valeurs)}
+        objet_rempli, corps_rempli = m.remplir(objet, valeurs), m.remplir(corps, valeurs)
+        encadre = None
+        if type_ == m.INVITATION:
+            encadre = mail_html.Entretien(date=valeurs["date"], heure=valeurs["heure"], duree=valeurs["duree"], lieu=valeurs["lieu"])
+        signature = mail_html.Signature.depuis_profil({**(profil or {}), "nom": valeurs["entreprise"]})
+        return {"objet": objet_rempli, "corps": corps_rempli, "html": mail_html.rendre(corps_rempli, signature, encadre, objet_rempli)}
 
     @staticmethod
     def _type(type_: str) -> None:

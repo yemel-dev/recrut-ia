@@ -130,7 +130,7 @@ export default function FenetreEnvoi({ ouverte, titre, charger, envoyer, onFerme
                         </button>
                         {deplie && (
                           <div className="pb-3">
-                            <ApercuMail objet={d.objet} corps={d.corps} destinataire={d.destinataire} />
+                            <ApercuMail objet={d.objet} corps={d.corps} html={d.html} destinataire={d.destinataire} />
                           </div>
                         )}
                       </li>

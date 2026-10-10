@@ -6,6 +6,7 @@ import { api } from '../api.js';
 import { useAgent } from '../agent/ContexteAgent.jsx';
 import { Alerte, Badge, Bouton, Carte, Champ, Chargement, Confirmation, EnTetePage, Onglets, Saisie, ZoneTexte, cx } from '../components/ui.jsx';
 import { AutorisationEnvoi } from '../mails/AutorisationEnvoi.jsx';
+import { MailRendu } from '../mails/elements.jsx';
 
 const MODELES = {
   invitation: {
@@ -341,7 +342,7 @@ function EditeurModele({ type, modele, entreprise, onModifie, onEnregistre }) {
   );
 }
 
-/** Le mail tel que le candidat le recevra, présenté comme dans une messagerie. */
+/** Le mail tel que le candidat le recevra : objet et expéditeur, puis le mail mis en forme. */
 function MailApercu({ apercu, entreprise, destinataire }) {
   if (!apercu) return <div className="squelette h-96 rounded-lg" />;
   const nom = entreprise || 'Votre entreprise';
@@ -349,17 +350,11 @@ function MailApercu({ apercu, entreprise, destinataire }) {
     <article className="overflow-hidden rounded-lg border border-trait bg-surface shadow-flottante">
       <header className="border-b border-trait px-5 py-4">
         <p className="text-lg leading-snug font-semibold text-fort">{apercu.objet || <span className="text-tenu">(sans objet)</span>}</p>
-        <div className="mt-3 flex items-center gap-3">
-          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-accent font-affichage text-sm font-semibold text-sur-accent" aria-hidden>
-            {nom.trim().charAt(0).toUpperCase()}
-          </span>
-          <div className="min-w-0 text-sm">
-            <p className="truncate font-semibold text-fort">{nom}</p>
-            <p className="truncate text-doux">À : {destinataire}</p>
-          </div>
-        </div>
+        <p className="mt-1 truncate text-sm text-doux">
+          De : <span className="font-medium text-texte">{nom}</span> · À : {destinataire}
+        </p>
       </header>
-      <div className="px-5 py-4 text-[15px] leading-relaxed whitespace-pre-line text-texte">{apercu.corps}</div>
+      <MailRendu html={apercu.html} />
     </article>
   );
 }

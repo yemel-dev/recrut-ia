@@ -1,20 +1,55 @@
 // Éléments d'affichage des mails aux candidats : aperçu d'un mail, état des envois.
 import { CircleAlert, MailCheck } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { Badge } from '../components/ui.jsx';
 import { formaterDateHeure } from '../format.js';
 
 export const TYPES_MAIL = { invitation: 'Invitation', modification: "Modification de l'entretien", refus: 'Réponse négative' };
 const COURTS = { invitation: 'Invitation', modification: 'Modification', refus: 'Réponse négative' };
 
-/** Un mail tel qu'il partira (objet et texte). */
-export function ApercuMail({ objet, corps, destinataire, note }) {
+/** Un mail tel qu'il partira : objet, destinataire, puis la version mise en forme (ou le texte). */
+export function ApercuMail({ objet, corps, html, destinataire, note }) {
   return (
-    <div className="rounded-md border border-trait bg-enfonce p-4 text-sm">
-      {note && <p className="mb-2 text-xs text-tenu">{note}</p>}
-      {destinataire && <p className="text-xs text-doux">À : {destinataire}</p>}
-      <p className="font-semibold text-fort">{objet}</p>
-      <p className="mt-2 whitespace-pre-line text-texte">{corps}</p>
+    <div className="overflow-hidden rounded-lg border border-trait bg-enfonce text-sm">
+      <div className="border-b border-trait px-4 py-3">
+        {note && <p className="mb-1 text-xs text-tenu">{note}</p>}
+        <p className="font-semibold text-fort">{objet}</p>
+        {destinataire && <p className="mt-0.5 text-xs text-doux">À : {destinataire}</p>}
+      </div>
+      {html ? <MailRendu html={html} /> : <p className="px-4 py-3 whitespace-pre-line text-texte">{corps}</p>}
     </div>
+  );
+}
+
+/**
+ * Le HTML du mail, isolé dans un cadre sans scripts ; sa hauteur suit le contenu. Les liens ne sont pas cliquables
+ * dans l'aperçu (le cadre ne doit jamais charger une page extérieure).
+ */
+export function MailRendu({ html, className = '' }) {
+  const cadre = useRef(null);
+  const [hauteur, setHauteur] = useState(420);
+  const ajuster = () => {
+    const doc = cadre.current?.contentDocument;
+    const h = doc?.documentElement?.scrollHeight;
+    if (h) setHauteur(h); // 0 quand le cadre est masqué (onglet inactif) : on garde la hauteur connue
+  };
+  // Remesure quand le cadre devient visible ou change de largeur
+  useEffect(() => {
+    if (!cadre.current || typeof ResizeObserver === 'undefined') return undefined;
+    const observateur = new ResizeObserver(ajuster);
+    observateur.observe(cadre.current);
+    return () => observateur.disconnect();
+  }, []);
+  return (
+    <iframe
+      ref={cadre}
+      title="Aperçu du mail"
+      sandbox="allow-same-origin"
+      srcDoc={html}
+      onLoad={ajuster}
+      style={{ height: hauteur, pointerEvents: 'none' }}
+      className={`block w-full border-0 bg-[#f2f5f9] ${className}`}
+    />
   );
 }
 
