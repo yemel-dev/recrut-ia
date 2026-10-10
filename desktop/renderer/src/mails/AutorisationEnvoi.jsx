@@ -4,16 +4,29 @@ import { CheckCircle2, KeyRound, LogOut, PlugZap, RefreshCw, Server, ShieldAlert
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { useAgent } from '../agent/ContexteAgent.jsx';
-import { Alerte, Bouton, Carte, Champ, Confirmation, Saisie } from '../components/ui.jsx';
+import { Alerte, Badge, Bouton, Carte, Champ, Confirmation, Saisie } from '../components/ui.jsx';
 
 function EnTete({ etat, children }) {
-  const Icone = etat.autorise || etat.simule ? CheckCircle2 : etat.reconnexion || etat.transport === 'smtp' ? ShieldAlert : KeyRound;
-  const couleur = etat.autorise || etat.simule ? 'text-accent-texte' : etat.reconnexion || etat.transport === 'smtp' ? 'text-danger' : 'text-doux';
+  const pret = etat.autorise || etat.simule;
+  const probleme = etat.reconnexion || etat.transport === 'smtp';
+  const Icone = pret ? CheckCircle2 : probleme ? ShieldAlert : KeyRound;
+  const tuile = pret
+    ? 'border-accent-trait bg-accent-doux text-accent-texte'
+    : probleme
+      ? 'border-danger-trait bg-danger-doux text-danger'
+      : 'border-trait-fort bg-survol text-doux';
   return (
-    <div className="flex items-start gap-3">
-      <Icone className={`mt-0.5 size-5 shrink-0 ${couleur}`} aria-hidden />
-      <div className="min-w-0 text-base">
-        <h2 className="titre-section">Envoi des mails</h2>
+    <div className="flex items-start gap-4">
+      <span className={`grid size-10 shrink-0 place-items-center rounded-lg border ${tuile}`}>
+        <Icone className="size-5" aria-hidden />
+      </span>
+      <div className="min-w-0 flex-1 text-base">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="titre-section">Envoi des mails</h2>
+          <Badge ton={pret ? 'accent' : probleme ? 'danger' : 'neutre'} point>
+            {pret ? 'Prêt' : 'À régler'}
+          </Badge>
+        </div>
         {children}
       </div>
     </div>
