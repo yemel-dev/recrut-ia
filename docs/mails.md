@@ -2,8 +2,10 @@
 
 Invitation à un entretien pour les candidats retenus, réponse négative pour les candidats écartés.
 
-**Aucun mail ne part automatiquement.** Un changement de décision, une planification d'entretien ou une clôture de
-la sélection n'envoie jamais rien : le recruteur prépare l'envoi, voit l'aperçu de chaque mail, puis confirme.
+**Le recruteur écrit lui-même aux retenus** : un changement de décision ou une planification d'entretien n'envoie
+rien ; il prépare l'invitation, voit l'aperçu, puis confirme. **La clôture du poste prévient les autres** : quand il
+passe le poste à « clôturé » (après une confirmation qui dit combien de candidats seront prévenus), tous les candidats
+non retenus reçoivent automatiquement la réponse négative.
 
 ## Parcours
 
@@ -19,9 +21,13 @@ la sélection n'envoie jamais rien : le recruteur prépare l'envoi, voit l'aper�
      retenu sans entretien (ou sans date) est listé à part, avec la raison. Pour un entretien **en ligne**, `{lieu}`
      contient le **lien de la visio** du candidat : il faut donc que l'accès à distance soit activé, sinon le candidat
      est exclu de l'envoi avec cette raison ;
-   - « Clôturer la sélection » : après confirmation, les candidatures encore « à examiner » passent à « écarté » ;
-     « en attente » et « retenu » ne bougent pas ;
-   - « Envoyer les réponses négatives » : candidats « écarté ».
+   - statut « Clôturé » (en haut de la page du poste, ou formulaire du poste) : confirmation avec le nombre de
+     candidats prévenus, les retenus (qui ne reçoivent rien) et ceux qui ne peuvent pas l'être (raison). Ensuite les
+     candidatures « à examiner » et « en attente » passent à « écarté », et la réponse négative part en arrière-plan
+     à chaque non retenu (`services/cloture_poste.py`). Si l'envoi est impossible (nom de l'entreprise manquant,
+     boîte non autorisée), le poste est clôturé quand même et la raison est affichée. Un poste clôturé garde ses
+     candidats : le reclassement automatique ne les déplace plus vers un autre poste ;
+   - « Envoyer les réponses négatives » : candidats « écarté », pour envoyer avant la clôture ou relancer les échecs.
    Chaque envoi ouvre un écran de confirmation : nombre de destinataires, aperçu du mail de chacun, exclus avec la
    raison, puis résultat ligne par ligne et « Relancer les échecs ».
 3. **Carte « Mails »** de la fiche et **classement** : état de chaque mail (non envoyé, envoyé le…, échec et raison).

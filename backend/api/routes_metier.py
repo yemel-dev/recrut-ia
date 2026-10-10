@@ -87,12 +87,22 @@ def consulter_poste(poste_id: int, request: Request):
 
 @router.put("/postes/{poste_id}", tags=["Postes"])
 def modifier_poste(poste_id: int, corps: PosteSaisi, request: Request):
-    return _services(request).postes.modifier(poste_id, corps.model_dump())
+    services = _services(request)
+    donnees = corps.model_dump()
+    if donnees.get("statut") == "cloture" and services.postes.consulter(poste_id)["statut"] != "cloture":
+        # Clôture par le formulaire : mêmes effets que par le statut (réponses négatives aux non retenus)
+        services.postes.modifier(poste_id, {**donnees, "statut": services.postes.consulter(poste_id)["statut"]})
+        return services.cloture_poste.cloturer(poste_id)
+    return services.postes.modifier(poste_id, donnees)
 
 
 @router.put("/postes/{poste_id}/statut", tags=["Postes"])
 def changer_statut(poste_id: int, corps: ChangementStatut, request: Request):
-    return _services(request).postes.changer_statut(poste_id, corps.statut)
+    """« clôturé » : les non retenus passent à « écarté » et reçoivent la réponse négative (bilan dans « cloture »)."""
+    services = _services(request)
+    if corps.statut == "cloture":
+        return services.cloture_poste.cloturer(poste_id)
+    return services.postes.changer_statut(poste_id, corps.statut)
 
 
 @router.delete("/postes/{poste_id}", status_code=204, tags=["Postes"])

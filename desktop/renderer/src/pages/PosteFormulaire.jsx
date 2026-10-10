@@ -116,8 +116,21 @@ export default function PosteFormulaire() {
           <Champ label="Description et missions" erreur={erreurs.description} aide="Contexte du poste, responsabilités, missions principales." obligatoire>
             {(a) => <ZoneTexte {...a} rows={8} {...valeur('description')} />}
           </Champ>
-          <Champ label="Statut" erreur={erreurs.statut} aide="Seuls les postes actifs serviront au classement des candidatures." className="md:w-1/2">
-            {(a) => <Liste {...a} options={STATUTS} vide={null} {...valeur('statut')} />}
+          <Champ
+            label="Statut"
+            erreur={erreurs.statut}
+            aide="Seuls les postes actifs serviront au classement des candidatures. Pour clôturer le poste, utilisez son statut sur la page du poste : les candidats non retenus y sont prévenus."
+            className="md:w-1/2"
+          >
+            {(a) => (
+              <Liste
+                {...a}
+                // « Clôturé » seulement depuis la page du poste (confirmation et réponses négatives)
+                options={Object.fromEntries(Object.entries(STATUTS).filter(([cle]) => cle !== 'cloture' || formulaire.statut === 'cloture'))}
+                vide={null}
+                {...valeur('statut')}
+              />
+            )}
           </Champ>
         </Section>
 

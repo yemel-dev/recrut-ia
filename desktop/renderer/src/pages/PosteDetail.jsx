@@ -2,10 +2,11 @@ import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api.js';
+import { useAgent } from '../agent/ContexteAgent.jsx';
 import TopPoste from '../candidatures/TopPoste.jsx';
 import ActionsPoste from '../mails/ActionsPoste.jsx';
 import SuppressionPoste from '../components/SuppressionPoste.jsx';
-import { Alerte, BadgeStatut, Bouton, Carte, Segments } from '../components/ui.jsx';
+import { Alerte, BadgeStatut, Bouton, Carte, Confirmation, Segments } from '../components/ui.jsx';
 import { STATUTS, TELETRAVAIL, TYPES_CONTRAT } from '../constantes.js';
 import { experience, formaterDate } from '../format.js';
 
@@ -17,6 +18,8 @@ export default function PosteDetail() {
   const [suppression, setSuppression] = useState(false);
   const [changementStatut, setChangementStatut] = useState(false);
   const [versionClassement, setVersionClassement] = useState(0); // relu après un envoi ou une clôture
+  const [cloture, setCloture] = useState(null); // aperçu avant de clôturer : candidats prévenus, exclus, blocages
+  const { notifier } = useAgent();
 
   useEffect(() => {
     api.get(`/postes/${id}`).then(setPoste, (err) => setErreur(err.message));
@@ -26,11 +29,38 @@ export default function PosteDetail() {
     setChangementStatut(true);
     setErreur('');
     try {
+      if (statut === 'cloture') {
+        setCloture(await api.get(`/postes/${id}/cloture`)); // confirmation d'abord : des mails vont partir
+        return;
+      }
       setPoste(await api.put(`/postes/${id}/statut`, { statut }));
     } catch (err) {
       setErreur(err.message);
     } finally {
       setChangementStatut(false);
+    }
+  };
+
+  const cloturer = async () => {
+    setChangementStatut(true);
+    try {
+      const reponse = await api.put(`/postes/${id}/statut`, { statut: 'cloture' });
+      const { cloture: bilan, ...nouveau } = reponse;
+      setPoste(nouveau);
+      setVersionClassement((v) => v + 1);
+      if (bilan?.envoi_impossible) {
+        notifier(`Poste clôturé. Les réponses négatives ne sont pas parties : ${bilan.envoi_impossible}`, 'erreur');
+      } else if (bilan?.a_informer) {
+        notifier(`Poste clôturé. ${bilan.a_informer} réponse${bilan.a_informer > 1 ? 's' : ''} négative${bilan.a_informer > 1 ? 's' : ''} en cours d'envoi.`, 'succes');
+        setTimeout(() => setVersionClassement((v) => v + 1), 8000); // l'état des mails apparaît sur les lignes
+      } else {
+        notifier('Poste clôturé.', 'succes');
+      }
+    } catch (err) {
+      setErreur(err.message);
+    } finally {
+      setChangementStatut(false);
+      setCloture(null);
     }
   };
 
@@ -107,6 +137,17 @@ export default function PosteDetail() {
       </Carte>
 
       <ActionsPoste posteId={Number(id)} onChange={() => setVersionClassement((v) => v + 1)} />
+      <Confirmation
+        ouverte={Boolean(cloture)}
+        titre="Clôturer ce poste ?"
+        variante="primaire"
+        libelleConfirmer={cloture?.a_informer && !cloture.blocages.length ? `Clôturer et prévenir ${cloture.a_informer} candidat${cloture.a_informer > 1 ? 's' : ''}` : 'Clôturer le poste'}
+        chargement={changementStatut}
+        onConfirmer={cloturer}
+        onAnnuler={() => setCloture(null)}
+      >
+        {cloture && <ResumeCloture cloture={cloture} />}
+      </Confirmation>
 
       <div className="mb-6">
         <TopPoste key={versionClassement} posteId={Number(id)} actif={poste.statut === 'actif'} />
@@ -177,6 +218,45 @@ function Etiquettes({ titre, valeurs, accent }) {
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+/** Ce que la clôture va faire, en clair. */
+function ResumeCloture({ cloture }) {
+  const { a_informer: n, retenus, exclus, blocages } = cloture;
+  return (
+    <div className="flex flex-col gap-2">
+      {blocages.length > 0 ? (
+        <p>
+          Le poste sera clôturé, mais les réponses négatives ne pourront pas partir : <strong className="text-fort">{blocages.join(' ')}</strong>{' '}
+          Vous pourrez les envoyer plus tard depuis ce poste.
+        </p>
+      ) : n > 0 ? (
+        <p>
+          Les candidats non retenus recevront automatiquement la réponse négative :{' '}
+          <strong className="text-fort">{n} candidat{n > 1 ? 's' : ''}</strong>.
+        </p>
+      ) : (
+        <p>Aucun candidat à prévenir.</p>
+      )}
+      <p className="text-doux">
+        {retenus > 0
+          ? `Les ${retenus} candidat${retenus > 1 ? 's' : ''} retenu${retenus > 1 ? 's' : ''} ne reçoi${retenus > 1 ? 'vent' : 't'} rien : c'est vous qui leur écrivez.`
+          : 'Aucun candidat retenu pour ce poste.'}
+      </p>
+      {exclus.length > 0 && (
+        <details className="text-sm text-doux">
+          <summary className="cursor-pointer">{exclus.length} candidat{exclus.length > 1 ? 's' : ''} ne recevr{exclus.length > 1 ? 'ont' : 'a'} pas de mail</summary>
+          <ul className="mt-1.5 flex flex-col gap-1">
+            {exclus.map((e) => (
+              <li key={e.candidature_id}>
+                <span className="font-medium text-fort">{e.nom}</span> : {e.raison}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
     </div>
   );
 }

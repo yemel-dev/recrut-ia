@@ -5,6 +5,7 @@
    d'après le nom du fichier ; les autres pièces jointes servent de lettre de motivation) ;
 2. lecture et extraction, une seule fois par CV (fichier illisible → statut « illisible », signalé) ;
 3. score de chaque candidature pour chaque poste actif (et pour le poste choisi à la main, même inactif) ;
+   une candidature d'un poste clôturé y reste rattachée (sélection terminée, réponses envoyées) ;
 4. classement : poste cité dans le mail, sinon meilleur poste. Un choix manuel n'est jamais écrasé.
 
 Quand un poste change, ses candidatures sont renotées à partir des données enregistrées, sans relire les CV.
@@ -418,7 +419,10 @@ class TraitementService:
                     adequation_ignoree=resultat.adequation_ignoree, detail=resultat.detail(),
                     **self._potentiel(profil, donnees_postes[poste_id].niveau_formation),
                 )
-            if candidature["mode_assignation"] != "manuel":
+            poste_actuel = postes.get(candidature["poste_id"])
+            # Poste clôturé : il garde ses candidats, sauf demande explicite du recruteur (« remettre en automatique »)
+            fige = ids is None and poste_actuel is not None and poste_actuel["statut"] == "cloture"
+            if candidature["mode_assignation"] != "manuel" and not fige:
                 source = classement.SourceMail(candidature["objet"] or "", candidature["corps"] or "", candidature["texte_lettre"] or "")
                 decision = classement.decider(source, postes_actifs, pertinences)
                 self.candidatures.maj(

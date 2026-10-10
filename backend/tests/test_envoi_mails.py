@@ -65,7 +65,7 @@ def test_aucun_mail_ne_part_sur_un_changement_de_decision(connecte, services, po
     decider(connecte, a, "retenu")
     planifier(connecte, a)
     decider(connecte, b, "ecarte")
-    connecte.post(f"/postes/{poste}/cloture")
+    connecte.get(f"/postes/{poste}/cloture")  # simple aperçu de la clôture
     assert faux.envoyes == []
 
 
@@ -176,15 +176,62 @@ def test_entretien_sans_date_pas_d_invitation(connecte, services, poste, faux): 
 # --- Clôture et réponses négatives ------------------------------------------------------------------------------
 
 
-def test_cloture_ne_touche_que_les_a_examiner(connecte, services, poste, faux):  # noqa: F811
+def test_cloturer_le_poste_previent_tous_les_non_retenus(connecte, services, poste, faux):  # noqa: F811
+    """Poste clôturé : à examiner et en attente passent à « écarté » et reçoivent la réponse négative ; pas les retenus."""
+    services.cloture_poste.lancer = lambda tache: tache()  # envoi tout de suite, au lieu de l'arrière-plan
     a, b, c = ids(services)
     decider(connecte, b, "en_attente")
     decider(connecte, c, "retenu")
-    assert connecte.get(f"/postes/{poste}/cloture").json() == {"a_ecarter": 1, "en_attente": 1, "retenus": 1}
-    assert connecte.post(f"/postes/{poste}/cloture").json() == {"ecartes": 1, "en_attente": 1}
+    apercu = connecte.get(f"/postes/{poste}/cloture").json()
+    assert (apercu["retenus"], apercu["a_informer"], apercu["exclus"], apercu["blocages"]) == (1, 2, [], [])
+    assert faux.envoyes == []  # l'aperçu n'envoie rien
+
+    r = connecte.put(f"/postes/{poste}/statut", json={"statut": "cloture"})
+    assert r.status_code == 200, r.text
+    assert r.json()["statut"] == "cloture"
+    assert r.json()["cloture"] == {"ecartes": 2, "a_informer": 2, "envoi_impossible": None}
     decisions = {cid: connecte.get(f"/candidatures/{cid}").json()["decision"]["etat"] for cid in (a, b, c)}
-    assert decisions == {a: "ecarte", b: "en_attente", c: "retenu"}
+    assert decisions == {a: "ecarte", b: "ecarte", c: "retenu"}
+    assert sorted(m.destinataire for m in faux.envoyes) == ["c0@x.cm", "c1@x.cm"]
+    assert all(m.corps.startswith("Bonjour") and "[TEST" not in m.objet for m in faux.envoyes)
+    # Le poste clôturé garde ses candidats, même après un nouveau classement
+    services.traitement.traiter()
+    assert {candidature_de(services, f"CV_{i}.pdf")["poste_id"] for i in range(3)} == {poste}
+
+    # Déjà clôturé : rien ne repart ; rouvert puis reclôturé : pas de doublon
+    assert connecte.put(f"/postes/{poste}/statut", json={"statut": "cloture"}).json()["cloture"] is None
+    connecte.put(f"/postes/{poste}/statut", json={"statut": "actif"})
+    assert connecte.put(f"/postes/{poste}/statut", json={"statut": "cloture"}).json()["cloture"]["a_informer"] == 0
+    assert len(faux.envoyes) == 2
+
+
+def test_cloture_sans_envoi_possible_le_poste_est_clos_quand_meme(connecte, services, poste, faux):  # noqa: F811
+    services.cloture_poste.lancer = lambda tache: tache()
+    faux.autorise = False  # boîte d'envoi non autorisée
+    ids(services)
+    apercu = connecte.get(f"/postes/{poste}/cloture").json()
+    assert any("pas autorisé" in b for b in apercu["blocages"])
+    r = connecte.put(f"/postes/{poste}/statut", json={"statut": "cloture"}).json()
+    assert r["statut"] == "cloture" and r["cloture"]["ecartes"] == 3 and r["cloture"]["a_informer"] == 0
+    assert "pas autorisé" in r["cloture"]["envoi_impossible"]
     assert faux.envoyes == []
+    # Les réponses partent ensuite depuis le poste, une fois l'envoi autorisé
+    faux.autorise = True
+    assert len(connecte.get(f"/postes/{poste}/envois/refus").json()["destinataires"]) == 3
+
+
+def test_cloture_en_arriere_plan_par_defaut(connecte, services, poste, faux):  # noqa: F811
+    import time
+
+    a, _, _ = ids(services)
+    r = connecte.put(f"/postes/{poste}/statut", json={"statut": "cloture"}).json()
+    assert r["cloture"]["a_informer"] == 3  # la réponse HTTP n'attend pas les envois
+    for _ in range(100):
+        if len(faux.envoyes) == 3:
+            break
+        time.sleep(0.05)
+    assert len(faux.envoyes) == 3
+    assert connecte.get(f"/candidatures/{a}/mails").json()["etats"]["refus"]["statut"] == "envoye"
 
 
 def test_reponses_negatives_aux_seuls_ecartes(connecte, services, poste, faux):  # noqa: F811
@@ -264,3 +311,15 @@ def test_etat_des_mails_dans_le_classement(connecte, services, poste, faux):  # 
     envoyer(connecte, poste, "refus", [a])
     ligne = next(e for e in connecte.get(f"/postes/{poste}/classement").json()["elements"] if e["id"] == a)
     assert ligne["mails"] == {"invitation": "non_envoye", "modification": "non_envoye", "refus": "envoye"}
+
+
+def test_cloture_par_le_formulaire_du_poste_meme_effet(connecte, services, poste, faux):  # noqa: F811
+    from .test_traitement import POSTE_DEV as champs
+
+    services.cloture_poste.lancer = lambda tache: tache()
+    ids(services)
+    r = connecte.put(f"/postes/{poste}", json={**champs, "statut": "cloture", "description": champs["description"] + " Mise à jour."})
+    assert r.status_code == 200, r.text
+    assert r.json()["statut"] == "cloture" and r.json()["cloture"]["a_informer"] == 3
+    assert r.json()["description"].endswith("Mise à jour.")
+    assert len(faux.envoyes) == 3

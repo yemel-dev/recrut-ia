@@ -44,12 +44,8 @@ def envoyer_lot(poste_id: int, type_: str, corps: Envoi, request: Request):
 
 @router.get("/postes/{poste_id}/cloture")
 def apercu_cloture(poste_id: int, request: Request):
-    return _services(request).candidatures.apercu_cloture(poste_id)
-
-
-@router.post("/postes/{poste_id}/cloture")
-def cloturer(poste_id: int, request: Request):
-    return _services(request).candidatures.cloturer_selection(poste_id)
+    """Avant de clôturer le poste : candidats qui recevront la réponse négative, exclus, blocages."""
+    return _services(request).cloture_poste.apercu(poste_id)
 
 
 # --- Un candidat (fiche) ------------------------------------------------------------------------------------------

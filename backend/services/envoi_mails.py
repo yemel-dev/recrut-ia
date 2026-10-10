@@ -4,7 +4,8 @@ Règles :
 - aucun mail ne part automatiquement : le recruteur prépare l'envoi, voit l'aperçu, puis confirme ;
 - invitation : candidats « retenu » du poste avec un entretien planifié et daté ; un retenu sans entretien est listé
   à part ; un entretien en ligne exige le lien de la visio (accès à distance activé), qui figure dans le mail ;
-- réponse négative : candidats « écarté » du poste ;
+- réponse négative : candidats « écarté » du poste ; à la clôture du poste, elle part automatiquement à tous les
+  non retenus (services/cloture_poste.py), après la confirmation de la clôture ;
 - toujours exclus : CV illisibles, candidatures non classées, sans adresse, et ceux qui ont déjà reçu ce mail
   (sauf « renvoyer », action explicite) ;
 - un mail à la fois : chaque résultat est enregistré tout de suite, un échec n'arrête pas les autres ;
@@ -150,6 +151,40 @@ class EnvoiMailsService:
             "echecs": sum(r["statut"] == "echec" for r in resultats),
             "ignores": sum(r["statut"] == "ignore" for r in resultats),
         }
+
+    # --- Clôture du poste (services/cloture_poste.py) ------------------------------------------------------------
+
+    def apercu_cloture(self, poste_id: int) -> dict[str, Any]:
+        """Avant de clôturer : combien de non retenus recevront la réponse négative, qui ne la recevra pas (raison),
+        et ce qui empêcherait l'envoi."""
+        poste = self._poste(poste_id)
+        contexte = self._contexte()
+        du_poste = [c for c in self.candidatures.toutes() if c["poste_id"] == poste_id]
+        a_informer, exclus = 0, []
+        for candidature in du_poste:
+            if candidature["decision"] == "retenu":
+                continue
+            raison, _ = self._eligibilite({**candidature, "decision": "ecarte"}, poste, m.REFUS, contexte)
+            if raison:
+                exclus.append({**self._identite(candidature), "raison": raison})
+            else:
+                a_informer += 1
+        return {
+            "retenus": sum(c["decision"] == "retenu" for c in du_poste),
+            "a_informer": a_informer,
+            "exclus": exclus,
+            "blocages": self._blocages(contexte),
+        }
+
+    def ecarter_non_retenus(self, poste_id: int) -> int:
+        """Les candidatures du poste « à examiner » ou « en attente » passent à « écarté »."""
+        maintenant = datetime.now(timezone.utc)
+        ecartees = 0
+        for candidature in self.candidatures.toutes():
+            if candidature["poste_id"] == poste_id and candidature["decision"] in ("a_examiner", "en_attente"):
+                self.candidatures.maj(candidature["id"], decision="ecarte", decision_le=maintenant)
+                ecartees += 1
+        return ecartees
 
     # --- Un candidat (fiche) ------------------------------------------------------------------------------------
 

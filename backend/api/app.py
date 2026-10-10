@@ -26,6 +26,7 @@ from ..services.agent_mail import AgentMailService
 from ..services.auth import AuthService
 from ..services.boite import BoiteService
 from ..services.candidatures import CandidaturesService
+from ..services.cloture_poste import CloturePosteService
 from ..services.entreprise import EntrepriseService
 from ..services.entretiens import EntretiensService
 from ..services.detection_boite import DetectionBoite
@@ -65,6 +66,7 @@ class Services:
     reglages_mails: ReglagesMailsService
     envoi_mails: EnvoiMailsService
     boite: BoiteService
+    cloture_poste: CloturePosteService
 
 
 def construire_services(db: Database, settings: Settings, modele: ModeleSemantique | None = None) -> Services:
@@ -115,6 +117,7 @@ def construire_services(db: Database, settings: Settings, modele: ModeleSemantiq
         reglages_mails=reglages_mails,
         envoi_mails=envoi_mails,
         boite=boite,
+        cloture_poste=CloturePosteService(postes, envoi_mails),
         rapport=RapportService(
             CandidatureRepository(db), ScoreRepository(db), PosteRepository(db), EntrepriseRepository(db), cle=auth.cle_session,
             entretiens=EntretienRepository(db), mails=MailCandidatRepository(db),

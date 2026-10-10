@@ -134,29 +134,6 @@ class CandidaturesService:
         self.traitement.demander(f"relecture de la candidature {candidature_id}")
         return self.consulter(candidature_id)
 
-    def apercu_cloture(self, poste_id: int) -> dict[str, int]:
-        """Combien de candidatures du poste la clôture ferait passer de « à examiner » à « écarté »."""
-        self._poste(poste_id)
-        du_poste = [c for c in self.candidatures.toutes() if c["poste_id"] == poste_id]
-        return {
-            "a_ecarter": sum(c["decision"] == "a_examiner" for c in du_poste),
-            "en_attente": sum(c["decision"] == "en_attente" for c in du_poste),
-            "retenus": sum(c["decision"] == "retenu" for c in du_poste),
-        }
-
-    def cloturer_selection(self, poste_id: int) -> dict[str, int]:
-        """Fin de la sélection : les candidatures encore « à examiner » passent à « écarté ».
-
-        « En attente » et « retenu » ne sont pas touchées. Aucun mail ne part : les réponses négatives s'envoient
-        ensuite, après confirmation.
-        """
-        apercu = self.apercu_cloture(poste_id)
-        maintenant = datetime.now(timezone.utc)
-        for candidature in self.candidatures.toutes():
-            if candidature["poste_id"] == poste_id and candidature["decision"] == "a_examiner":
-                self.candidatures.maj(candidature["id"], decision="ecarte", decision_le=maintenant)
-        return {"ecartes": apercu["a_ecarter"], "en_attente": apercu["en_attente"]}
-
     def top(self, poste_id: int, decision: str | None = None) -> dict[str, Any]:
         """Les meilleurs profils du poste ; avec `decision`, toutes les candidatures du poste ayant cette décision,
         chacune à son rang dans le classement complet."""
