@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>INJARA : nouveau démarrage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap">
+<style>
+/* Mise en page : une colonne de lecture (~68 caractères), sections séparées par un titre et un repère vert,
+   schémas en cartes reliées par des flèches. Couleurs d'INJARA : bleu nuit et vert. */
+:root {
+  --fond: #f4f6f9;
+  --papier: #ffffff;
+  --encre: #0c1a2e;
+  --doux: #4c5b70;
+  --tenu: #7d8a9c;
+  --trait: #dde3eb;
+  --nuit: #031e40;
+  --vert: #00a556;
+  --vert-doux: #e6f6ed;
+  --vert-trait: #b9e6cc;
+  --alerte: #a15c00;
+  --alerte-doux: #fff4e3;
+  --code: #eef1f5;
+  --titre: "Unbounded", "Segoe UI", system-ui, sans-serif;
+  --texte: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fond: #061428; --papier: #0b1e38; --encre: #e9eef5; --doux: #a9b6c8; --tenu: #7d8ca2; --trait: #1d3456;
+    --nuit: #021530; --vert: #2fd383; --vert-doux: #0c3326; --vert-trait: #17583b; --alerte: #f3b45b; --alerte-doux: #2f2412;
+    --code: #10274a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --fond: #061428; --papier: #0b1e38; --encre: #e9eef5; --doux: #a9b6c8; --tenu: #7d8ca2; --trait: #1d3456;
+  --nuit: #021530; --vert: #2fd383; --vert-doux: #0c3326; --vert-trait: #17583b; --alerte: #f3b45b; --alerte-doux: #2f2412;
+  --code: #10274a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--fond); color: var(--encre); font-family: var(--texte); font-size: 17px; line-height: 1.65; padding-inline: 16px; }
+.page { max-width: 760px; margin: 0 auto; padding-block: 0 72px; }
+header.bandeau { background: var(--nuit); color: #fff; margin: 0 -16px; padding: 48px 16px 40px; }
+header.bandeau .dedans { max-width: 760px; margin: 0 auto; }
+.marque { display: flex; align-items: center; gap: 10px; font-family: var(--titre); font-weight: 600; font-size: 15px; letter-spacing: 0.02em; }
+.pastille { width: 30px; height: 30px; border-radius: 50%; background: #00bf63; color: #031e40; display: grid; place-items: center; font-size: 15px; }
+h1 { font-family: var(--titre); font-weight: 600; font-size: clamp(28px, 5vw, 40px); line-height: 1.15; letter-spacing: -0.02em; margin: 28px 0 14px; text-wrap: balance; }
+.chapeau { color: #c7d3e4; font-size: 18px; max-width: 62ch; margin: 0; }
+.infos { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 22px; font-size: 14px; color: #9fb0c8; }
+.infos b { color: #fff; font-weight: 600; }
+h2 { font-family: var(--titre); font-weight: 500; font-size: 22px; line-height: 1.25; letter-spacing: -0.01em; margin: 56px 0 14px; text-wrap: balance; display: flex; gap: 12px; align-items: baseline; }
+h2 .num { font-size: 13px; color: var(--vert); font-weight: 600; }
+h3 { font-size: 17px; font-weight: 700; margin: 26px 0 6px; }
+p { margin: 0 0 14px; max-width: 68ch; }
+.doux { color: var(--doux); }
+ul, ol { margin: 0 0 16px; padding-left: 22px; max-width: 66ch; }
+li { margin-bottom: 6px; }
+code { font-family: var(--mono); font-size: 0.86em; background: var(--code); padding: 1px 6px; border-radius: 4px; }
+pre { font-family: var(--mono); font-size: 14px; background: var(--code); padding: 14px 16px; border-radius: 8px; overflow-x: auto; margin: 0 0 16px; }
+
+.resume { background: var(--papier); border: 1px solid var(--trait); border-radius: 12px; padding: 22px 24px; margin-top: 32px; }
+.resume h2 { margin-top: 0; }
+.resume ul { margin-bottom: 0; }
+
+.avant-apres { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 18px 0 20px; }
+.avant-apres > div { min-width: 0; border-radius: 10px; padding: 16px 18px; border: 1px solid var(--trait); background: var(--papier); }
+.avant-apres .etiquette { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tenu); margin-bottom: 6px; }
+.avant-apres .apres { border-color: var(--vert-trait); background: var(--vert-doux); }
+.avant-apres .apres .etiquette { color: var(--vert); }
+.avant-apres ul { margin: 0; padding-left: 18px; font-size: 15px; }
+
+.parcours { list-style: none; padding: 0; margin: 20px 0 22px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; max-width: none; }
+.parcours li { margin: 0; background: var(--papier); border: 1px solid var(--trait); border-radius: 10px; padding: 14px; position: relative; min-width: 0; }
+.parcours li:not(:last-child)::after { content: "→"; position: absolute; right: -11px; top: 50%; transform: translateY(-50%); color: var(--vert); font-weight: 700; background: var(--fond); line-height: 1; padding: 2px 0; }
+.parcours .n { font-family: var(--titre); font-size: 12px; color: var(--vert); font-weight: 600; }
+.parcours b { display: block; font-size: 15px; margin: 4px 0 4px; line-height: 1.3; }
+.parcours span { font-size: 13.5px; color: var(--doux); line-height: 1.45; display: block; }
+
+.tableau { overflow-x: auto; margin: 14px 0 20px; border: 1px solid var(--trait); border-radius: 10px; background: var(--papier); }
+table { border-collapse: collapse; width: 100%; font-size: 15px; min-width: 520px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--trait); vertical-align: top; }
+th { font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--tenu); font-weight: 700; }
+tr:last-child td { border-bottom: 0; }
+.ok { color: var(--vert); font-weight: 700; }
+.non { color: var(--alerte); font-weight: 700; }
+
+.note { border-left: 3px solid var(--alerte); background: var(--alerte-doux); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 16px 0 20px; font-size: 15.5px; }
+.note p:last-child { margin-bottom: 0; }
+
+.grille { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 14px 0 18px; }
+.grille > div { min-width: 0; background: var(--papier); border: 1px solid var(--trait); border-radius: 10px; padding: 14px 16px; }
+.grille b { display: block; margin-bottom: 4px; }
+.grille span { font-size: 15px; color: var(--doux); }
+
+footer { margin-top: 64px; padding-top: 18px; border-top: 1px solid var(--trait); font-size: 14px; color: var(--tenu); }
+
+@media (max-width: 680px) {
+  .avant-apres, .grille { grid-template-columns: 1fr; }
+  .parcours { grid-template-columns: 1fr 1fr; }
+  .parcours li:nth-child(2)::after { content: none; }
+}
+@media (max-width: 420px) {
+  .parcours { grid-template-columns: 1fr; }
+  .parcours li::after { content: none !important; }
+  body { font-size: 16px; }
+}
+</style>
+
+<header class="bandeau">
+  <div class="dedans">
+    <div class="marque"><span class="pastille">✳</span> INJARA</div>
+    <h1>Un compte prêt en trois étapes, et des mails aux candidats qui partent tout seuls</h1>
+    <p class="chapeau">Ce document explique simplement ce qui a changé dans INJARA : la création du compte, la connexion de la boîte mail, et tout ce qui touche aux mails envoyés aux candidats.</p>
+    <div class="infos">
+      <span>Branche <b>feat/mails-candidats-v2</b></span>
+      <span>Basée sur <b>redesign-ui</b></span>
+      <span>Octobre 2026</span>
+    </div>
+  </div>
+</header>
+
+<body>
+<main class="page">
+
+  <section class="resume">
+    <h2>En bref</h2>
+    <ul>
+      <li><b>Après la création du compte, un assistant</b> guide l'entreprise en trois étapes : son nom, sa boîte mail, les candidatures déjà reçues.</li>
+      <li><b>On ne demande plus que l'adresse mail.</b> INJARA reconnaît seul la messagerie (Gmail, Yahoo, Spacemail, OVH…) et ne pose que les questions utiles, sans mot technique.</li>
+      <li><b>Une seule connexion</b> sert à la fois à lire les candidatures (agent IA) et à répondre aux candidats.</li>
+      <li><b>Les mails aux candidats</b> partent vers les vrais candidats (plus de mode test). Quand on clôture un poste, les non retenus reçoivent automatiquement la réponse négative.</li>
+      <li><b>Les mails sont mis en forme</b> : en-tête au nom de l'entreprise, encadré de l'entretien, bouton pour rejoindre la visio.</li>
+    </ul>
+  </section>
+
+  <h2><span class="num">01</span> Pourquoi cette réforme</h2>
+  <p>INJARA sera utilisé par des recruteurs qui ne sont pas informaticiens. Avant, pour que l'application fonctionne, il fallait passer par plusieurs écrans et comprendre des notions comme « IMAP », « serveur SMTP », « autoriser l'envoi » ou « mode test ». Beaucoup d'utilisateurs se seraient arrêtés en route.</p>
+  <p>L'objectif était simple : <b>tout configurer une seule fois, dès la création du compte</b>, avec des questions qu'une personne non technique comprend. Ensuite, tout devient facile.</p>
+
+  <div class="avant-apres">
+    <div>
+      <div class="etiquette">Avant</div>
+      <ul>
+        <li>Le compte est créé, puis on arrive sur un tableau de bord vide.</li>
+        <li>Il faut trouver seul la page « Boîte mail ».</li>
+        <li>Deux cartes au choix : « Gmail » ou « Autre messagerie », avec serveur et port à saisir.</li>
+        <li>Puis une seconde autorisation pour envoyer des mails, ailleurs dans l'application.</li>
+        <li>Un mode test actif par défaut, avec une adresse à renseigner.</li>
+      </ul>
+    </div>
+    <div class="apres">
+      <div class="etiquette">Maintenant</div>
+      <ul>
+        <li>Un assistant s'ouvre tout seul après la première connexion.</li>
+        <li>On tape juste son adresse mail.</li>
+        <li>INJARA trouve la messagerie et demande seulement le mot de passe, avec des étapes guidées si besoin.</li>
+        <li>La même connexion lit les CV et envoie les réponses.</li>
+        <li>Un récapitulatif dit clairement ce qui marche.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2><span class="num">02</span> Le nouveau démarrage, étape par étape</h2>
+  <p>Après « Créer le compte » et la clé de récupération, la première connexion ouvre l'assistant de démarrage. Il reprend le même cadre que les écrans de connexion, sans la barre latérale.</p>
+
+  <ol class="parcours">
+    <li><span class="n">Étape 1</span><b>Votre entreprise</b><span>Nom (obligatoire), ville, secteur. Ils signent les mails et les rapports.</span></li>
+    <li><span class="n">Étape 2</span><b>Votre boîte de recrutement</b><span>Une adresse, puis le mot de passe ou « Se connecter avec Google ».</span></li>
+    <li><span class="n">Étape 3</span><b>Candidatures déjà reçues</b><span>30 derniers jours, depuis une date, ou seulement les nouveaux mails.</span></li>
+    <li><span class="n">Fin</span><b>C'est prêt</b><span>Récapitulatif : entreprise, réception des CV, envoi des mails.</span></li>
+  </ol>
+
+  <ul>
+    <li>Chaque étape a un bouton <b>« Plus tard »</b>. Rien n'est bloquant, et tout reste modifiable ensuite dans l'application.</li>
+    <li>L'assistant ne revient plus une fois terminé. Il ne s'affiche pas non plus si l'entreprise et la boîte sont déjà renseignées, ce qui évite de gêner les comptes existants.</li>
+    <li>La page « Boîte mail » utilise désormais le même écran simple que l'assistant.</li>
+  </ul>
+
+  <h2><span class="num">03</span> Comment INJARA reconnaît la boîte mail</h2>
+  <p>L'utilisateur donne seulement son adresse. INJARA regarde le nom de domaine (ce qui suit le <code>@</code>) et décide quoi proposer.</p>
+
+  <div class="tableau">
+    <table>
+      <thead><tr><th>Adresse</th><th>Ce que voit l'utilisateur</th><th>Fonctionne</th></tr></thead>
+      <tbody>
+        <tr><td><code>@gmail.com</code> ou entreprise chez Google</td><td>« Se connecter avec Google » (si configuré), sinon un mot de passe d'application expliqué en 4 étapes, avec un bouton vers la bonne page Google</td><td class="ok">Oui</td></tr>
+        <tr><td><code>@yahoo.fr</code>, <code>@yahoo.com</code></td><td>Mot de passe d'application, étapes guidées et bouton vers la page Yahoo</td><td class="ok">Oui</td></tr>
+        <tr><td>Domaine de l'entreprise (Spacemail, OVH, Zoho, Hostinger, Gandi…)</td><td>Le nom de l'hébergeur s'affiche, puis seulement le mot de passe habituel de la boîte</td><td class="ok">Oui (testé en vrai avec Spacemail)</td></tr>
+        <tr><td>Hébergeur inconnu</td><td>INJARA essaie les serveurs habituels. S'il ne trouve rien, il demande l'adresse du serveur en expliquant à qui la demander</td><td class="ok">Oui</td></tr>
+        <tr><td>Microsoft 365 (Outlook pro)</td><td>Un avertissement : l'administrateur doit souvent autoriser la connexion</td><td class="non">Selon la configuration</td></tr>
+        <tr><td><code>@outlook.com</code>, <code>@hotmail.fr</code></td><td>Message clair : Microsoft refuse ces connexions, utiliser une autre adresse</td><td class="non">Non</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="doux">Comment ça marche en coulisses : INJARA lit les « enregistrements MX » du domaine, c'est-à-dire l'annuaire public qui dit quel serveur reçoit les mails de cette adresse. Il vérifie aussi qu'un serveur répond vraiment comme une boîte mail avant de le retenir. Aucun mot de passe n'est envoyé tant que l'utilisateur n'a pas validé.</p>
+
+  <h3>Une seule connexion pour tout</h3>
+  <p>Une fois la boîte connectée, INJARA <b>essaie immédiatement l'envoi</b> et affiche le résultat en clair : « Réception des candidatures : prête », « Mails aux candidats : prêts ». Avec Google, une seule fenêtre accorde la lecture et l'envoi. Avec un mot de passe, l'envoi réutilise les mêmes identifiants, rangés dans le coffre sécurisé de Windows.</p>
+
+  <h2><span class="num">04</span> Les mails aux candidats</h2>
+
+  <h3>Le principe</h3>
+  <div class="grille">
+    <div><b>Les candidats retenus</b><span>Le recruteur leur envoie lui-même l'invitation à l'entretien, depuis la page du poste, après avoir vu l'aperçu de chaque mail.</span></div>
+    <div><b>Les candidats non retenus</b><span>Quand le recruteur passe le poste à « Clôturé », ils reçoivent automatiquement la réponse négative.</span></div>
+  </div>
+
+  <h3>La clôture d'un poste</h3>
+  <p>Au clic sur « Clôturé », une confirmation indique par exemple : <i>« Les candidats non retenus recevront automatiquement la réponse négative : 12 candidats. Les 3 candidats retenus ne reçoivent rien. »</i> Après confirmation :</p>
+  <ul>
+    <li>les candidatures « À examiner » et « En attente » passent à « Écarté » ;</li>
+    <li>la réponse négative part en arrière-plan, un mail à la fois ;</li>
+    <li>jamais de doublon : un candidat déjà prévenu ne reçoit rien de plus ;</li>
+    <li>les CV illisibles et les candidats sans adresse sont exclus, avec la raison affichée ;</li>
+    <li>si l'envoi est impossible (boîte non connectée, par exemple), le poste est clôturé quand même et un message l'explique.</li>
+  </ul>
+
+  <h3>Plus de mode test</h3>
+  <p>Le mode test redirigeait tous les mails vers une adresse de test. Il était actif par défaut et créait de la confusion. Il a été <b>supprimé</b> : les mails partent toujours aux vrais candidats, mais jamais sans l'aperçu et la confirmation du recruteur. Pour faire des essais sans rien envoyer, on lance l'application en mode démo (<code>npm run dev:demo</code>).</p>
+
+  <h3>Des mails mis en forme</h3>
+  <p>Avant, le candidat recevait du texte brut. Maintenant il reçoit un vrai mail :</p>
+  <ul>
+    <li>un en-tête bleu nuit au nom de l'entreprise, avec son initiale et son secteur ;</li>
+    <li>pour une invitation, un encadré <b>« Votre entretien »</b> avec la date, l'heure, la durée et le lieu ;</li>
+    <li>pour un entretien en ligne, un bouton <b>« Rejoindre l'entretien en ligne »</b> ;</li>
+    <li>un pied de page avec les coordonnées de l'entreprise (prises dans le Profil entreprise).</li>
+  </ul>
+  <p>Le mail reste lisible sur téléphone et ne contient aucune image externe (pas de pistage). Une version texte est jointe pour les vieilles messageries.</p>
+
+  <h3>La page « Mails aux candidats »</h3>
+  <p>Elle a été redessinée. En haut, l'état de l'envoi (« Prêt » ou « À régler ») et un schéma « Comment ça marche ». En dessous, les deux modèles (invitation et réponse négative) dans des onglets, avec l'éditeur à gauche et un <b>aperçu en direct</b> à droite, exactement comme le candidat le recevra. Des boutons comme « + Nom du candidat » ou « + Date » insèrent les informations sans avoir à taper de code.</p>
+
+  <h2><span class="num">05</span> Intégration avec le travail de l'équipe</h2>
+  <p>Ce travail a été repris sur la branche <code>redesign-ui</code>, qui contient le nouveau design et le module d'entretien vidéo.</p>
+  <ul>
+    <li><b>Une seule table d'entretiens.</b> L'entretien du module vidéo a reçu ce dont les mails ont besoin : durée, sur site ou en ligne, adresse, message, confirmation du candidat. Son fonctionnement (planifié, en cours, terminé, annulé) ne change pas.</li>
+    <li><b>Planifier un entretien</b> est maintenant possible depuis la fiche du candidat : date, heure, durée, en ligne ou sur site. Pour un entretien en ligne, l'invitation contient le lien de la visio.</li>
+    <li>Le <b>rapport PDF</b> du candidat montre en plus l'entretien prévu et l'historique des mails.</li>
+  </ul>
+
+  <h2><span class="num">06</span> Problèmes corrigés en chemin</h2>
+  <div class="tableau">
+    <table>
+      <thead><tr><th>Problème</th><th>Correction</th></tr></thead>
+      <tbody>
+        <tr><td>L'application ne démarrait plus sur une ancienne base (« valeur par défaut requise pour la migration »)</td><td>La table des entretiens est convertie automatiquement au démarrage, sans perte</td></tr>
+        <tr><td>Une boîte Spacemail était envoyée vers un mauvais serveur</td><td>Spacemail est reconnu, et un serveur n'est retenu que s'il répond vraiment comme une boîte mail</td></tr>
+        <tr><td>Clôturer un poste détachait ses candidats, voire les déplaçait vers un autre poste</td><td>Un poste clôturé garde ses candidats</td></tr>
+        <tr><td>On pouvait clôturer un poste depuis son formulaire sans prévenir les candidats</td><td>Toutes les façons de clôturer ont maintenant le même effet</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2><span class="num">07</span> Ce qui reste à faire</h2>
+  <div class="note">
+    <p><b>À tester avec de vraies boîtes.</b> Spacemail a été testé en conditions réelles. Gmail avec mot de passe d'application, Yahoo et Microsoft 365 ne l'ont pas encore été.</p>
+  </div>
+  <ul>
+    <li><b>Bouton « Se connecter avec Google »</b> : il faut configurer le projet Google Cloud (autorisations <code>gmail.readonly</code> et <code>gmail.send</code>). Pour une diffusion large, Google devra valider l'application.</li>
+    <li><b>Entretiens en ligne</b> : pour que l'invitation contienne un lien qui marche encore le jour J, il faut une adresse fixe pour l'accès à distance (un domaine et un tunnel Cloudflare nommé).</li>
+    <li><b>Connexion Microsoft</b> (Outlook, Hotmail, Microsoft 365) : à ajouter, car très répandue en entreprise.</li>
+    <li><b>CV non récupérés</b> : photos de CV (JPG, PNG), anciens fichiers Word (.doc) et liens Google Drive ou WeTransfer.</li>
+  </ul>
+
+  <h2><span class="num">08</span> Pour essayer</h2>
+  <p>Depuis le dossier <code>desktop</code> du projet, sur la branche <code>feat/mails-candidats-v2</code> :</p>
+  <pre>npm run dev        # application normale (les mails partent vraiment)
+npm run dev:demo   # mode démo : boîte simulée, rien n'est envoyé</pre>
+  <p>Pour voir l'assistant de démarrage sans toucher à son propre compte, on lance l'application sur un autre dossier de données :</p>
+  <pre>INJARA_DATA_DIR=~/injara-test npm run dev</pre>
+  <p class="doux">Le travail est vérifié par 550 tests automatiques, et par des parcours complets joués dans la vraie fenêtre de l'application : création du compte, assistant, envoi des invitations, clôture d'un poste.</p>
+
+  <footer>INJARA · branche feat/mails-candidats-v2 · document de présentation pour l'équipe</footer>
+</main>
+
+</html>
